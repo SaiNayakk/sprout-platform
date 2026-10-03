@@ -1,0 +1,17 @@
+target/
+*.class
+*.log
+.idea/
+*.iml
+.vscode/
+.DS_Store
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+site/
+.claude/
+CLAUDE.md
+preprod/out/
+!docs/reliability/runs/**/*.log
