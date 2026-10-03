@@ -1,0 +1,69 @@
+site_name: Sprout
+site_description: A brokerage built from scratch, one service and one contract at a time, and the evidence that it works.
+site_url: https://sainayakk.github.io/sprout-platform/
+repo_url: https://github.com/SaiNayakk/sprout-platform
+repo_name: SaiNayakk/sprout-platform
+edit_uri: edit/main/docs/
+copyright: Simulated brokerage for learning. No real money, no real orders.
+
+theme:
+  name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  font:
+    text: Figtree
+    code: JetBrains Mono
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle: { icon: material/weather-night, name: Dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle: { icon: material/weather-sunny, name: Light mode }
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - content.code.copy
+    - search.highlight
+
+extra_css:
+  - assets/brand.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc: { permalink: true }
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - { name: mermaid, class: mermaid, format: !!python/name:pymdownx.superfences.fence_code_format }
+  - pymdownx.tabbed: { alternate_style: true }
+
+not_in_nav: |
+  /reliability/runs/*/index.md
+
+nav:
+  - Overview:
+      - index.md
+      - Architecture: architecture.md
+      - Contracts: contracts.md
+      - Environments & releases: environments.md
+  - Testing:
+      - End-to-end tests: testing/e2e.md
+      - Performance tests: testing/performance.md
+      - Chaos tests: testing/chaos.md
+  - Reliability:
+      - reliability/index.md
+      - Evidence from runs: reliability/runs/index.md
+      - Runbooks: runbooks.md
+      - Incidents: incidents.md
+  - Decisions: decisions.md
+  - Errors: errors.md

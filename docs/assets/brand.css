@@ -1,0 +1,35 @@
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap");
+
+:root,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #157a45;
+  --md-primary-fg-color--light: #1f9a59;
+  --md-primary-fg-color--dark: #0f5c34;
+  --md-accent-fg-color: #f2a62c;
+  --md-default-fg-color: #141833;
+  --md-typeset-a-color: #157a45;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #0f5c34;
+  --md-accent-fg-color: #f2a62c;
+  --md-typeset-a-color: #5fd08f;
+  --md-default-bg-color: #11142a;
+}
+
+.md-header__title,
+.md-typeset h1,
+.md-typeset h2 {
+  font-family: "Bricolage Grotesque", var(--md-text-font-family), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.md-typeset h1 { color: var(--md-default-fg-color); }
+
+.md-typeset .pass { color: #157a45; font-weight: 600; }
+.md-typeset .fail { color: #b4430b; font-weight: 600; }
+
+.md-typeset table:not([class]) th { background: color-mix(in srgb, var(--md-primary-fg-color) 10%, transparent); }
+
+[data-md-color-scheme="slate"] .md-typeset h1 { color: #f4f1e8; }

@@ -1,0 +1,76 @@
+# Pre-prod: an environment created fresh for every release, tested end to end, then destroyed.
+# It mirrors the phone: the same host jar, JVM flags, memory budget and Postgres major version.
+#
+#   ./preprod/run.sh            create, test (e2e, perf, chaos), record evidence, destroy
+#   docker compose -f preprod/docker-compose.yml --profile observability up -d   to explore by hand
+#
+# Every secret below is a throwaway value for this disposable environment only.
+name: sprout-preprod
+
+services:
+  postgres:
+    image: postgres:18-alpine          # the phone runs PostgreSQL 18.6
+    environment:
+      POSTGRES_DB: sprout
+      POSTGRES_USER: sprout
+      POSTGRES_PASSWORD: preprod-only-not-a-secret
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sprout -d sprout"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    mem_limit: 256m
+
+  edge:
+    build:
+      context: ..
+      dockerfile: preprod/Dockerfile.edge
+    environment:
+      IDENTITY_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=identity
+      IDENTITY_DB_USER: sprout
+      IDENTITY_DB_PASSWORD: preprod-only-not-a-secret
+      IDENTITY_TOTP_KEY: cHJlcHJvZC1vbmx5LTMyLWJ5dGUtdGVzdC1rZXkhISE=
+      IDENTITY_BIND: 0.0.0.0
+      GATEWAY_BIND: 0.0.0.0
+      GATEWAY_IDENTITY_URL: http://127.0.0.1:8101
+      GATEWAY_JWKS_URL: http://127.0.0.1:8101/.well-known/jwks.json
+      # pre-prod sits behind the test runner the way prod sits behind Cloudflare
+      GATEWAY_TRUST_CF_IP: "true"
+      LOG_FORMAT: ecs
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      MANAGEMENT_OTLP_METRICS_EXPORT_STEP: 10s   # pre-prod runs are short; one point a minute is too coarse
+      # latency percentiles on the dashboard need histogram buckets, off by default to save memory
+      SPRING_APPLICATION_JSON: '{"management.metrics.distribution.percentiles-histogram.http.server.requests": true}'
+      OTEL_METRICS_URL: http://lgtm:4318/v1/metrics
+      OTEL_TRACES_URL: http://lgtm:4318/v1/traces
+    ports:
+      - "8100:8100"
+    mem_limit: 384m                     # the phone's budget for this host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8190/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8101/actuator/health >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+      start_period: 20s
+
+  # Grafana, Prometheus, Loki and Tempo in one container. Optional: about 1 GB of RAM.
+  lgtm:
+    image: grafana/otel-lgtm:latest
+    profiles: ["observability"]
+    ports:
+      - "3000:3000"
+      - "4318:4318"
+    mem_limit: 1536m
+
+  k6:
+    image: grafana/k6:2.3.0
+    profiles: ["tools"]
+    working_dir: /scripts               # scripts are passed by name, so no host path is ever converted
+    volumes:
+      - ./k6:/scripts:ro
+      - ./out:/out
+    environment:
+      BASE_URL: http://edge:8100
