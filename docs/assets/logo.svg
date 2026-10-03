@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Sprout">
+  <circle cx="32" cy="40" r="20" fill="#f2a62c"/>
+  <circle cx="32" cy="40" r="14.5" fill="none" stroke="#141833" stroke-opacity=".18" stroke-width="2"/>
+  <path d="M32 40V22" stroke="#157a45" stroke-width="4" stroke-linecap="round"/>
+  <path d="M32 26c0-9 7-14 16-14 0 9-7 14-16 14z" fill="#157a45"/>
+  <path d="M32 30c0-7-5-11-12-11 0 7 5 11 12 11z" fill="#1f9a59"/>
+</svg>

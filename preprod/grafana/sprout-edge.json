@@ -1,0 +1,254 @@
+{
+  "dashboard": {
+    "uid": "sprout-edge",
+    "title": "Sprout edge host",
+    "tags": [
+      "sprout"
+    ],
+    "timezone": "utc",
+    "refresh": "10s",
+    "time": {
+      "from": "now-15m",
+      "to": "now"
+    },
+    "schemaVersion": 39,
+    "panels": [
+      {
+        "id": 1,
+        "type": "timeseries",
+        "title": "Sign-ins per second, by result",
+        "description": "Counted by identity.",
+        "interval": "15s",
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 12,
+          "h": 8
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 8,
+              "showPoints": "never"
+            }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum by (result) (rate(identity_signins_total[1m]))",
+            "legendFormat": "{{result}}"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "type": "timeseries",
+        "title": "Requests per second at the gateway, by status",
+        "description": "What clients see.",
+        "interval": "15s",
+        "gridPos": {
+          "x": 12,
+          "y": 0,
+          "w": 12,
+          "h": 8
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 8,
+              "showPoints": "never"
+            }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum by (status) (rate(http_server_requests_milliseconds_count{job=\"sprout-gateway\"}[1m]))",
+            "legendFormat": "{{status}}"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "type": "timeseries",
+        "title": "Latency at the gateway",
+        "description": "Includes identity behind it.",
+        "interval": "15s",
+        "gridPos": {
+          "x": 0,
+          "y": 8,
+          "w": 12,
+          "h": 8
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 8,
+              "showPoints": "never"
+            }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "histogram_quantile(0.5, sum by (le) (rate(http_server_requests_milliseconds_bucket{job=\"sprout-gateway\"}[1m])))",
+            "legendFormat": "p50"
+          },
+          {
+            "refId": "B",
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_milliseconds_bucket{job=\"sprout-gateway\"}[1m])))",
+            "legendFormat": "p95"
+          },
+          {
+            "refId": "C",
+            "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_milliseconds_bucket{job=\"sprout-gateway\"}[1m])))",
+            "legendFormat": "p99"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "type": "timeseries",
+        "title": "Edge host JVM memory",
+        "description": "One JVM for both services; counted once.",
+        "interval": "15s",
+        "gridPos": {
+          "x": 12,
+          "y": 8,
+          "w": 12,
+          "h": 8
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 8,
+              "showPoints": "never"
+            }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum by (area) (jvm_memory_used_bytes{job=\"sprout-identity\"})",
+            "legendFormat": "{{area}} used"
+          },
+          {
+            "refId": "B",
+            "expr": "sum(jvm_memory_max_bytes{job=\"sprout-identity\",area=\"heap\"})",
+            "legendFormat": "heap max"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "type": "timeseries",
+        "title": "Database connections (identity)",
+        "description": "Pool of 5; waiting > 0 means requests queue for the database.",
+        "interval": "15s",
+        "gridPos": {
+          "x": 0,
+          "y": 16,
+          "w": 12,
+          "h": 8
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 8,
+              "showPoints": "never"
+            }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum(hikaricp_connections_active)",
+            "legendFormat": "active"
+          },
+          {
+            "refId": "B",
+            "expr": "sum(hikaricp_connections_pending)",
+            "legendFormat": "waiting"
+          },
+          {
+            "refId": "C",
+            "expr": "sum(hikaricp_connections_max)",
+            "legendFormat": "max"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "type": "timeseries",
+        "title": "Database connection timeouts (CHAOS-01)",
+        "description": "Each one became a fast 503 instead of a hang.",
+        "interval": "15s",
+        "gridPos": {
+          "x": 12,
+          "y": 16,
+          "w": 12,
+          "h": 8
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 8,
+              "showPoints": "never"
+            }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum(hikaricp_connections_timeout_total) or vector(0)",
+            "legendFormat": "timeouts since start"
+          }
+        ]
+      }
+    ]
+  },
+  "overwrite": true
+}
