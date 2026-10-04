@@ -57,6 +57,9 @@ tags kept failing intermittently after that, while builds of the very same commi
 - It recurred: the gateway's `v0.2.4` failed both as a tag and as a commit. So hosts no longer get
   services from JitPack at all; they build each service from its release tag
   ([ADR-011](decisions.md#adr-011-build-from-tags)).
+- The contracts moved too: they now publish themselves to a Maven repository on their own GitHub
+  Pages, and identity `0.2.2` and market data `0.1.1` take them from there. Nothing in the release path
+  uses JitPack.
 - Versions that JitPack never published don't matter to hosts any more; they are still listed here:
   contracts `v0.3.0` and `v0.3.1`, gateway `v0.2.0` and `v0.2.1` (use `v0.3.2` and `v0.2.4`).
 

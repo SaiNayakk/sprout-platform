@@ -1,6 +1,7 @@
 package app.sprout.hosts.edge;
 
 import app.sprout.gateway.GatewayApplication;
+import app.sprout.hosts.common.HostLogFields.HostInfo;
 import app.sprout.identity.IdentityApplication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,10 +41,18 @@ public final class EdgeHost {
 
     /** Starts identity first (the gateway fetches its keys from it), then the gateway. */
     public static ConfigurableApplicationContext[] start(String... args) {
-        ConfigurableApplicationContext identity = IdentityApplication.builder().run(args);
+        HostInfo host = HostInfo.load();
+        ConfigurableApplicationContext identity = IdentityApplication.builder()
+                .properties(host.loggingDefaults())
+                .run(args);
         ConfigurableApplicationContext gateway = GatewayApplication.builder()
+                .properties(host.loggingDefaults())
                 .properties("spring.autoconfigure.exclude=" + GATEWAY_EXCLUDES)
                 .run(args);
+        int signIns = Integer.parseInt(System.getenv().getOrDefault("EDGE_WARMUP_SIGNINS", "300"));
+        if (signIns > 0) {
+            WarmUp.run(identity, gateway, signIns);
+        }
         log.info("Edge host up: identity and gateway running in one JVM");
         return new ConfigurableApplicationContext[] {identity, gateway};
     }

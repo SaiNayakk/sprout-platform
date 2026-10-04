@@ -69,6 +69,10 @@ def phase(scenario):
 warm, steady = phase("warmup"), phase("steady")
 thresholds = [(name, rule, t.get("ok", False)) for name, m in k6.items() for rule, t in m.get("thresholds", {}).items()]
 fanout = load(os.path.join(out, "perf-03-summary.json"))
+cold_k6 = (load(os.path.join(out, "perf-02-k6-summary.json")) or {}).get("metrics", {})
+cold_dur = cold_k6.get("http_req_duration{scenario:cold}", {}).get("values", {})
+cold_failed = cold_k6.get("http_req_failed{scenario:cold}", {}).get("values", {})
+cold_thresholds = [(n, r, t.get("ok", False)) for n, m in cold_k6.items() for r, t in m.get("thresholds", {}).items()]
 
 
 def peak_memory(host):
@@ -97,7 +101,7 @@ L = [f"# Pre-prod run {run_id}", "",
      *[f"| [{i}](../../../testing/e2e.md#{i.lower()}) | {n} | {t:.1f} s | {mark(ok)} |" for i, n, t, ok in cases], ""]
 
 L += ["## PERF-01: sign-in throughput", "",
-      "First 30 s: ramp from 2 to 20 sign-ins a second on a freshly started JVM. Then 60 s steady at 20 a second. "
+      "First 30 s: ramp from 2 to 10 sign-ins a second. Then 60 s steady at 10 a second (half the edge host's capacity). "
       "Every request from a different client.", "",
       "| Measure | Warm-up (30 s) | Steady (60 s) |", "|---|---|---|",
       *[f"| {label} | {ms(warm.get(k))} | {ms(steady.get(k))} |"
@@ -106,6 +110,17 @@ L += ["## PERF-01: sign-in throughput", "",
       f"| Failed | {(warm['failRate'] or 0) * 100:.2f}% | {(steady['failRate'] or 0) * 100:.2f}% |", "",
       "| Threshold | Rule | Result |", "|---|---|---|",
       *[f"| `{n}` | `{r}` | {mark(ok)} |" for n, r, ok in thresholds], ""]
+
+if cold_dur:
+    L += ["## PERF-02: sign-in straight after a restart", "",
+          "The edge host is restarted (it warms itself up before reporting ready), then gets 10 sign-ins a "
+          "second for 30 s from the moment it is ready.", "",
+          "| Measure | Value |", "|---|---|",
+          f"| Median / p95 / p99 / slowest | {ms(cold_dur.get('med'))} / {ms(cold_dur.get('p(95)'))} / "
+          f"{ms(cold_dur.get('p(99)'))} / {ms(cold_dur.get('max'))} |",
+          f"| Failed | {(cold_failed.get('rate') or 0) * 100:.2f}% |", "",
+          "| Threshold | Rule | Result |", "|---|---|---|",
+          *[f"| `{n}` | `{r}` | {mark(ok)} |" for n, r, ok in cold_thresholds], ""]
 
 if fanout:
     L += ["## PERF-03: price fan-out", "",
@@ -138,6 +153,7 @@ if os.path.exists(os.path.join(out, "grafana-edge.png")):
           "![Grafana dashboard for this run](grafana-edge.png)", ""]
 
 L += ["## Files", "", "- `e2e/`: JUnit reports", "- `perf-01-k6-summary.json`: every k6 metric",
+      "- `perf-02-k6-summary.json`: sign-in straight after a restart",
       "- `perf-03-summary.json`: the fan-out result", "- `memory-during.txt`: host memory and CPU every 5 s under load",
       "- `chaos-*.json`: each experiment's observations and checks",
       "- `edge.log`, `trading.log`: the hosts' structured logs for the whole run"]

@@ -61,6 +61,14 @@ affects only one user).
 1. Check the signing key file hasn't been replaced (`IDENTITY_SIGNING_KEY_PATH`).
 2. If one user reports it, it's reuse detection doing its job ([E2E-30](testing/e2e.md#e2e-30)).
 
+## Finding a service's logs in a host
+
+Several services share each host's JVM and its log. Every JSON line carries the host
+(`service.name`, e.g. `edge-host`, and its version) and, for lines written by a service's own code,
+which service and version wrote it (`sprout.service`, `sprout.service.version`). Filter on
+`sprout.service` to see one service. Lines from Spring or libraries have no `sprout.service`; follow
+the `requestId` to connect them to a request.
+
 ## Pre-prod fails
 
 1. Open the run's evidence page under [Evidence from runs](reliability/runs/index.md): it says which
