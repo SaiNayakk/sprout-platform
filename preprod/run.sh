@@ -62,6 +62,7 @@ else
 fi
 
 log "End-to-end suite"
+rm -rf "$ROOT/e2e/target/surefire-reports"   # only this run's results go into the evidence
 if (cd "$ROOT/e2e" && mvn -q -B test -Dsprout.baseUrl=http://localhost:8100); then stage e2e pass; else stage e2e fail; fi
 cp "$ROOT"/e2e/target/surefire-reports/TEST-*.xml "$OUT/e2e/" 2>/dev/null
 
