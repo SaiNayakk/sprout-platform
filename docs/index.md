@@ -7,24 +7,27 @@ market data, orders, execution, money movement and the records behind all of it.
 separate services the way a large institution splits teams, each with its own repository, its own
 contract and its own responsibility, and it runs on a phone.
 
+The market is simulated: twenty fictional companies whose prices behave like a real market's. See
+[ADR-008](decisions.md#adr-008-simulated-market).
+
 The product is aimed at people investing for the first time. It rewards steady habits (investing
 regularly, holding, diversifying) rather than frequent trading.
 
 !!! note "Simulated"
-    No real money moves and no real orders reach an exchange. Prices come from the market; everything
-    after that is simulated faithfully.
+    No real money moves, no real orders reach an exchange, and the companies and their prices are made
+    up. Everything is simulated faithfully: the market, and everything a brokerage does with it.
 
 ## What exists today
 
 | Piece | Repository | Status |
 |---|---|---|
-| Contracts: every API and event, versioned | [sprout-contracts](https://github.com/SaiNayakk/sprout-contracts) | `v0.2.0` |
+| Contracts: every API and event, versioned | [sprout-contracts](https://github.com/SaiNayakk/sprout-contracts) | `v0.3.2` |
 | Identity: accounts, passwords, two-factor, sessions, tokens | [sprout-identity](https://github.com/SaiNayakk/sprout-identity) | `v0.2.1` |
-| Gateway: the only public door; auth, rate limits, routing | [sprout-gateway](https://github.com/SaiNayakk/sprout-gateway) | `v0.1.0` |
+| Gateway: the only public door; auth, rate limits, routing, price streams | [sprout-gateway](https://github.com/SaiNayakk/sprout-gateway) | `v0.2.4` |
+| Market data: the simulated market, quotes, candles, live prices | [sprout-marketdata](https://github.com/SaiNayakk/sprout-marketdata) | `v0.1.0` |
 | Platform: hosts, release manifests, pre-prod, these docs | [sprout-platform](https://github.com/SaiNayakk/sprout-platform) | this site |
 
-Next: market data (replayed from the market, then live), then accounts and the ledger, orders and the
-matching simulation, and the web app.
+Next: accounts and the ledger (money in), then orders and the matching simulation, and the web app.
 
 ## How to read this site
 

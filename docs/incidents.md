@@ -39,6 +39,27 @@ the workflow file was invalid and branch protection wasn't on yet.
 **What changed.** Branch protection is set up before the first merge in every repository, and merges
 wait for a green check, not just the absence of a red one.
 
+## 2026-10-05: library releases didn't publish
+
+**Impact.** None in production. Four releases (contracts `v0.3.0`, `v0.3.1`; gateway `v0.2.0`, `v0.2.1`)
+never became available to the services that depend on them, and the gateway's `v0.2.2` built only when
+asked for by commit.
+
+**What happened.** JitPack, which turns git tags into Maven artifacts, started running builds on Java 8
+even when Java 21 was selected, so Maven couldn't start. Diagnostic builds on scratch branches found
+the cause and a fix (install Java 21 and point `JAVA_HOME` at it explicitly). Builds of the gateway's
+tags kept failing intermittently after that, while builds of the very same commits succeeded.
+
+**What changed.**
+
+- Every repository builds on JitPack with the Maven wrapper and Java 21 set explicitly, and the build
+  logs the wrapper's steps so a failure can be diagnosed from JitPack's log.
+- It recurred: the gateway's `v0.2.4` failed both as a tag and as a commit. So hosts no longer get
+  services from JitPack at all; they build each service from its release tag
+  ([ADR-011](decisions.md#adr-011-build-from-tags)).
+- Versions that JitPack never published don't matter to hosts any more; they are still listed here:
+  contracts `v0.3.0` and `v0.3.1`, gateway `v0.2.0` and `v0.2.1` (use `v0.3.2` and `v0.2.4`).
+
 ## 2026-10: a release tagged on a failing commit
 
 **Impact.** None in production. `sprout-identity v0.2.0` was tagged while its CI was failing, because

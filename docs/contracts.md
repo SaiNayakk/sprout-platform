@@ -21,6 +21,13 @@ Contracts are released as git tags and published as a Maven artifact. A service 
 contract version. Additive changes (a new optional field, a new response) are minor versions; anything
 that could break an existing client is a new major version served side by side.
 
+| Contract | Version | Implemented by |
+|---|---|---|
+| Identity API v1 | `identity-v1.yaml` | sprout-identity |
+| Market Data API v1 | `marketdata-v1.yaml` | sprout-marketdata |
+| `identity.user.registered` v1 | event schema | sprout-identity |
+| `marketdata.tick` v1 | event schema, on NATS subject `md.tick.<SYMBOL>` | sprout-marketdata |
+
 Example: identity `v0.2.1` started returning `503` with `Retry-After` when its database is unreachable
 (see [CHAOS-01](testing/chaos.md#chaos-01)). That was added to the contract first, as `v0.2.0`, and the
 breaking-change check confirmed it was compatible.

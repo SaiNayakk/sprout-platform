@@ -1,0 +1,16 @@
+# A host as it runs on the phone: same jar, same JVM flags, same memory budget (set by the compose
+# file). Built from the host jar, whose pom pins the exact service versions.
+#   docker build --build-arg HOST=edge --build-arg XMX=160m ...
+FROM eclipse-temurin:21-jre-alpine
+
+ARG HOST
+ARG XMX=160m
+RUN addgroup -S sprout && adduser -S sprout -G sprout
+WORKDIR /app
+COPY hosts/${HOST}/target/${HOST}-host.jar /app/host.jar
+USER sprout
+
+# The tuned flags measured on the phone (see the docs: Decisions, ADR-003).
+ENV JAVA_OPTS="-XX:+UseSerialGC -Xms32m -Xmx${XMX} -Xss512k -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=48m -XX:TieredStopAtLevel=1"
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/host.jar"]

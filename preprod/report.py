@@ -1,6 +1,6 @@
 """Turns a pre-prod run's raw output into the evidence page under docs/reliability/runs/<run>/.
 
-usage: report.py <out dir> <run dir> <run id> <host pom>
+usage: report.py <out dir> <run dir> <run id> <hosts dir>
 """
 import glob
 import json
@@ -11,7 +11,7 @@ import subprocess
 import sys
 import xml.etree.ElementTree as ET
 
-out, run_dir, run_id, host_pom = sys.argv[1:5]
+out, run_dir, run_id, hosts_dir = sys.argv[1:5]
 os.makedirs(run_dir, exist_ok=True)
 
 
@@ -23,150 +23,135 @@ def read(path, default=""):
         return default
 
 
+def load(path):
+    text = read(path)
+    return json.loads(text) if text.strip() else None
+
+
+mark = lambda ok: "✅ pass" if ok else "❌ fail"
+ms = lambda v: "n/a" if v is None else f"{v:,.0f} ms"
+
 stages = dict(line.strip().split("=", 1) for line in read(os.path.join(out, "stages.txt")).splitlines() if "=" in line)
-pom = read(host_pom)
-versions = dict(re.findall(r"<(sprout-[a-z-]+)\.version>([^<]+)<", pom))
+
+# ── what was tested: every host's manifest ───────────────────────────────────
+releases = []
+for pom in sorted(glob.glob(os.path.join(hosts_dir, "*", "pom.xml"))):
+    host = os.path.basename(os.path.dirname(pom))
+    for svc, version in re.findall(r"<(sprout-[a-z-]+)\.version>([^<]+)<", read(pom)):
+        releases.append((host, svc, version))
 try:
-    platform_sha = subprocess.run(["git", "describe", "--always", "--dirty"], capture_output=True, text=True,
-                                  cwd=os.path.dirname(host_pom)).stdout.strip() or "unknown"
+    platform = subprocess.run(["git", "describe", "--always", "--dirty"], capture_output=True, text=True,
+                              cwd=hosts_dir).stdout.strip() or "unknown"
 except OSError:
-    platform_sha = "unknown"
+    platform = "unknown"
 
 # ── end-to-end ───────────────────────────────────────────────────────────────
 cases = []
 for xml_file in sorted(glob.glob(os.path.join(out, "e2e", "TEST-*.xml"))):
     for tc in ET.parse(xml_file).getroot().iter("testcase"):
         failed = tc.find("failure") is not None or tc.find("error") is not None
-        name = tc.get("name", "")
-        m = re.match(r"(E2E-\d+)\s*(.*)", name)
-        cases.append((m.group(1) if m else "", m.group(2) if m else name, float(tc.get("time", 0)), not failed))
-cases.sort(key=lambda c: int(c[0].split("-")[1]) if c[0] else 999)
+        m = re.match(r"(E2E-\d+)\s*(.*)", tc.get("name", ""))
+        if m:
+            cases.append((m.group(1), m.group(2), float(tc.get("time", 0)), not failed))
+cases.sort(key=lambda c: int(c[0].split("-")[1]))
 
 # ── performance ──────────────────────────────────────────────────────────────
-perf = {}
-summary = read(os.path.join(out, "perf-01-k6-summary.json"))
-if summary:
-    metrics = json.loads(summary).get("metrics", {})
+k6 = (load(os.path.join(out, "perf-01-k6-summary.json")) or {}).get("metrics", {})
 
-    def phase(scenario):
-        dur = metrics.get(f"http_req_duration{{scenario:{scenario}}}", {}).get("values", {})
-        failed = metrics.get(f"http_req_failed{{scenario:{scenario}}}", {}).get("values", {})
-        return {"p50": dur.get("med"), "p95": dur.get("p(95)"), "p99": dur.get("p(99)"), "max": dur.get("max"),
-                "failRate": failed.get("rate"), "count": (failed.get("passes") or 0) + (failed.get("fails") or 0)}
 
-    perf = {
-        "warmup": phase("warmup"), "steady": phase("steady"),
-        "thresholds": [(name, rule, t.get("ok", False)) for name, m in metrics.items()
-                       for rule, t in m.get("thresholds", {}).items()],
-    }
+def phase(scenario):
+    dur = k6.get(f"http_req_duration{{scenario:{scenario}}}", {}).get("values", {})
+    failed = k6.get(f"http_req_failed{{scenario:{scenario}}}", {}).get("values", {})
+    return {"p50": dur.get("med"), "p95": dur.get("p(95)"), "p99": dur.get("p(99)"), "max": dur.get("max"),
+            "failRate": failed.get("rate"), "count": (failed.get("passes") or 0) + (failed.get("fails") or 0)}
 
-def peak_memory():
+
+warm, steady = phase("warmup"), phase("steady")
+thresholds = [(name, rule, t.get("ok", False)) for name, m in k6.items() for rule, t in m.get("thresholds", {}).items()]
+fanout = load(os.path.join(out, "perf-03-summary.json"))
+
+
+def peak_memory(host):
     peak = 0.0
     for line in read(os.path.join(out, "memory-during.txt")).splitlines():
-        m = re.search(r"([\d.]+)(MiB|GiB)", line)
-        if m:
-            v = float(m.group(1)) * (1024 if m.group(2) == "GiB" else 1)
-            peak = max(peak, v)
+        if host in line:
+            m = re.search(r"([\d.]+)(MiB|GiB)", line)
+            if m:
+                peak = max(peak, float(m.group(1)) * (1024 if m.group(2) == "GiB" else 1))
     return peak
 
-chaos = json.loads(read(os.path.join(out, "chaos-01.json"), "{}") or "{}")
 
+chaos = [load(p) for p in sorted(glob.glob(os.path.join(out, "chaos-*.json")))]
+chaos = [c for c in chaos if c]
 
-def probe(result):
-    """'503 2.036427' (status, seconds) as '503 in 2,036 ms'."""
-    try:
-        code, seconds = result.split()
-        return f"`{code}` in {float(seconds) * 1000:,.0f} ms"
-    except (AttributeError, ValueError):
-        return "n/a"
+# ── the page ─────────────────────────────────────────────────────────────────
+L = [f"# Pre-prod run {run_id}", "",
+     "A fresh environment built from the pinned releases, tested, then destroyed. Raw evidence sits next to this page.", "",
+     "## Release under test", "", "| Host | Service | Version |", "|---|---|---|",
+     *[f"| {h} | {s} | `{v}` |" for h, s, v in releases],
+     f"| | sprout-platform | `{platform}` |", "",
+     "## Result", "", "| Stage | Result |", "|---|---|",
+     *[f"| {k} | {mark(v == 'pass')} |" for k, v in stages.items()], "",
+     "## End-to-end suite", "", f"{sum(1 for c in cases if c[3])} of {len(cases)} passed.", "",
+     "| Id | Journey or edge case | Time | Result |", "|---|---|---|---|",
+     *[f"| [{i}](../../../testing/e2e.md#{i.lower()}) | {n} | {t:.1f} s | {mark(ok)} |" for i, n, t, ok in cases], ""]
 
+L += ["## PERF-01: sign-in throughput", "",
+      "First 30 s: ramp from 2 to 20 sign-ins a second on a freshly started JVM. Then 60 s steady at 20 a second. "
+      "Every request from a different client.", "",
+      "| Measure | Warm-up (30 s) | Steady (60 s) |", "|---|---|---|",
+      *[f"| {label} | {ms(warm.get(k))} | {ms(steady.get(k))} |"
+        for label, k in (("Median", "p50"), ("p95", "p95"), ("p99", "p99"), ("Slowest", "max"))],
+      f"| Requests | {warm['count']} | {steady['count']} |",
+      f"| Failed | {(warm['failRate'] or 0) * 100:.2f}% | {(steady['failRate'] or 0) * 100:.2f}% |", "",
+      "| Threshold | Rule | Result |", "|---|---|---|",
+      *[f"| `{n}` | `{r}` | {mark(ok)} |" for n, r, ok in thresholds], ""]
 
-# ── write the page ───────────────────────────────────────────────────────────
-mark = lambda ok: "✅ pass" if ok else "❌ fail"
-fmt = lambda v, unit="ms": "n/a" if v is None else f"{v:.0f} {unit}"
-lines = [
-    f"# Pre-prod run {run_id}",
-    "",
-    "A fresh environment built from the pinned release, tested, then destroyed. "
-    "Raw evidence sits next to this page.",
-    "",
-    "## Release under test",
-    "",
-    "| Component | Version |",
-    "|---|---|",
-    *[f"| {k} | `{v}` |" for k, v in sorted(versions.items())],
-    f"| sprout-platform | `{platform_sha}` |",
-    "",
-    "## Result",
-    "",
-    "| Stage | Result |",
-    "|---|---|",
-    *[f"| {k} | {mark(v == 'pass')} |" for k, v in stages.items()],
-    "",
-    "## End-to-end suite",
-    "",
-    f"{sum(1 for c in cases if c[3])} of {len(cases)} passed.",
-    "",
-    "| Id | Journey or edge case | Time | Result |",
-    "|---|---|---|---|",
-    *[f"| {i} | {n} | {t:.1f} s | {mark(ok)} |" for i, n, t, ok in cases],
-    "",
-    "## PERF-01: sign-in throughput",
-    "",
-    "First 30 s: ramp from 2 to 20 sign-ins a second on a freshly started JVM. Then 60 s steady at 20 a "
-    "second. Every request from a different client.",
-    "",
-    "| Measure | Warm-up (30 s) | Steady (60 s) |",
-    "|---|---|---|",
-    *[f"| {label} | {fmt(perf.get('warmup', {}).get(key))} | {fmt(perf.get('steady', {}).get(key))} |"
-      for label, key in (("Median", "p50"), ("p95", "p95"), ("p99", "p99"), ("Slowest", "max"))],
-    f"| Requests | {perf.get('warmup', {}).get('count', 'n/a')} | {perf.get('steady', {}).get('count', 'n/a')} |",
-    f"| Failed | {(perf.get('warmup', {}).get('failRate') or 0) * 100:.2f}% | {(perf.get('steady', {}).get('failRate') or 0) * 100:.2f}% |",
-    "",
-    f"Edge host peak memory: {f'{peak_memory():.0f} MiB of a 384 MiB limit' if peak_memory() else 'n/a'}.",
-    "",
-    "| Threshold | Rule | Result |",
-    "|---|---|---|",
-    *[f"| `{name}` | `{rule}` | {mark(ok)} |" for name, rule, ok in perf.get("thresholds", [])],
-    "",
-    "## CHAOS-01: the database goes away",
-    "",
-    "Hypothesis: with Postgres stopped, sign-in answers `503` with `Retry-After` in under 3 s (it never hangs "
-    "until the gateway's 5 s timeout), and recovers within 30 s of Postgres returning, without a restart.",
-    "",
-    "| Moment | Status and time |",
-    "|---|---|",
-    f"| Before (wrong password, so `401` is healthy) | {probe(chaos.get('before'))} |",
-    *[f"| Database down, try {n + 1} | {probe(d)} |" for n, d in enumerate(chaos.get("down", []))],
-    f"| `Retry-After` header | {chaos.get('retryAfter', 'n/a')} s |",
-    f"| Answering normally again after Postgres started | {chaos.get('recoveredAfterSeconds', 'n/a')} s |",
-    f"| Edge host restarts | {chaos.get('edgeRestarts', 'n/a')} |",
-    "",
-    *(["## Dashboard", "",
-        "The edge host's Grafana dashboard for the whole run, captured automatically: the sign-in load, "
-        "then the database outage.", "",
-        "![Grafana dashboard for this run](grafana-edge.png)", ""]
-      if os.path.exists(os.path.join(out, "grafana-edge.png")) else []),
-    "## Files",
-    "",
-    "- `e2e/`: JUnit reports",
-    "- `perf-01-k6-summary.json`: every k6 metric",
-    "- `memory-during.txt`: edge host memory and CPU every 5 s under load",
-    "- `chaos-01.json`: raw chaos timings",
-    "- `edge.log`: the edge host's structured logs for the whole run",
-]
+if fanout:
+    L += ["## PERF-03: price fan-out", "",
+          f"{fanout['clients']} clients, each streaming {fanout['symbolsPerClient']} symbols through the gateway for "
+          f"{fanout['seconds']} s. Latency is from the moment market data produced a tick to the moment a client "
+          "read it, measured on one clock.", "",
+          "| Measure | Value |", "|---|---|",
+          f"| Streams opened | {fanout['opened']} of {fanout['clients']} |",
+          f"| Streams that ended early | {fanout['endedEarly']} |",
+          f"| Ticks delivered | {fanout['ticksReceived']:,} ({fanout['ticksPerSecond']:,.0f} a second) |",
+          f"| Delivery latency p50 / p95 / p99 / max | {ms(fanout['p50Ms'])} / {ms(fanout['p95Ms'])} / {ms(fanout['p99Ms'])} / {ms(fanout['maxMs'])} |",
+          f"| Conflated (a client got only the newest price) | {fanout['seqGaps']:,} times, "
+          f"{fanout['seqGaps'] / max(1, fanout['ticksReceived']) * 100:.1f}% of ticks |", "",
+          "Pass when every stream opens and stays open, p95 is under 250 ms and p99 under 1 s.", ""]
+
+L += ["## Memory under load", "", "| Host | Peak | Limit |", "|---|---|---|"]
+for host, limit in (("edge", 384), ("trading", 256)):
+    peak = peak_memory(host)
+    L.append(f"| {host} | {f'{peak:.0f} MiB' if peak else 'n/a'} | {limit} MiB |")
+L.append("")
+
+for c in chaos:
+    L += [f"## {c['id']}: {c['title']}", "",
+          f"Hypothesis: {c['hypothesis']}", "", "| Observed | |", "|---|---|",
+          *[f"| {o['what']} | {o['value']} |" for o in c["observations"]], "",
+          "| Check | Result |", "|---|---|", *[f"| {k['what']} | {mark(k['pass'])} |" for k in c["checks"]], ""]
+
+if os.path.exists(os.path.join(out, "grafana-edge.png")):
+    L += ["## Dashboard", "", "The Grafana dashboard for the whole run, captured automatically.", "",
+          "![Grafana dashboard for this run](grafana-edge.png)", ""]
+
+L += ["## Files", "", "- `e2e/`: JUnit reports", "- `perf-01-k6-summary.json`: every k6 metric",
+      "- `perf-03-summary.json`: the fan-out result", "- `memory-during.txt`: host memory and CPU every 5 s under load",
+      "- `chaos-*.json`: each experiment's observations and checks",
+      "- `edge.log`, `trading.log`: the hosts' structured logs for the whole run"]
 if os.path.exists(os.path.join(out, "metrics.jsonl")):
-    lines.append("- `metrics.jsonl`: counters queried from Prometheus at the end of the run")
+    L.append("- `metrics.jsonl`: counters queried from Prometheus at the end of the run")
 
 with open(os.path.join(run_dir, "index.md"), "w", encoding="utf-8", newline="\n") as f:
-    f.write("\n".join(lines) + "\n")
+    f.write("\n".join(L) + "\n")
 
 os.makedirs(os.path.join(run_dir, "e2e"), exist_ok=True)
 for xml_file in glob.glob(os.path.join(out, "e2e", "TEST-*.xml")):
     shutil.copy(xml_file, os.path.join(run_dir, "e2e"))
-for name in ("perf-01-k6-summary.json", "memory-during.txt", "chaos-01.json", "edge.log", "metrics.jsonl",
-             "grafana-edge.png"):
-    if os.path.exists(os.path.join(out, name)):
+for name in os.listdir(out):
+    if name.endswith((".json", ".jsonl", ".log", ".png")) or name == "memory-during.txt":
         shutil.copy(os.path.join(out, name), run_dir)
 print(f"wrote {os.path.join(run_dir, 'index.md')}")
 
@@ -178,21 +163,19 @@ for name in sorted(os.listdir(runs_root), reverse=True):
     if not page:
         continue
     results = dict(re.findall(r"^\| ([a-z0-9-]+) \| (?:✅|❌) (pass|fail) \|$", page, re.M))
-    release = ", ".join(f"{k.removeprefix('sprout-')} {v}" for k, v in
-                        re.findall(r"^\| (sprout-(?!platform)[a-z-]+) \| `([^`]+)` \|$", page, re.M))
-    verdict = "✅ passed" if results and all(v == "pass" for v in results.values()) else "❌ failed"
+    release = ", ".join(f"{s.removeprefix('sprout-')} {v}" for s, v in
+                        re.findall(r"^\| (?:[a-z]+ )?\| (sprout-(?!platform)[a-z-]+) \| `([^`]+)` \|$", page, re.M))
+    if not release:  # pages from before hosts were listed
+        release = ", ".join(f"{s.removeprefix('sprout-')} {v}" for s, v in
+                            re.findall(r"^\| (sprout-(?!platform)[a-z-]+) \| `([^`]+)` \|$", page, re.M))
     failed = [k for k, v in results.items() if v != "pass"]
+    verdict = "✅ passed" if results and not failed else "❌ failed"
     rows.append(f"| [{name}]({name}/index.md) | {release} | {verdict}{' (' + ', '.join(failed) + ')' if failed else ''} |")
 
 with open(os.path.join(runs_root, "index.md"), "w", encoding="utf-8", newline="\n") as f:
     f.write("\n".join([
-        "# Evidence from runs",
-        "",
+        "# Evidence from runs", "",
         "Every pre-prod run writes its evidence here: the release it tested, every end-to-end case, the "
-        "performance numbers, the chaos timings, and the raw files behind them. These pages are generated "
-        "by `preprod/report.py`, not written by hand.",
-        "",
-        "| Run (UTC) | Release | Result |",
-        "|---|---|---|",
-        *rows,
-    ]) + "\n")
+        "performance numbers, the chaos experiments, and the raw files behind them. These pages are generated "
+        "by `preprod/report.py`, not written by hand.", "",
+        "| Run (UTC) | Release | Result |", "|---|---|---|", *rows]) + "\n")

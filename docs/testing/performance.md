@@ -1,8 +1,9 @@
 # Performance tests
 
-Each test states a hypothesis and the thresholds that decide it. They run with
-[k6](https://k6.io/) inside the pre-prod environment, against the gateway, and k6 exits non-zero when a
-threshold is crossed, which fails the release.
+Each test states a hypothesis and the thresholds that decide it. They run inside the pre-prod
+environment against the gateway, and a crossed threshold fails the release. Request/response tests use
+[k6](https://k6.io/); long-lived price streams, which k6 can't hold open, use a small Java load
+generator (`loadgen`) from the end-to-end module.
 
 Load numbers are deliberately far above what a phone-hosted app will see. The point is to know where the
 limits are and to catch regressions, not to claim exchange-scale throughput.
@@ -57,11 +58,46 @@ if the security trade-off is written down.
 
 **Results of every run:** [Evidence from runs](../reliability/runs/index.md).
 
+## PERF-03: price fan-out { #perf-03 }
+
+**Hypothesis.** 200 clients, each streaming 5 symbols through the gateway at once, all get their
+streams, keep them for the whole test, and receive each price change within 250 ms at p95 and 1 s at
+p99, inside both hosts' memory limits.
+
+**Why.** Streaming is the opposite load to sign-in: few requests, many open connections, a constant
+flow of small writes. It exercises the gateway's stream relay, market data's per-client fan-out and
+conflation, and the memory both hold per open stream.
+
+| Setting | Value |
+|---|---|
+| Client | [`Perf03StreamFanoutTest`](https://github.com/SaiNayakk/sprout-platform/blob/main/e2e/src/test/java/app/sprout/e2e/Perf03StreamFanoutTest.java), run by the `loadgen` container |
+| Load | 200 streams, 5 symbols each (all 21 instruments covered), 60 s, opened over 2 s |
+| Market | 30 times real speed: about 420 price changes a second across all instruments |
+| Clients | A different address per stream, as real users would be |
+| Measured | For every tick: the time between market data producing it (`emittedAt`) and the client reading it |
+
+| Threshold | Pass when |
+|---|---|
+| Streams opened | all 200 |
+| Streams ended early | none |
+| Delivery latency | p95 < 250 ms and p99 < 1000 ms |
+| Memory (recorded) | edge and trading hosts under their limits |
+
+### Finding: measure latency on one clock { #perf-03-one-clock }
+
+The first trial ran the load client on the laptop and reported a **median latency of −122 ms**.
+Latency was the client's clock minus the service's clock, and the laptop's clock and the Docker VM's
+differ by more than the latency being measured. The load client now runs inside the Docker network
+(the `loadgen` container), on the same clock as the services. Measured that way the trial gave p50
+7 ms, p95 50 ms and p99 86 ms.
+
+The same applies on the phone: any latency comparing two machines' clocks needs those clocks
+synchronised far better than the latency itself, or it measures the clocks.
+
 ## Planned
 
 | Id | What | When |
 |---|---|---|
 | PERF-02 | Authenticated reads (`GET /users/me`) at 100/s: the gateway's token verification cost | With the next gateway release |
-| PERF-03 | Market data fan-out: ticks per second to many connected clients | Phase 1 (market data) |
 | PERF-04 | Order placement through to execution report, end to end | Phase 2 (orders) |
 | SOAK-01 | Sign-in at 5/s for 1 hour: memory must stay flat (no leak) | Before the first phone release of each host |

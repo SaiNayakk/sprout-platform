@@ -5,17 +5,17 @@
 ```mermaid
 flowchart LR
   pr[Pull request] --> ci[CI: build, unit + contract tests,<br/>tests against real Postgres]
-  ci --> merge[Merge to main] --> tag[Tag a version] --> pub[Published artifact]
-  pub --> manifest[Bump the host's release manifest]
+  ci --> merge[Merge to main] --> tag[Tag a version]
+  tag --> manifest[Bump the host's release manifest]
   manifest --> preprod[Pre-prod: create, test, destroy]
   preprod --> prod[Deploy to the phone]
 ```
 
 1. **Every repository** protects `main`. Changes arrive by pull request and merge only when CI is green.
-2. **A release is a tag.** Tags are published as Maven artifacts, so a host can depend on
-   `sprout-identity:v0.2.1` exactly.
+2. **A release is a tag**, `vX.Y.Z`.
 3. **A host's `pom.xml` is its release manifest**: the exact version of every service it runs. Changing
-   a version is a release.
+   a version is a release. Before a host is built, each service is built from its release tag
+   ([ADR-011](decisions.md#adr-011-build-from-tags)).
 4. **Pre-prod** builds that manifest, tests it and throws it away.
 5. **Production** is the phone, deployed only from a manifest that passed pre-prod.
 
@@ -28,9 +28,12 @@ evidence and destroys it, volumes included.
 | Container | Purpose | Memory limit |
 |---|---|---|
 | `postgres` | Postgres 18, the version the phone runs | 256 MB |
-| `edge` | The edge host jar, same JVM flags as production | 384 MB |
+| `edge` | The edge host jar (gateway, identity), same JVM flags as production | 384 MB |
+| `trading` | The trading host jar (market data), its market running 30 times real speed | 256 MB |
+| `nats` | NATS, for events between services | 64 MB |
 | `lgtm` | Grafana, Prometheus, Loki and Tempo (with `--observability`) | 1.5 GB |
-| `k6` | Load generator for performance tests | n/a |
+| `k6` | Load generator for request/response performance tests | n/a |
+| `loadgen` | Java load generator for price streams, on the same clock as the services | n/a |
 
 Limits mirror what the phone can give each host, so a memory regression fails in pre-prod first.
 

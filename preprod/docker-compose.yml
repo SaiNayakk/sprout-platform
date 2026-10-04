@@ -21,10 +21,24 @@ services:
       retries: 30
     mem_limit: 256m
 
+  # Events between services. Small and single-binary, like on the phone.
+  nats:
+    image: nats:2.10-alpine
+    command: ["-m", "8222"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8222/healthz >/dev/null"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    mem_limit: 64m
+
   edge:
     build:
       context: ..
-      dockerfile: preprod/Dockerfile.edge
+      dockerfile: preprod/Dockerfile.host
+      args:
+        HOST: edge
+        XMX: 160m
     environment:
       IDENTITY_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=identity
       IDENTITY_DB_USER: sprout
@@ -34,6 +48,7 @@ services:
       GATEWAY_BIND: 0.0.0.0
       GATEWAY_IDENTITY_URL: http://127.0.0.1:8101
       GATEWAY_JWKS_URL: http://127.0.0.1:8101/.well-known/jwks.json
+      GATEWAY_MARKETDATA_URL: http://trading:8103
       # pre-prod sits behind the test runner the way prod sits behind Cloudflare
       GATEWAY_TRUST_CF_IP: "true"
       LOG_FORMAT: ecs
@@ -56,6 +71,37 @@ services:
       retries: 60
       start_period: 20s
 
+  # The trading host: market data (orders and risk later). A separate JVM, so its faults can't
+  # take sign-in down (CHAOS-03).
+  trading:
+    build:
+      context: ..
+      dockerfile: preprod/Dockerfile.host
+      args:
+        HOST: trading
+        XMX: 128m
+    environment:
+      MARKETDATA_BIND: 0.0.0.0
+      # accelerated so a full session (and the close, and the next day) fits in a pre-prod run
+      MARKETDATA_CLOCK: ACCELERATED
+      MARKETDATA_SPEED: ${MARKETDATA_SPEED:-30}
+      MARKETDATA_NATS_URL: nats://nats:4222
+      LOG_FORMAT: ecs
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      MANAGEMENT_OTLP_METRICS_EXPORT_STEP: 10s
+      OTEL_METRICS_URL: http://lgtm:4318/v1/metrics
+      OTEL_TRACES_URL: http://lgtm:4318/v1/traces
+    mem_limit: 256m                     # the phone's budget for this host
+    depends_on:
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8103/actuator/health >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+      start_period: 15s
+
   # Grafana, Prometheus, Loki and Tempo in one container. Optional: about 1 GB of RAM.
   lgtm:
     image: grafana/otel-lgtm:latest
@@ -74,3 +120,19 @@ services:
       - ./out:/out
     environment:
       BASE_URL: http://edge:8100
+
+  # Java load generator for tests k6 can't express (long-lived price streams). It runs inside the
+  # network so it reads the same clock as the services: delivery latency compares the tick's
+  # emittedAt with the moment it arrives, and two machines' clocks would differ by more than that.
+  loadgen:
+    image: maven:3.9.9-eclipse-temurin-21
+    profiles: ["tools"]
+    working_dir: /tmp
+    volumes:
+      - ../e2e:/e2e:ro
+      - ./out:/out
+      - ${M2_REPO:-~/.m2}:/root/.m2
+    environment:
+      MAVEN_ARGS: --no-transfer-progress
+      PERF_OUT: /out/perf-03-summary.json
+    entrypoint: ["sh", "-c", "cp -r /e2e /tmp/e2e && rm -rf /tmp/e2e/target && exec mvn -q -B -f /tmp/e2e/pom.xml test -Dsprout.baseUrl=http://edge:8100 \"$$@\"", "loadgen"]

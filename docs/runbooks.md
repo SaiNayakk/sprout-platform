@@ -22,6 +22,29 @@ which answers within about 2 s even when its database is down.
 2. Look for the slow requests by request id in the logs.
 3. Restart the edge host only if it is unresponsive; note the time for the incident record.
 
+## Prices aren't moving
+
+**Means:** the market is closed, or the market clock has stalled.
+
+1. `GET /api/marketdata/v1/market`. `state: CLOSED` outside 09:15-15:30 IST and at weekends is normal.
+2. If it says `OPEN` but `marketTime` isn't advancing, check the trading host's health: the `market`
+   component turns `DOWN` when the clock is more than 30 s behind. Restart the trading host; clients
+   reconnect and get fresh quotes.
+
+## Price streams keep dropping
+
+1. Is the trading host restarting? Streams end when it does (by design, so clients reconnect).
+2. Is something between the app and the gateway buffering or cutting long responses? The gateway sends
+   `X-Accel-Buffering: no` and market data sends a heartbeat every 15 s, which is well inside
+   Cloudflare's 100 s idle limit.
+3. Many `429`s on stream requests mean a client is opening streams without closing old ones.
+
+## NATS is down
+
+Prices keep reaching clients; only events for other services stop, and they are dropped rather than
+queued. Restart NATS; market data reconnects by itself within seconds
+([CHAOS-02](testing/chaos.md#chaos-02)). Check the `nats` component of the trading host's health.
+
 ## Many `429 RATE_LIMITED`
 
 **Means:** one client address is over its limit (10 sign-ins a minute, 120 other requests a minute).
