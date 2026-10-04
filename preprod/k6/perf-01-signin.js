@@ -1,14 +1,13 @@
 // PERF-01: sign-in throughput and latency through the gateway.
 //
-// Hypothesis: at a steady 20 sign-ins per second (far above what the phone will see), p95
+// Hypothesis: at a steady 10 sign-ins per second (far above what the phone will see), p95
 // latency stays under 500 ms and fewer than 1% of requests fail, within the edge host's
 // memory budget. Each request comes from a different client address, as real users would,
 // so the per-client sign-in rate limit doesn't interfere.
 //
-// A freshly started JVM is measurably slower until the JIT has compiled the hot paths (bcrypt
-// above all), and a deploy puts a fresh JVM straight into traffic. So the first 30 s ramp up
-// and are held to a looser bar of their own (never near the gateway's 5 s timeout) instead of
-// being hidden or averaged into the steady state.
+// The first 30 s ramp up and are reported separately. They used to need a looser bar because a
+// fresh JVM was slow (p99 1.9 s); since the edge host warms itself up before reporting ready,
+// both phases are held to the same bar. PERF-02 tests the restart case directly.
 import http from 'k6/http';
 import { check } from 'k6';
 
@@ -22,14 +21,14 @@ export const options = {
       executor: 'ramping-arrival-rate',
       startRate: 2,
       timeUnit: '1s',
-      stages: [{ target: 20, duration: '30s' }],
+      stages: [{ target: 10, duration: '30s' }],
       preAllocatedVUs: 20,
       maxVUs: 60,
     },
     steady: {
       executor: 'constant-arrival-rate',
       startTime: '30s',
-      rate: 20,
+      rate: 10,  // half the edge host's capacity: 20 a second used 4.5 laptop cores (see docs)
       timeUnit: '1s',
       duration: '60s',
       preAllocatedVUs: 20,
@@ -40,7 +39,7 @@ export const options = {
     'http_req_duration{scenario:steady}': ['p(95)<500', 'p(99)<1000'],
     'http_req_failed{scenario:steady}': ['rate<0.01'],
     'checks{scenario:steady}': ['rate>0.99'],
-    'http_req_duration{scenario:warmup}': ['p(99)<3000'],
+    'http_req_duration{scenario:warmup}': ['p(95)<500', 'p(99)<1000'],
     'http_req_failed{scenario:warmup}': ['rate<0.01'],
   },
   summaryTrendStats: ['avg', 'min', 'med', 'p(90)', 'p(95)', 'p(99)', 'max'],

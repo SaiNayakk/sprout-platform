@@ -10,7 +10,7 @@ limits are and to catch regressions, not to claim exchange-scale throughput.
 
 ## PERF-01: sign-in throughput { #perf-01 }
 
-**Hypothesis.** At a steady 20 sign-ins per second, each from a different client, the edge host keeps
+**Hypothesis.** At a steady 10 sign-ins per second, each from a different client, the edge host keeps
 p95 latency under 500 ms and fails fewer than 1% of requests, inside its 384 MB memory limit. While the
 JVM is freshly started, latency is worse, but no request comes near the gateway's 5 s timeout.
 
@@ -21,8 +21,8 @@ and every sign-in writes a session and a refresh token. If sign-in holds, cheape
 |---|---|
 | Script | [`preprod/k6/perf-01-signin.js`](https://github.com/SaiNayakk/sprout-platform/blob/main/preprod/k6/perf-01-signin.js) |
 | Setup | 50 accounts created before the test starts |
-| Warm-up | 30 s, ramping from 2 to 20 sign-ins a second, on the JVM pre-prod just started |
-| Steady | 60 s at a constant 20 sign-ins a second (about 1,200) |
+| Warm-up | 30 s, ramping from 2 to 10 sign-ins a second |
+| Steady | 60 s at a constant 10 sign-ins a second (about 600): half the host's capacity |
 | Clients | A random address per request, so the per-client sign-in limit doesn't apply |
 
 | Phase | Threshold | Pass when |
@@ -30,9 +30,25 @@ and every sign-in writes a session and a refresh token. If sign-in holds, cheape
 | Steady | `http_req_duration` | p95 < 500 ms and p99 < 1000 ms |
 | Steady | `http_req_failed` | rate < 1% |
 | Steady | `checks` | > 99% of responses are `200 AUTHENTICATED` |
-| Warm-up | `http_req_duration` | p99 < 3000 ms |
+| Warm-up | `http_req_duration` | p95 < 500 ms and p99 < 1000 ms (since the warm-up fix; was p99 < 3000 ms) |
 | Warm-up | `http_req_failed` | rate < 1% |
 | Both | Memory (recorded) | Edge host stays under its limit; sampled every 5 s |
+
+### Finding: sign-in capacity is about 20 a second, and the test ran at it { #perf-01-capacity }
+
+Until 2026-10-05 this test ran at 20 sign-ins a second. With the whole pre-prod environment running,
+its latency tail came and went between runs (p95 from 160 ms to 920 ms) even on a warm JVM. The CPU
+samples explained it: at 20 a second the edge host used **4 to 4.5 cores**. Sign-in is CPU-bound on
+purpose (bcrypt is deliberately slow), and the JVM flags that save memory on the phone
+(`TieredStopAtLevel=1`, quick compilation only) make it slower still. So 20 a second was the host's
+capacity on this laptop, and any other load (Grafana, Windows) made requests queue.
+
+A gate run at capacity measures the machine's mood, not the service. It now runs at 10 a second
+(half the capacity, and still about 50 times what the phone will see) with the strict bar on both
+phases. Capacity itself is recorded here rather than gated.
+
+Follow-up: measure whether full JIT compilation is worth its extra memory on the phone, where the
+CPU is slower and bcrypt's cost matters more.
 
 ### Finding: a cold JVM has a slow tail { #perf-01-cold-start }
 
@@ -52,9 +68,40 @@ host used about three CPU cores.
 **What changed.** The test now measures the two phases separately and holds each to its own bar, rather
 than letting a warm run hide the cold-start tail or a cold run fail a healthy steady state.
 
-**Follow-up.** A deploy puts a cold JVM straight into traffic. Options to evaluate: warm the hot paths
-before reporting ready, class data sharing (CDS) to cut start-up work, and lowering bcrypt's cost only
-if the security trade-off is written down.
+**Fixed.** A deploy put a cold JVM straight into traffic. The edge host now warms itself up before
+it reports ready: it holds both services at readiness `REFUSING_TRAFFIC` (so health checks, pre-prod
+and the deploy's smoke tests wait), signs in 300 times to an address that can't exist (identity
+checks a dummy hash for unknown emails, so the real password, database and JSON paths run and nothing
+is created), calls the gateway 100 times, then reports ready.
+
+How much warm-up is enough depends on how busy the machine is. 60 sign-ins (about 3.5 s) passed on a
+quiet machine but not with the whole pre-prod environment competing for CPU, where p99 was still
+1,050 ms; 300 (about 10 s) gave p95 267 ms and p99 421 ms. So it does 300, and on the slower phone it
+simply takes longer to report ready. Both PERF-01
+phases are now held to the same bar, and [PERF-02](#perf-02) tests the restart directly.
+
+Lowering bcrypt's cost was rejected: it would trade every user's password strength for a few
+seconds after a deploy.
+
+## PERF-02: sign-in straight after a restart { #perf-02 }
+
+**Hypothesis.** Restarted, the edge host takes 10 sign-ins a second from the moment it reports ready
+with the same latency as a warm host: p95 under 500 ms, p99 under 1 s.
+
+**Method.** The accounts are created first, in a separate run, because creating them on the fresh
+host would warm it up and spoil the measurement. Then the edge host is restarted, pre-prod waits for
+it to report ready, and k6 sends 10 sign-ins a second for 30 s
+([`perf-02-cold-signin.js`](https://github.com/SaiNayakk/sprout-platform/blob/main/preprod/k6/perf-02-cold-signin.js)).
+
+| Straight after a restart | Median | p95 | p99 | Slowest |
+|---|---|---|---|---|
+| Before the warm-up (PERF-01's first run) | 135 ms | 878 ms | 1,913 ms | 2,674 ms |
+| 60 warm-up sign-ins, quiet machine | 127 ms | 217 ms | 322 ms | 831 ms |
+| 60 warm-up sign-ins, full pre-prod running | 207 ms | 825 ms | 1,050 ms | 1,519 ms |
+| 300 warm-up sign-ins, full pre-prod running | 128 ms | 267 ms | 421 ms | 847 ms |
+
+These were measured at 20 a second. A later full run at 20 a second failed again (p95 720 ms) for the
+reason in the capacity finding above, which is why PERF-02 now runs at 10 a second too.
 
 **Results of every run:** [Evidence from runs](../reliability/runs/index.md).
 
@@ -94,10 +141,29 @@ differ by more than the latency being measured. The load client now runs inside 
 The same applies on the phone: any latency comparing two machines' clocks needs those clocks
 synchronised far better than the latency itself, or it measures the clocks.
 
+### What the trading host's memory is { #perf-03-memory }
+
+The trading host peaked at about 207 MiB of its 256 MiB limit during PERF-03, so it was measured with
+Java's native memory tracking under the same load (committed memory when the test ended):
+
+| Part of the JVM | Committed |
+|---|---|
+| Java heap | 100 MB (of a 128 MB maximum; 30-70 MB in use, per the dashboard) |
+| Class metadata (metaspace) | 34 MB |
+| Symbols | 14.5 MB |
+| Compiled code | 13 MB |
+| Shared classes | 12 MB |
+| Threads, GC and the rest | about 10 MB |
+| **Total** | **189 MB** |
+
+Nothing grows with time or leaks: most of the headroom is heap the JVM keeps after a burst, by
+design. So nothing changes now. When orders and risk join this host (Phase 3), its budget goes to
+320 MB with a 160 MB heap; the phone has room for that.
+
 ## Planned
 
 | Id | What | When |
 |---|---|---|
-| PERF-02 | Authenticated reads (`GET /users/me`) at 100/s: the gateway's token verification cost | With the next gateway release |
+| PERF-05 | Authenticated reads (`GET /users/me`) at 100/s: the gateway's token verification cost | With the next gateway release |
 | PERF-04 | Order placement through to execution report, end to end | Phase 2 (orders) |
 | SOAK-01 | Sign-in at 5/s for 1 hour: memory must stay flat (no leak) | Before the first phone release of each host |

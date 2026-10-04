@@ -13,7 +13,7 @@
 
   <groupId>app.sprout.hosts</groupId>
   <artifactId>trading-host</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <name>trading-host</name>
   <description>One JVM for the trading services: market data now; orders and risk as they arrive.</description>
 
@@ -22,7 +22,7 @@
        Each version X.Y.Z is built from tag vX.Y.Z of its repository by ../install-services.sh. -->
   <properties>
     <java.version>21</java.version>
-    <sprout-marketdata.version>0.1.0</sprout-marketdata.version>
+    <sprout-marketdata.version>0.1.1</sprout-marketdata.version>
   </properties>
 
 
@@ -37,7 +37,38 @@
 
   <build>
     <finalName>trading-host</finalName>
+    <resources>
+      <!-- the host's name, version and services, filled in from the manifest above -->
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes><include>sprout-host.properties</include></includes>
+      </resource>
+    </resources>
     <plugins>
+      <plugin>
+        <!-- code every host shares lives in ../common -->
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <id>common-sources</id>
+            <goals><goal>add-source</goal></goals>
+            <configuration><sources><source>../common/src/main/java</source></sources></configuration>
+          </execution>
+          <execution>
+            <id>common-test-sources</id>
+            <goals><goal>add-test-source</goal></goals>
+            <configuration><sources><source>../common/src/test/java</source></sources></configuration>
+          </execution>
+          <execution>
+            <id>common-test-resources</id>
+            <goals><goal>add-test-resource</goal></goals>
+            <configuration><resources><resource><directory>../common/src/test/resources</directory></resource></resources></configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>

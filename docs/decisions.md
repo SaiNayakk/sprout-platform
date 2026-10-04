@@ -131,6 +131,9 @@ intermittently inside Maven itself. Four releases never published and others onl
 [Incidents](incidents.md)). Building from the tag needs nothing but GitHub, is reproducible, and takes
 about 40 seconds for three services.
 
-**Lost.** Nothing important for hosts. Services still take their test-time dependency on the contracts
-from JitPack; if that breaks too, the same approach applies, or a static Maven repository published
-to GitHub Pages.
+The contracts, which services need at test time, publish themselves instead: every tag of
+sprout-contracts is built, tested and deployed by its own workflow into a Maven repository on its
+GitHub Pages (`https://sainayakk.github.io/sprout-contracts/maven`). Nothing in Sprout's release path
+uses JitPack any more.
+
+**Lost.** Nothing important. A host build takes about 40 seconds longer.

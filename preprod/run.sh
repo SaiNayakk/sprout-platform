@@ -73,6 +73,12 @@ sampler=$!
 log "PERF-01: sign-in throughput"
 if "${COMPOSE[@]}" --profile tools run --rm k6 run perf-01-signin.js; then stage perf-01 pass; else stage perf-01 fail; fi
 
+log "PERF-02: sign-in straight after a restart"
+"${COMPOSE[@]}" --profile tools run --rm -e PREPARE=1 k6 run perf-02-cold-signin.js >/dev/null
+"${COMPOSE[@]}" restart edge >/dev/null 2>&1
+t0=$(date +%s)
+if "${COMPOSE[@]}" up -d --wait edge >/dev/null 2>&1 && echo "edge ready again after $(( $(date +%s) - t0 ))s (including warm-up)"    && "${COMPOSE[@]}" --profile tools run --rm k6 run perf-02-cold-signin.js; then stage perf-02 pass; else stage perf-02 fail; fi
+
 log "PERF-03: price fan-out"
 if "${COMPOSE[@]}" --profile tools run --rm loadgen -Dgroups=perf -De2e.excludedGroups= ; then stage perf-03 pass; else stage perf-03 fail; fi
 kill $sampler 2>/dev/null

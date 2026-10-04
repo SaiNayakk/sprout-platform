@@ -49,6 +49,7 @@ services:
       GATEWAY_IDENTITY_URL: http://127.0.0.1:8101
       GATEWAY_JWKS_URL: http://127.0.0.1:8101/.well-known/jwks.json
       GATEWAY_MARKETDATA_URL: http://trading:8103
+      EDGE_WARMUP_SIGNINS: ${EDGE_WARMUP_SIGNINS:-300}
       # pre-prod sits behind the test runner the way prod sits behind Cloudflare
       GATEWAY_TRUST_CF_IP: "true"
       LOG_FORMAT: ecs

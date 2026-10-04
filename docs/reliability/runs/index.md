@@ -4,5 +4,6 @@ Every pre-prod run writes its evidence here: the release it tested, every end-to
 
 | Run (UTC) | Release | Result |
 |---|---|---|
+| [2026-10-04-2152-preprod](2026-10-04-2152-preprod/index.md) | identity 0.2.2, gateway 0.2.4, marketdata 0.1.1 | ✅ passed |
 | [2026-10-04-2021-preprod](2026-10-04-2021-preprod/index.md) | identity 0.2.1, gateway 0.2.4, marketdata 0.1.0 | ✅ passed |
 | [2026-10-03-2333-preprod](2026-10-03-2333-preprod/index.md) | gateway v0.1.0, identity v0.2.1 | ✅ passed |

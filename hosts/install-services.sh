@@ -16,7 +16,8 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 hosts=("$@")
-[ ${#hosts[@]} -eq 0 ] && hosts=($(cd "$ROOT" && ls -d */ | tr -d /))
+# every folder with a pom.xml is a host (common/ holds shared code, not a manifest)
+[ ${#hosts[@]} -eq 0 ] && hosts=($(cd "$ROOT" && for d in */; do [ -f "$d/pom.xml" ] && echo "${d%/}"; done))
 
 for host in "${hosts[@]}"; do
   grep -o '<sprout-[a-z-]*\.version>[^<]*<' "$ROOT/$host/pom.xml" | sed 's/<\(sprout-[a-z-]*\)\.version>\(.*\)</\1 \2/' |

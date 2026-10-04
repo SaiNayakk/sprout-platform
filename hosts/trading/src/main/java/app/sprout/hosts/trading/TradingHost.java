@@ -1,5 +1,6 @@
 package app.sprout.hosts.trading;
 
+import app.sprout.hosts.common.HostLogFields.HostInfo;
 import app.sprout.marketdata.MarketDataApplication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +30,10 @@ public final class TradingHost {
     }
 
     public static ConfigurableApplicationContext[] start(String... args) {
-        ConfigurableApplicationContext marketData = MarketDataApplication.builder().run(args);
+        HostInfo host = HostInfo.load();
+        ConfigurableApplicationContext marketData = MarketDataApplication.builder()
+                .properties(host.loggingDefaults())
+                .run(args);
         log.info("Trading host up: market data running");
         return new ConfigurableApplicationContext[] {marketData};
     }
