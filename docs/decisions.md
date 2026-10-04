@@ -13,10 +13,10 @@ about 60 MB per service.
 **Lost.** Go or Node would use far less memory on a phone. Rejected because learning how large
 institutions build is the point.
 
-## ADR-002: One repository per service, released through JitPack { #adr-002-polyrepo }
+## ADR-002: One repository per service { #adr-002-polyrepo }
 
 **Decision.** Every service, the contracts and the platform each have their own public repository.
-Releases are git tags, published as Maven artifacts by JitPack.
+Releases are git tags. (How a host gets a release's code: [ADR-011](#adr-011-build-from-tags).)
 
 **Why.** It forces what a monorepo lets you skip: versioned contracts, explicit dependencies, independent
 releases. CI on public repositories and JitPack are free.
@@ -64,10 +64,73 @@ phone. Hosted free tiers were time-limited or too small to keep.
 
 ## ADR-007: An event bus for anything that isn't a question { #adr-007-event-bus }
 
-**Decision (planned).** Services announce what happened (a user registered, an order filled) as events,
+**Decision (in use since Phase 1 for prices).** Services announce what happened (a user registered, an order filled) as events,
 written to an outbox table in the same transaction as the change, then published to NATS.
 
 **Why.** Money movement and records must never disagree with what happened. The outbox makes "change
 the data" and "announce it" atomic without distributed transactions. NATS is small enough for a phone.
 
 **Lost.** Kafka is the industry default, but needs far more memory than the phone has.
+
+## ADR-008: A simulated market of fictional companies { #adr-008-simulated-market }
+
+**Decision.** Prices come from a deterministic simulation of twenty fictional companies and an index,
+not from a real exchange.
+
+**Why.** Real NSE prices can't be redistributed publicly, so a public demo couldn't show them. Free
+intraday history only reaches back about a week and comes from unofficial sources that can break. A
+live feed costs money and needs a manual login every day. A simulation has none of those problems and
+can do what real data can't: run every weekday forever, replay any day exactly from a seed, and crash
+on demand to test risk checks.
+
+To stay believable, every stock's move is market + sector + its own; days have scenarios (normal,
+trending, volatile, crash, rally); there are opening gaps, news jumps and U-shaped volume; and every
+tick adds up exactly to its minute's candle. Fake prices are only shown under fictional names, so
+nobody could mistake them for a real company's.
+
+The default seed (12) was picked from the first 80 for a believable long run: about +38% over the
+history (roughly 12% a year), one correction of about 23%, and a mix of winning and losing stocks.
+
+**Lost.** Realism of the very fine structure (real order flow, real news). The API has a `mode`
+field, so a replay or live source can be added later without clients changing.
+
+## ADR-009: Server-Sent Events with conflation for live prices { #adr-009-sse-with-conflation }
+
+**Decision.** Live prices are a Server-Sent Events stream through the gateway. Each stream holds at
+most one pending tick per symbol; a slow client gets the newest price only.
+
+**Why.** SSE is plain HTTP: it passes through Cloudflare, proxies and the gateway like any request,
+browsers reconnect it themselves, and prices only flow one way anyway. Conflation is what real market
+data feeds do for slow consumers: it bounds memory per client and means no client can slow the market
+down.
+
+**Lost.** WebSockets would allow two-way messages (e.g. changing subscriptions without reconnecting).
+Not needed yet; reconnecting with a new symbol list is cheap.
+
+## ADR-010: A separate trading host { #adr-010-trading-host }
+
+**Decision.** Market data runs in its own JVM, the trading host, which orders and risk will join,
+rather than inside the edge host.
+
+**Why.** A host is a blast radius. If market data ran next to identity, a stuck market clock, a flood
+of price streams or running out of memory would also stop people signing in. CHAOS-03 kills the
+trading host and checks that sign-in doesn't notice.
+
+**Lost.** About 130 MB for the extra JVM. The phone has room for the planned five hosts.
+
+## ADR-011: Hosts build services from their release tags { #adr-011-build-from-tags }
+
+**Decision.** A host's release manifest pins each service's version `X.Y.Z`. Before a host is built,
+`hosts/install-services.sh` clones tag `vX.Y.Z` of each service, builds it, and installs it into the
+local Maven repository; the host builds from that. It always rebuilds, so nothing from a working tree
+can stand in for the tag.
+
+**Why.** Releases were published by JitPack, which builds artifacts from git tags. On 2026-10-04/05 its
+builds broke: first it ran every build on Java 8, then builds of the gateway's tags and commits failed
+intermittently inside Maven itself. Four releases never published and others only by commit (see
+[Incidents](incidents.md)). Building from the tag needs nothing but GitHub, is reproducible, and takes
+about 40 seconds for three services.
+
+**Lost.** Nothing important for hosts. Services still take their test-time dependency on the contracts
+from JitPack; if that breaks too, the same approach applies, or a static Maven repository published
+to GitHub Pages.

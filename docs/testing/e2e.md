@@ -5,7 +5,7 @@ talks to a running environment **only through the gateway**, exactly as a client
 the released services together, not any one service's code.
 
 Each case has a stable id. Ids are grouped: `0x` happy journeys, `1x` input validation, `2x` sign-in
-protection, `3x` attacks and the edge.
+protection, `3x` attacks and the edge, `4x` market data.
 
 ```bash
 mvn -f e2e/pom.xml test -Dsprout.baseUrl=http://localhost:8100
@@ -93,6 +93,47 @@ gets `413`.
 `X-Request-Id` comes back on the response header and in the problem body, both for an error raised by
 the gateway and for one raised by identity behind it, so one id finds a request in every service's
 logs.
+
+## Market data
+
+The market in pre-prod runs 30 times faster than real time, so a whole trading day, its close and the
+next morning all happen within a run. These cases are written to pass at any moment of that day:
+the market may be open, closed, or between sessions when they run.
+
+### E2E-40 { #e2e-40 }
+**The market and its instruments are visible before signing in.** `GET /v1/market` says the mode is
+`SYNTHETIC` and that the prices aren't real; the instrument list includes at least one index, and an
+index is never tradable.
+
+### E2E-41 { #e2e-41 }
+**Prices need a signed-in user.** Quotes and candles without a token get `401 UNAUTHENTICATED` at the
+gateway.
+
+### E2E-42 { #e2e-42 }
+**Quotes come back in the order asked; unknown symbols are named.** Lower-case symbols are accepted;
+each quote's last price lies between its day's low and high. Asking for a symbol that doesn't exist
+gets `404 UNKNOWN_INSTRUMENT`, and the detail names it.
+
+### E2E-43 { #e2e-43 }
+**Candles never show the future.** Every complete one-minute candle ended at or before the market
+time, at most one candle is still forming, and the daily history ends at the session being shown.
+
+### E2E-44 { #e2e-44 }
+**The price stream starts with the current state, then ticks live with rising `seq`.** Through the
+gateway: a `market` event, a `quote` per symbol, then at least 40 ticks. Each tick's `seq` is higher
+than the last one for its symbol (and than the opening quote's), and the ticks arrive spread over
+time, not in one batch.
+
+### E2E-45 { #e2e-45 }
+**Every streamed price lies inside its minute's high and low.** Ticks collected from the stream are
+checked against the one-minute candles published afterwards: the live feed and the history agree.
+
+### E2E-46 { #e2e-46 }
+**One client can hold at most five price streams.** The sixth gets `429 RATE_LIMITED`.
+
+### E2E-47 { #e2e-47 }
+**A bad stream request is refused before it starts.** An unknown symbol gets `404`, more than 50
+symbols `400`, and no token `401`, each as a normal JSON problem rather than a broken stream.
 
 ## Results
 

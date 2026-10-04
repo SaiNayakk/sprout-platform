@@ -30,11 +30,22 @@ in again.
 `404`. No such route. Also returned for blocked paths, so it doesn't reveal what exists.
 
 ### RATE_LIMITED { #rate_limited }
-`429`. Too many requests from this client. Wait for the number of seconds in `Retry-After`.
+`429`. Too many requests from this client, or too many open price streams (five per client). Wait
+for the number of seconds in `Retry-After`, or close a stream you no longer need.
 
 ### UPSTREAM_UNAVAILABLE { #upstream_unavailable }
-`503`. A service or its database is temporarily unreachable. Safe to retry after `Retry-After` seconds.
+`503`. A service or its database is temporarily unreachable, or too many people are streaming prices.
+The request didn't happen; safe to retry after `Retry-After` seconds.
+
+`504` with the same code means something different: the service took too long to answer, so the
+request **may** have happened. Check before retrying anything that changes state.
 See the [runbook](runbooks.md#sign-in-returns-503-upstream_unavailable).
+
+## Market data
+
+### UNKNOWN_INSTRUMENT { #unknown_instrument }
+`404`. No instrument has this symbol. When several symbols were asked for, `detail` names the unknown
+ones. `GET /v1/instruments` lists them all.
 
 ## Identity
 

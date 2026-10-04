@@ -12,45 +12,37 @@
   </parent>
 
   <groupId>app.sprout.hosts</groupId>
-  <artifactId>edge-host</artifactId>
+  <artifactId>trading-host</artifactId>
   <version>0.1.0</version>
-  <name>edge-host</name>
-  <description>One JVM running the gateway and identity: the services every request touches first.</description>
+  <name>trading-host</name>
+  <description>One JVM for the trading services: market data now; orders and risk as they arrive.</description>
 
   <!-- THE RELEASE MANIFEST for this host: the exact service versions it ships.
        Changing a version here is a release, and goes through the pre-prod gate.
        Each version X.Y.Z is built from tag vX.Y.Z of its repository by ../install-services.sh. -->
   <properties>
     <java.version>21</java.version>
-    <sprout-identity.version>0.2.1</sprout-identity.version>
-    <sprout-gateway.version>0.2.4</sprout-gateway.version>
+    <sprout-marketdata.version>0.1.0</sprout-marketdata.version>
   </properties>
 
 
   <dependencies>
     <dependency>
       <groupId>com.github.SaiNayakk</groupId>
-      <artifactId>sprout-identity</artifactId>
-      <version>${sprout-identity.version}</version>
+      <artifactId>sprout-marketdata</artifactId>
+      <version>${sprout-marketdata.version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.github.SaiNayakk</groupId>
-      <artifactId>sprout-gateway</artifactId>
-      <version>${sprout-gateway.version}</version>
-    </dependency>
-    <!-- the services' runtime-scoped dependencies aren't inherited through a library jar -->
-    <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>runtime</scope></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
   </dependencies>
 
   <build>
-    <finalName>edge-host</finalName>
+    <finalName>trading-host</finalName>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <configuration>
-          <mainClass>app.sprout.hosts.edge.EdgeHost</mainClass>
+          <mainClass>app.sprout.hosts.trading.TradingHost</mainClass>
         </configuration>
       </plugin>
     </plugins>

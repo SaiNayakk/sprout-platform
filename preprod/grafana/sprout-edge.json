@@ -1,7 +1,7 @@
 {
   "dashboard": {
     "uid": "sprout-edge",
-    "title": "Sprout edge host",
+    "title": "Sprout pre-prod",
     "tags": [
       "sprout"
     ],
@@ -245,6 +245,226 @@
             "refId": "A",
             "expr": "sum(hikaricp_connections_timeout_total) or vector(0)",
             "legendFormat": "timeouts since start"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "type": "timeseries",
+        "title": "Price ticks delivered to clients per second",
+        "description": "Sent over Server-Sent Events by market data.",
+        "interval": "15s",
+        "gridPos": {
+          "x": 0,
+          "y": 24,
+          "w": 12,
+          "h": 8
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 8,
+              "showPoints": "never"
+            }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum(rate(md_stream_events_total{type=\"tick\"}[1m]))",
+            "legendFormat": "ticks/s"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "type": "timeseries",
+        "title": "Open price streams",
+        "description": "At market data, and at the gateway in front of it.",
+        "interval": "15s",
+        "gridPos": {
+          "x": 12,
+          "y": 24,
+          "w": 12,
+          "h": 8
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 8,
+              "showPoints": "never"
+            }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum(md_stream_subscribers)",
+            "legendFormat": "market data"
+          },
+          {
+            "refId": "B",
+            "expr": "sum(gateway_streams_open)",
+            "legendFormat": "gateway"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "type": "timeseries",
+        "title": "Conflation: slow clients sent only the newest price",
+        "description": "Per second. A client that keeps up never needs it.",
+        "interval": "15s",
+        "gridPos": {
+          "x": 0,
+          "y": 32,
+          "w": 12,
+          "h": 8
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 8,
+              "showPoints": "never"
+            }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum(rate(md_stream_conflated_total[1m]))",
+            "legendFormat": "conflated/s"
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "type": "timeseries",
+        "title": "Ticks to NATS per second (CHAOS-02)",
+        "description": "Dropped while NATS is down, by design.",
+        "interval": "15s",
+        "gridPos": {
+          "x": 12,
+          "y": 32,
+          "w": 12,
+          "h": 8
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 8,
+              "showPoints": "never"
+            }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum by (result) (rate(md_nats_ticks_total[1m]))",
+            "legendFormat": "{{result}}"
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "type": "timeseries",
+        "title": "Market clock lag",
+        "description": "How far the market engine is behind its own schedule.",
+        "interval": "15s",
+        "gridPos": {
+          "x": 0,
+          "y": 40,
+          "w": 12,
+          "h": 8
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 8,
+              "showPoints": "never"
+            }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "max(md_engine_lag_ms)",
+            "legendFormat": "lag"
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "type": "timeseries",
+        "title": "Trading host JVM memory",
+        "description": "Market data (orders and risk later).",
+        "interval": "15s",
+        "gridPos": {
+          "x": 12,
+          "y": 40,
+          "w": 12,
+          "h": 8
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 8,
+              "showPoints": "never"
+            }
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum by (area) (jvm_memory_used_bytes{job=\"sprout-marketdata\"})",
+            "legendFormat": "{{area}} used"
+          },
+          {
+            "refId": "B",
+            "expr": "sum(jvm_memory_max_bytes{job=\"sprout-marketdata\",area=\"heap\"})",
+            "legendFormat": "heap max"
           }
         ]
       }
