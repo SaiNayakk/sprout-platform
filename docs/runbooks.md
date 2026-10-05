@@ -74,6 +74,16 @@ an outage: the entry stays in `oms.ledger_outbox` with `last_error`, retried eve
 it is skipped. Find the order by the entry's reference, fix the cause, and the next round posts it.
 RECON-02 fails while any entry is unposted.
 
+## Reconciliation reports a break
+
+`GET /v1/runs` on the recon service (with the service key) shows each run's checks and up to 20
+differences each. A `FAIL` found the difference twice, a moment apart, so it isn't money in flight.
+Which books disagree points at the cause: held money (an order or position the ledger doesn't reflect:
+look at the order service's ledger outbox), unsettled money (a settlement not completed for clients),
+executions (a fill the order service hasn't booked: its reconciler asks the exchange every 10 s), demat
+holdings (a delivery not reflected as T1 cleared). An `ERROR` means a book couldn't be read: check that
+service. `POST /v1/runs` reconciles again once fixed.
+
 ## A settlement is a break
 
 The clearing corporation's obligation for a trade date didn't match Sprout's books, so the back office

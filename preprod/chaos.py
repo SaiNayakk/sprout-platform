@@ -522,9 +522,32 @@ def recon_03():
          ("clearing balances are only the unsettled days'", payable == open_payable and receivable == open_receivable)])
 
 
+def recon_04():
+    """Sprout's own reconciliation (the recon service) agrees with the checks above."""
+    r = compose("exec", "-T", "money", "wget", "-qO-", "--header", "X-Service-Key: preprod-only-service-key", "--post-data", "",
+                "http://127.0.0.1:8114/v1/runs", check=False)
+    run = json.loads(r.stdout) if r.returncode == 0 and r.stdout.strip() else {}
+    checks = {c["check"]: c for c in run.get("checks", [])}
+    listed = compose("exec", "-T", "money", "wget", "-qO-", "--header", "X-Service-Key: preprod-only-service-key",
+                     "http://127.0.0.1:8114/v1/runs", check=False)
+    runs = json.loads(listed.stdout).get("runs", []) if listed.returncode == 0 and listed.stdout.strip() else []
+    scheduled = [x for x in runs if x.get("trigger") == "SCHEDULED"]
+    return result(
+        "RECON-04", "Sprout's own reconciliation agrees",
+        "At the end of the run, Sprout's reconciliation service (which reads every book through its owner's API, as it does "
+        "every day in production) finds every check passing: the ledger, the bank, held and unsettled money, executions "
+        "against the exchange, demat holdings, and settlements.",
+        [("On-demand run", run.get("status", f"no answer ({r.returncode})"))]
+        + [(c, f"{v['status']}: {v['summary']}") for c, v in checks.items()]
+        + [("Scheduled runs during the run (sessions past midday)", ", ".join(f"{x.get('session')} {x.get('status')}" for x in scheduled) or "none")],
+        [("the run completed", bool(checks)),
+         ("every check passes", bool(checks) and all(v["status"] == "PASS" for v in checks.values())),
+         ("all seven checks ran", len(checks) == 7)])
+
+
 EXPERIMENTS = {"CHAOS-01": chaos_01, "CHAOS-02": chaos_02, "CHAOS-03": chaos_03, "CHAOS-04": chaos_04,
                "CHAOS-05": chaos_05, "CHAOS-06": chaos_06, "SETTLE-01": settle_01, "RECON-01": recon_01, "RECON-02": recon_02,
-               "RECON-03": recon_03}
+               "RECON-03": recon_03, "RECON-04": recon_04}
 
 
 def main():

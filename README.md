@@ -8,7 +8,7 @@ with its own contract. This repository holds what sits between them:
 
 | Path | What |
 |---|---|
-| `hosts/` | Deployable hosts (`edge`: gateway + identity; `trading`: market data + orders; `money`: ledger, accounts, payments, settlement; `street`: Sprout Bank, the exchange, clearing, the depository). Each `pom.xml` is a **release manifest**: the exact service versions that host runs. `install-services.sh` builds each of those services from its release tag. |
+| `hosts/` | Deployable hosts (`edge`: gateway + identity; `trading`: market data + orders; `money`: ledger, accounts, payments, settlement, statements, recon; `street`: Sprout Bank, the exchange, clearing, the depository). Each `pom.xml` is a **release manifest**: the exact service versions that host runs. `install-services.sh` builds each of those services from its release tag. |
 | `preprod/` | The disposable pre-prod environment and `run.sh`, which creates it, tests it and destroys it. |
 | `e2e/` | The end-to-end suite, run through the gateway like a real client, and the price fan-out load test. |
 | `docs/` | The documentation site, including the evidence from every pre-prod run. |
