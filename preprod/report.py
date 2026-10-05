@@ -85,7 +85,8 @@ def peak_memory(host):
     return peak
 
 
-chaos = [load(p) for p in sorted(glob.glob(os.path.join(out, "chaos-*.json")) + glob.glob(os.path.join(out, "recon-*.json")))]
+chaos = [load(p) for p in sorted(glob.glob(os.path.join(out, "chaos-*.json")) + glob.glob(os.path.join(out, "settle-*.json"))
+                                  + glob.glob(os.path.join(out, "recon-*.json")))]
 chaos = [c for c in chaos if c]
 
 # ── the page ─────────────────────────────────────────────────────────────────

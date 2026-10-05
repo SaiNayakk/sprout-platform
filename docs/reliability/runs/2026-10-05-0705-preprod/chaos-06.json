@@ -1,0 +1,50 @@
+{
+  "id": "CHAOS-06",
+  "title": "The exchange goes away mid-order",
+  "hypothesis": "With the exchange unreachable, an order is accepted with its money blocked and left PENDING (its fate unknown, so not guessed); when the exchange is back, the reconciler finds it never arrived, rejects it within 120 s, and every paisa blocked for it is back.",
+  "observations": [
+    {
+      "what": "Order while the exchange was down",
+      "value": "201 PENDING in 1,082 ms, blocked \u20b93580.57"
+    },
+    {
+      "what": "Cash / blocked while down",
+      "value": "16419.43 / 3580.57"
+    },
+    {
+      "what": "Ended after the exchange came back",
+      "value": "REJECTED after 29.5 s"
+    },
+    {
+      "what": "Rejection",
+      "value": "UNAVAILABLE"
+    },
+    {
+      "what": "Cash / blocked after",
+      "value": "20000.00 / 0.00"
+    }
+  ],
+  "checks": [
+    {
+      "what": "accepted, money blocked, outcome left open",
+      "pass": true
+    },
+    {
+      "what": "answered without waiting for the exchange",
+      "pass": true
+    },
+    {
+      "what": "ended within 120 s of the exchange returning",
+      "pass": true
+    },
+    {
+      "what": "rejected as never placed (not filled from nowhere)",
+      "pass": true
+    },
+    {
+      "what": "every paisa back",
+      "pass": true
+    }
+  ],
+  "pass": true
+}

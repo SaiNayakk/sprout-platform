@@ -90,12 +90,13 @@ class MoneyJourneysTest {
     }
 
     @Test
-    @DisplayName("E2E-50 open a bank account with a UPI PIN, then a Sprout account linked to it")
+    @DisplayName("E2E-50 open a bank account with a UPI PIN, then a Sprout account linked to it, with a demat account")
     void onboarding() {
         assertThat(bankBalance()).isEqualTo("100000.00");
         JsonNode me = c.get("/api/accounts/v1/accounts/me", token).body();
         assertThat(me.path("status").asText()).isEqualTo("ACTIVE");
         assertThat(me.path("bankVpa").asText()).isEqualTo(vpa);
+        assertThat(me.path("dematAccount").asText()).as("a demat account at the depository").matches("[0-9]{16}");
         assertThat(me.path("panMasked").asText()).startsWith("XXXXX");
         assertThat(available()).isEqualTo("0.00");
     }

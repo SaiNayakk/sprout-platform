@@ -1,0 +1,18 @@
+{
+  "id": "CHAOS-06",
+  "title": "CHAOS-06",
+  "hypothesis": "",
+  "observations": [
+    {
+      "what": "error",
+      "value": "IndexError('list index out of range')"
+    }
+  ],
+  "checks": [
+    {
+      "what": "ran to completion",
+      "pass": false
+    }
+  ],
+  "pass": false
+}

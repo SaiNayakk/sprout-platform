@@ -207,3 +207,21 @@ charges make the numbers honest: a customer sees what trading costs.
 
 **Lost.** Until Phase 4, sale proceeds can't be reinvested or withdrawn. Visible in funds as
 `unsettled`, so nobody is surprised.
+
+## ADR-017: Settlement through simulated market institutions, checked by a back office { #adr-017-settlement }
+
+**Decision.** T+1 settlement is done the way Indian markets do it, by separate parties: a clearing
+corporation that nets each day's trades and settles them step by step, a depository holding every
+customer's shares in a demat account, and the bank moving the money. Sprout's side is a back-office
+service that checks each obligation against Sprout's own books before paying anything, books every
+movement in the ledger at the same time as the bank moves it, and only then settles clients.
+
+**Why.** Settlement is where a broker's books meet the outside world, and where real brokers spend their
+operational effort: reconciling, chasing breaks, paying on time. Simulating the institutions (rather than
+moving balances inside Sprout) means Sprout's code faces what a real back office faces: asynchronous
+news, partial failures, money that hasn't arrived yet, a counterparty that disagrees. Checking before
+paying turns a disagreement into a visible break instead of a silent loss.
+
+**Lost.** Simplifications: one member (Sprout) and a float standing for the rest of the market; whole
+settlement cycles rather than intraday pay-in deadlines; short deliveries closed out in cash at a fixed
+20% rather than through an auction.

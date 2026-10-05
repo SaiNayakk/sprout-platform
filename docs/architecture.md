@@ -49,7 +49,10 @@ flowchart LR
 | Payments | Each payment's story: deposits by UPI collect, withdrawals by payout, reconciliation | Hold balances (the ledger does) |
 | Orders (OMS) | Customers' orders, the risk checks before them, holdings, intraday positions, charges | Execute trades (the exchange does) or hold money (the ledger does) |
 | Sprout Bank | *Not Sprout*: a simulated customer bank with UPI PINs, so money can move end to end | Know anything about Sprout's books |
+| Settlement | Sprout's back office: checks each day's obligation against Sprout's books, moves and books the money, settles clients | Decide what was traded (the order service and the exchange do) |
 | Sprout Stock Exchange | *Not Sprout*: a simulated exchange that executes brokers' orders against the simulated market | Know who Sprout's customers are or what they own |
+| Sprout Clearing Corporation | *Not Sprout*: nets each day's trades and settles them T+1 between members, the depository and the bank | Know anything about a member's books |
+| Sprout Depository | *Not Sprout*: holds investors' shares in demat accounts; moves them only on instruction | Know prices or money |
 
 ## A request, end to end
 
@@ -175,7 +178,48 @@ sequenceDiagram
 - **Orders, the exchange and the ledger are reconciled** after every pre-prod run
   ([RECON-02](testing/chaos.md#recon-02)).
 
-Settlement (T+1: shares delivered, sale proceeds usable) is Phase 4.
+## Settlement (T+1)
+
+A trade isn't finished when it executes: the shares and the money change hands on the next trading day.
+Three outside parties do it, as in India, and Sprout's back office checks every step against its own
+books.
+
+```mermaid
+sequenceDiagram
+  participant Ex as Exchange
+  participant CC as Clearing corporation
+  participant Dep as Depository
+  participant Bank as Sprout Bank
+  participant BO as Settlement (back office)
+  participant OMS as Orders
+  participant Led as Ledger
+  Note over CC: the next session begins: the day's trades are final
+  CC->>Ex: the day's trades (the trade tape)
+  Note over CC: net per client and share, and per member
+  CC->>Dep: pay-in: sellers' shares into settlement
+  CC-->>BO: OBLIGATION (signed): owe or owed, every line
+  BO->>OMS: the day by Sprout's books
+  Note over BO: must match exactly, or it's a break and nothing is paid
+  BO->>Bank: pay the clearing corporation (reference = the obligation's)
+  BO->>Led: the same movement: clearing payable and receivable against sprout:bank
+  CC->>Bank: sees the money arrive (statement by reference), or pays Sprout
+  CC->>Dep: pay-out: buyers' shares into their demat accounts
+  CC-->>BO: SETTLED (signed)
+  BO->>OMS: settle clients: sale proceeds become cash, T1 shares delivered
+```
+
+- **Every customer has a demat account**, opened with their Sprout account (Sprout is their
+  depository participant) and registered with the clearing corporation under their client code.
+- **Nothing is paid on trust.** The obligation must equal Sprout's books exactly (the money, and
+  every client's shares bought and sold); otherwise the settlement stops as a break for a person to
+  look at ([runbook](runbooks.md#a-settlement-is-a-break)).
+- **A short delivery** (a client sold shares they didn't deliver) is closed out in cash at 20% above
+  the sale price and charged to the client as dues.
+- **Every step can be repeated and resumes after a crash**: depository instructions have fixed ids,
+  payments the obligation's reference, ledger entries fixed keys.
+- **Checked after every pre-prod run**: a whole day settles end to end ([SETTLE-01](testing/chaos.md#settle-01)),
+  and afterwards demat holdings, unsettled money and clearing balances agree everywhere
+  ([RECON-03](testing/chaos.md#recon-03)).
 
 ## Running many services on a phone
 
@@ -195,5 +239,5 @@ each service in its own Spring context with its own config, port and database sc
 |---|---|---|---|
 | edge | gateway, identity | 384 MB | Every request touches both |
 | trading | market data, orders (with risk) | 320 MB | The trading path; kept apart from sign-in so its faults can't stop people signing in ([ADR-010](decisions.md#adr-010-trading-host), [CHAOS-03](testing/chaos.md#chaos-03)); orders read prices on every placement and risk round |
-| money | ledger, accounts, payments | 320 MB | A payment needs all three, so they fail together anyway ([ADR-012](decisions.md#adr-012-money-host)) |
-| street | Sprout Bank, the Sprout Stock Exchange (clearing and depository to come) | 320 MB | The outside parties, simulated, kept apart from Sprout's own hosts as the real ones are |
+| money | ledger, accounts, payments, settlement | 320 MB | A payment needs all three, so they fail together anyway ([ADR-012](decisions.md#adr-012-money-host)) |
+| street | Sprout Bank, the Sprout Stock Exchange, the clearing corporation, the depository | 320 MB | The outside parties, simulated, kept apart from Sprout's own hosts as the real ones are |

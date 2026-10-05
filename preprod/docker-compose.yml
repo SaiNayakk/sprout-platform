@@ -123,7 +123,7 @@ services:
       retries: 60
       start_period: 15s
 
-  # The money host: ledger, accounts and payments. Throwaway secrets, shared with the street host
+  # The money host: ledger, accounts, payments and the settlement back office. Throwaway secrets, shared with the street host
   # where the two must agree (the bank partner key and the callback signing secret).
   money:
     build:
@@ -144,6 +144,17 @@ services:
       PAYMENTS_BIND: 0.0.0.0
       ACCOUNTS_BANK_URL: http://street:8107
       ACCOUNTS_PAN_PEPPER: preprod-only-pan-pepper
+      ACCOUNTS_DEPOSITORY_URL: http://street:8111
+      ACCOUNTS_CLEARING_URL: http://street:8110
+      DEPOSITORY_SPROUT_PARTICIPANT_KEY: preprod-only-participant-key
+      CLEARING_SPROUT_MEMBER_KEY: preprod-only-clearing-member-key
+      SETTLEMENT_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=settlement
+      SETTLEMENT_DB_PASSWORD: preprod-only-not-a-secret
+      SETTLEMENT_BIND: 0.0.0.0
+      SETTLEMENT_OMS_URL: http://trading:8109
+      SETTLEMENT_BANK_URL: http://street:8107
+      SETTLEMENT_EVERY: 2s
+      CLEARING_SPROUT_WEBHOOK_SECRET: preprod-only-clearing-webhook-secret
       PAYMENTS_ACCOUNTS_URL: http://127.0.0.1:8104
       PAYMENTS_LEDGER_URL: http://127.0.0.1:8106
       PAYMENTS_BANK_URL: http://street:8107
@@ -162,13 +173,14 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8106/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8104/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8105/actuator/health >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8106/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8104/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8105/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8112/actuator/health >/dev/null"]
       interval: 3s
       timeout: 3s
       retries: 60
       start_period: 20s
 
-  # The street host: Sprout Bank and the Sprout Stock Exchange (the outside world, simulated).
+  # The street host: Sprout Bank, the exchange, the depository and the clearing corporation (the outside
+  # world, simulated).
   street:
     build:
       context: ..
@@ -190,6 +202,22 @@ services:
       EXCHANGE_SPROUT_MEMBER_KEY: preprod-only-member-key
       EXCHANGE_SPROUT_WEBHOOK_SECRET: preprod-only-exchange-webhook-secret
       EXCHANGE_SPROUT_CALLBACK_URL: http://trading:8109/internal/v1/exchange-events
+      EXCHANGE_CLEARING_KEY: preprod-only-exchange-clearing-key
+      BANK_CLEARING_PARTNER_KEY: preprod-only-clearing-partner-key
+      BANK_CLEARING_WEBHOOK_SECRET: preprod-only-clearing-bank-webhook-secret
+      DEPOSITORY_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=depository
+      DEPOSITORY_DB_PASSWORD: preprod-only-not-a-secret
+      DEPOSITORY_BIND: 0.0.0.0
+      DEPOSITORY_SPROUT_PARTICIPANT_KEY: preprod-only-participant-key
+      DEPOSITORY_CLEARING_KEY: preprod-only-depository-clearing-key
+      CLEARING_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=clearing
+      CLEARING_DB_PASSWORD: preprod-only-not-a-secret
+      CLEARING_BIND: 0.0.0.0
+      CLEARING_MARKETDATA_URL: http://trading:8103
+      CLEARING_SETTLE_EVERY: 2s
+      CLEARING_SPROUT_MEMBER_KEY: preprod-only-clearing-member-key
+      CLEARING_SPROUT_WEBHOOK_SECRET: preprod-only-clearing-webhook-secret
+      CLEARING_SPROUT_CALLBACK_URL: http://money:8112/internal/v1/clearing-events
       LOG_FORMAT: ecs
       OTEL_ENABLED: ${OTEL_ENABLED:-false}
       MANAGEMENT_OTLP_METRICS_EXPORT_STEP: 10s
@@ -200,7 +228,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8107/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8108/actuator/health >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8107/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8108/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8111/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8110/actuator/health >/dev/null"]
       interval: 3s
       timeout: 3s
       retries: 60

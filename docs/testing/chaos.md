@@ -4,6 +4,10 @@ A chaos experiment breaks one thing on purpose and checks that the system behave
 does. Each has a **steady state** (what normal looks like), a **hypothesis** (what should happen when
 the thing breaks), a **method**, and a pass condition. They run automatically in pre-prod.
 
+Every experiment starts from a steady state: the run waits until every host's health check passes
+(each checks all the services in that host, not only the first one to start), because the experiment
+before may have just restarted one.
+
 ## CHAOS-01: the database goes away { #chaos-01 }
 
 | | |
@@ -139,12 +143,27 @@ its 30 s from a timestamp that asking the exchange kept moving; see
 [Incidents](../incidents.md)). After the fix: accepted as `PENDING` in 2.1 s with ₹3,593.37 blocked;
 `REJECTED` as `UNAVAILABLE` 28.5 s after the exchange came back; cash back to exactly ₹20,000.00.
 
+## SETTLE-01: a trading day settles T+1 { #settle-01 }
+
+Not a fault but the whole of settlement, run near the end, after the experiments above have stopped
+and started every host. The run's first trade date (the E2E suite's) must settle within one session of
+it: the clearing corporation nets the day, takes in sellers' shares and sends its obligation; Sprout's
+back office finds it matches its books exactly (no break); the money moves through Sprout Bank; buyers'
+shares reach their demat accounts; clients' sale proceeds become cash. No client may be short.
+
 ## RECON-02: orders, the exchange and the ledger agree { #recon-02 }
 
 Run last, like RECON-01: every order Sprout booked as executed was executed by the exchange at the same
 price and quantity, and the exchange executed nothing Sprout hasn't booked; for every customer, the money
 the ledger holds for orders equals what their working orders and open positions say; every ledger entry
 the order service decided on has been posted; no order is left waiting on the exchange.
+
+## RECON-03: after settlement, shares and money agree everywhere { #recon-03 }
+
+For every client, the shares in their demat account at the depository are exactly the delivered shares
+Sprout shows them (holdings less T1); their unsettled money in the ledger is exactly the proceeds of days
+not yet settled; and what the ledger says Sprout owes or is owed by the clearing corporation is exactly
+the unsettled days' trades.
 
 ## Planned
 
