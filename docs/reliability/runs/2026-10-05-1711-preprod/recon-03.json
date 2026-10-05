@@ -1,0 +1,46 @@
+{
+  "id": "RECON-03",
+  "title": "After settlement, shares and money agree everywhere",
+  "hypothesis": "For every client, the shares the depository holds in their demat account are exactly the delivered shares Sprout shows them; their unsettled money is exactly the proceeds of days not yet settled; and what the ledger says Sprout owes or is owed by the clearing corporation is exactly the unsettled days' trades.",
+  "observations": [
+    {
+      "what": "Trade dates settled",
+      "value": 1
+    },
+    {
+      "what": "Clients whose demat holdings differ from Sprout's",
+      "value": 0
+    },
+    {
+      "what": "Clients whose unsettled money is wrong",
+      "value": 0
+    },
+    {
+      "what": "Owed to clearing: ledger / unsettled trades",
+      "value": "\u20b9288.10 / \u20b9288.10"
+    },
+    {
+      "what": "Owed by clearing: ledger / unsettled trades",
+      "value": "\u20b90.00 / \u20b90.00"
+    }
+  ],
+  "checks": [
+    {
+      "what": "at least one day settled",
+      "pass": true
+    },
+    {
+      "what": "demat holdings match",
+      "pass": true
+    },
+    {
+      "what": "unsettled money matches",
+      "pass": true
+    },
+    {
+      "what": "clearing balances are only the unsettled days'",
+      "pass": true
+    }
+  ],
+  "pass": true
+}

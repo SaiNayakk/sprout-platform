@@ -1,0 +1,50 @@
+{
+  "id": "TRACE-01",
+  "title": "One request, followed through every service",
+  "hypothesis": "An order placed with a request id (and a forged trace from the client) can be followed from the gateway through the order service to the exchange: every service's log lines for it carry the same request id and the same trace, and that trace is the gateway's own, never the client's.",
+  "observations": [
+    {
+      "what": "Order",
+      "value": "201 FILLED"
+    },
+    {
+      "what": "Request id echoed by the gateway",
+      "value": "trace01-b7cdfadc9812"
+    },
+    {
+      "what": "Log lines with the request id, by host",
+      "value": "edge 0, trading 1, money 0, street 1"
+    },
+    {
+      "what": "Services that logged it",
+      "value": "sprout-exchange, sprout-oms"
+    },
+    {
+      "what": "Trace ids on those lines",
+      "value": "21d202a4302d2f80b959017f59e6e7a8"
+    }
+  ],
+  "checks": [
+    {
+      "what": "the order filled",
+      "pass": true
+    },
+    {
+      "what": "the gateway kept the request id",
+      "pass": true
+    },
+    {
+      "what": "the order service and the exchange both logged it",
+      "pass": true
+    },
+    {
+      "what": "one trace across every service",
+      "pass": true
+    },
+    {
+      "what": "the gateway's trace, not the client's",
+      "pass": true
+    }
+  ],
+  "pass": true
+}

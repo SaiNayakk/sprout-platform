@@ -1,0 +1,58 @@
+{
+  "id": "RECON-04",
+  "title": "Sprout's own reconciliation agrees",
+  "hypothesis": "At the end of the run, Sprout's reconciliation service (which reads every book through its owner's API, as it does every day in production) finds every check passing: the ledger, the bank, held and unsettled money, executions against the exchange, demat holdings, and settlements.",
+  "observations": [
+    {
+      "what": "On-demand run",
+      "value": "PASS"
+    },
+    {
+      "what": "BANK_MATCHES_LEDGER",
+      "value": "PASS: All Sprout's money at the bank agree."
+    },
+    {
+      "what": "DEMAT_MATCHES_HOLDINGS",
+      "value": "PASS: All customers' delivered shares agree."
+    },
+    {
+      "what": "HOLDS_MATCH_ORDERS",
+      "value": "PASS: All customers' held money agree."
+    },
+    {
+      "what": "LEDGER_BALANCED",
+      "value": "PASS: The ledger balances: assets \u00e2\u201a\u00b92173442.25 = liabilities \u00e2\u201a\u00b92173442.25."
+    },
+    {
+      "what": "SETTLEMENTS_HEALTHY",
+      "value": "PASS: 1 recent settlement(s) completed; none broken or late."
+    },
+    {
+      "what": "TRADES_MATCH_EXCHANGE",
+      "value": "PASS: All executions and exchange trades since 2026-10-01 agree."
+    },
+    {
+      "what": "UNSETTLED_MATCHES_ORDERS",
+      "value": "PASS: All customers' unsettled money agree."
+    },
+    {
+      "what": "Scheduled runs during the run (sessions past midday)",
+      "value": "2026-10-05 PASS"
+    }
+  ],
+  "checks": [
+    {
+      "what": "the run completed",
+      "pass": true
+    },
+    {
+      "what": "every check passes",
+      "pass": true
+    },
+    {
+      "what": "all seven checks ran",
+      "pass": true
+    }
+  ],
+  "pass": true
+}
