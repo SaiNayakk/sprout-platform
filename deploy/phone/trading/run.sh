@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/sh
-# The trading host on the phone (market data and orders), started by Backseat as `sh run.sh`.
+# The trading host on the phone (market data, orders, plans, habits), started by Backseat as `sh run.sh`.
 set -eu
 set -a
 . "$HOME/.sprout.env"
@@ -8,10 +8,13 @@ set +a
 export MARKETDATA_BIND=127.0.0.1
 export MARKETDATA_CLOCK=WALL                  # the market follows real Indian time: open 09:15-15:30 IST
 export MARKETDATA_NATS_URL=nats://127.0.0.1:4222
-export OMS_DB_URL="jdbc:postgresql://127.0.0.1:5432/sprout?currentSchema=oms"
-export OMS_DB_USER=sprout
-export OMS_DB_PASSWORD="$SPROUT_DB_PASSWORD"
-export OMS_BIND=127.0.0.1
+for svc in OMS PLANS HABITS; do
+  schema=$(echo "$svc" | tr 'A-Z' 'a-z')
+  export "${svc}_DB_URL=jdbc:postgresql://127.0.0.1:5432/sprout?currentSchema=$schema"
+  export "${svc}_DB_USER=sprout"
+  export "${svc}_DB_PASSWORD=$SPROUT_DB_PASSWORD"
+  export "${svc}_BIND=127.0.0.1"
+done
 export LOG_FORMAT=ecs
 # accounts, ledger and the exchange default to 127.0.0.1 on their ports
 

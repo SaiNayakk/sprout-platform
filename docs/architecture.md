@@ -49,6 +49,8 @@ flowchart LR
 | Payments | Each payment's story: deposits by UPI collect, withdrawals by payout, reconciliation | Hold balances (the ledger does) |
 | Orders (OMS) | Customers' orders, the risk checks before them, holdings, intraday positions, charges | Execute trades (the exchange does) or hold money (the ledger does) |
 | Sprout Bank | *Not Sprout*: a simulated customer bank with UPI PINs, so money can move end to end | Know anything about Sprout's books |
+| Plans | Systematic investment plans: a monthly amount into a share, bought through the order service | Decide whether an order may go ahead (the order service does) |
+| Habits | Streaks, levels, badges, points, squads, readiness and Future You, worked out from trading history | Reward trading volume, or rank people by money |
 | Statements | A customer's records: contract notes, funds statements, tax P&amp;L, holdings statements, read from the books | Store anything (it has no database) |
 | Reconciliation | Comparing every book with every other it should agree with, every day | Fix anything (a break is for a person) |
 | Settlement | Sprout's back office: checks each day's obligation against Sprout's books, moves and books the money, settles clients | Decide what was traded (the order service and the exchange do) |
@@ -223,6 +225,24 @@ sequenceDiagram
   and afterwards demat holdings, unsettled money and clearing balances agree everywhere
   ([RECON-03](testing/chaos.md#recon-03)).
 
+## The habit, not the hype
+
+Sprout is built to reward investing regularly, never trading often.
+
+- **Plans (SIPs)**: a monthly amount into a share, on the customer's day. Each instalment is a delivery
+  market buy of whole shares, placed through the order service on the customer's behalf (same checks,
+  same charges) and tagged `sip:<plan>`. A month is claimed before its order is placed, and the order
+  goes under a key made from (plan, month), so a retry never buys twice. Months that couldn't buy are
+  recorded with the reason, never bought late.
+- **Habits are worked out from history, not stored**: streaks of months with a delivery purchase (with
+  freezes for a missed month), levels, badges, and points that vest only if the shares stay invested 30
+  days. Selling doesn't break a streak; intraday trading doesn't count. A burst of trading shows a nudge,
+  never a block.
+- **Squads** rank friends by the habit (streak, then months invested in the last year), never by
+  money; someone can show a range for how much they've invested, never the amount.
+- **Readiness** (emergency fund, high-interest debt, horizon) gives plain advice before a first
+  investment, and **Future You** shows what a monthly amount could grow to.
+
 ## Records and reconciliation
 
 **Statements are read, never stored.** Contract notes, funds statements, profit and loss and holdings
@@ -256,6 +276,6 @@ each service in its own Spring context with its own config, port and database sc
 | Host | Services | Memory limit | Why together |
 |---|---|---|---|
 | edge | gateway, identity | 384 MB | Every request touches both |
-| trading | market data, orders (with risk) | 320 MB | The trading path; kept apart from sign-in so its faults can't stop people signing in ([ADR-010](decisions.md#adr-010-trading-host), [CHAOS-03](testing/chaos.md#chaos-03)); orders read prices on every placement and risk round |
+| trading | market data, orders (with risk), plans, habits | 320 MB | The trading path; kept apart from sign-in so its faults can't stop people signing in ([ADR-010](decisions.md#adr-010-trading-host), [CHAOS-03](testing/chaos.md#chaos-03)); orders read prices on every placement and risk round |
 | money | ledger, accounts, payments, settlement, statements, reconciliation | 320 MB | A payment needs all three, so they fail together anyway ([ADR-012](decisions.md#adr-012-money-host)) |
 | street | Sprout Bank, the Sprout Stock Exchange, the clearing corporation, the depository | 320 MB | The outside parties, simulated, kept apart from Sprout's own hosts as the real ones are |

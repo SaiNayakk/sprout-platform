@@ -1,0 +1,62 @@
+{
+  "id": "CHAOS-03",
+  "title": "The trading host dies",
+  "hypothesis": "With the trading host killed, sign-in and accounts are unaffected (they run in a different JVM). Market data answers 503 within 3 s instead of hanging, open price streams end within 5 s so clients know to reconnect, and market data is back within 60 s of the host restarting.",
+  "observations": [
+    {
+      "what": "Open stream ended after the kill",
+      "value": "0.0 s"
+    },
+    {
+      "what": "Sign-in (wrong password, so 401 is healthy)",
+      "value": "401 in 108 ms"
+    },
+    {
+      "what": "My account",
+      "value": "200 in 15 ms"
+    },
+    {
+      "what": "A quote",
+      "value": "503 in 2,030 ms (UPSTREAM_UNAVAILABLE)"
+    },
+    {
+      "what": "Opening a new stream",
+      "value": "503 in 2,032 ms"
+    },
+    {
+      "what": "Quotes working again after restart",
+      "value": "7.3 s"
+    },
+    {
+      "what": "Edge host",
+      "value": "Up 3 minutes (healthy)"
+    }
+  ],
+  "checks": [
+    {
+      "what": "sign-in unaffected",
+      "pass": true
+    },
+    {
+      "what": "accounts unaffected",
+      "pass": true
+    },
+    {
+      "what": "quotes fail fast with 503",
+      "pass": true
+    },
+    {
+      "what": "new streams refused fast",
+      "pass": true
+    },
+    {
+      "what": "open streams end within 5 s",
+      "pass": true
+    },
+    {
+      "what": "market data back within 60 s",
+      "pass": true
+    }
+  ],
+  "pass": true
+}

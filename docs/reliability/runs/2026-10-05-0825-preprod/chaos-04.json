@@ -1,0 +1,42 @@
+{
+  "id": "CHAOS-04",
+  "title": "Sprout Bank goes away mid-withdrawal",
+  "hypothesis": "With the bank unreachable, a withdrawal is accepted and the money held (never lost, never paid twice); when the bank returns, the reconciler finishes it within 90 s and the money arrives in the bank exactly once.",
+  "observations": [
+    {
+      "what": "Withdrawal while the bank was down",
+      "value": "201 PROCESSING in 2,056 ms"
+    },
+    {
+      "what": "Available / withdrawing / bank balance while down",
+      "value": "600.00 / 400.00 / None"
+    },
+    {
+      "what": "Completed after the bank came back",
+      "value": "6.1 s"
+    },
+    {
+      "what": "Available / withdrawing / bank balance after",
+      "value": "600.00 / 0.00 / 99400.00"
+    }
+  ],
+  "checks": [
+    {
+      "what": "accepted and held, not refused or lost",
+      "pass": true
+    },
+    {
+      "what": "answered without waiting for the bank",
+      "pass": true
+    },
+    {
+      "what": "completed within 90 s of the bank returning",
+      "pass": true
+    },
+    {
+      "what": "paid exactly once",
+      "pass": true
+    }
+  ],
+  "pass": true
+}

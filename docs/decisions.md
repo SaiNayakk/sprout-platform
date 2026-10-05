@@ -239,3 +239,18 @@ owner of its data.
 
 **Lost.** Statements cost a few calls each, and a year's P&amp;L reads a customer's whole history. Fine at
 Sprout's scale; at a real broker's, statements would be built once a day into a store of their own.
+
+## ADR-019: Habits are computed from trading history, and reward consistency only { #adr-019-habits }
+
+**Decision.** Streaks, levels, badges and points are a pure function of a customer's executions, worked
+out each time they're asked for; only choices (squads, privacy, readiness answers) are stored. Only
+delivery purchases build the habit; intraday trading never earns anything, points vest only if the money
+stays invested, squads rank by consistency and never show amounts.
+
+**Why.** A stored score drifts from what really happened and needs its own reconciliation; computing it
+from the executions means the same history always gives the same picture. And rewards shape behaviour:
+rewarding activity would push people to trade more, which costs them money. Rewarding regular
+investing, with time in the market, pushes the other way.
+
+**Lost.** Each picture reads the customer's history (a year per call). Fine for a squad of 12; at scale,
+habits would be kept incrementally from the stream of executions.

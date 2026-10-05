@@ -35,6 +35,12 @@ sprout:
       - name: oms
         prefix: /api/oms
         target: ${GATEWAY_OMS_URL:http://127.0.0.1:8109}
+      - name: plans
+        prefix: /api/plans
+        target: ${GATEWAY_PLANS_URL:http://127.0.0.1:8115}
+      - name: habits
+        prefix: /api/habits
+        target: ${GATEWAY_HABITS_URL:http://127.0.0.1:8116}
       - name: statements
         prefix: /api/statements
         target: ${GATEWAY_STATEMENTS_URL:http://127.0.0.1:8113}
