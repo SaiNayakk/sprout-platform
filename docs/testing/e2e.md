@@ -219,6 +219,28 @@ refused as `UNKNOWN_INSTRUMENT`.
 ### E2E-69 { #e2e-69 }
 **A forged execution report is refused**, even through the gateway with a valid user token.
 
+## Records
+
+Each case starts with a funded customer who, in the trading window, buys 2 HARBOR for delivery and does
+an intraday round trip in KOSHA.
+
+### E2E-70 { #e2e-70 }
+**Today's contract note lists every execution and charge, and adds up**: bought, sold, charges and net
+equal what the orders said when they executed.
+
+### E2E-71 { #e2e-71 }
+**The funds statement shows the deposit and every trade, and ends at the cash Sprout shows.**
+
+### E2E-72 { #e2e-72 }
+**Profit and loss puts the intraday round trip under intraday**, with the day's charges beside.
+
+### E2E-73 { #e2e-73 }
+**The holdings statement is the depository's record**: shares bought today aren't in it until they
+settle (they are T1 at Sprout).
+
+### E2E-74 { #e2e-74 }
+**Statements are only for signed-in customers with an account.**
+
 ## Results
 
 The latest results, case by case, are in each run's evidence page under

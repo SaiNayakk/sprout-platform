@@ -13,7 +13,7 @@
 
   <groupId>app.sprout.hosts</groupId>
   <artifactId>street-host</artifactId>
-  <version>0.3.0</version>
+  <version>0.4.0</version>
   <name>street-host</name>
   <description>One JVM for the outside world Sprout deals with: Sprout Bank, the Sprout Stock Exchange, the clearing corporation and the depository.</description>
 
@@ -22,9 +22,9 @@
        Each version X.Y.Z is built from tag vX.Y.Z of its repository by ../install-services.sh. -->
   <properties>
     <java.version>21</java.version>
-    <sprout-bank.version>0.2.0</sprout-bank.version>
-    <sprout-exchange.version>0.2.0</sprout-exchange.version>
-    <sprout-depository.version>0.1.0</sprout-depository.version>
+    <sprout-bank.version>0.3.0</sprout-bank.version>
+    <sprout-exchange.version>0.3.0</sprout-exchange.version>
+    <sprout-depository.version>0.2.0</sprout-depository.version>
     <sprout-clearing.version>0.1.0</sprout-clearing.version>
   </properties>
 

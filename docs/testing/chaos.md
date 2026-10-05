@@ -165,6 +165,12 @@ Sprout shows them (holdings less T1); their unsettled money in the ledger is exa
 not yet settled; and what the ledger says Sprout owes or is owed by the clearing corporation is exactly
 the unsettled days' trades.
 
+## RECON-04: Sprout's own reconciliation agrees { #recon-04 }
+
+The last check of a run: Sprout's reconciliation service, which runs every day in production, is asked
+to reconcile now. Every one of its seven checks must pass, reading through the services' APIs what the
+SQL checks above read from their databases.
+
 ## Planned
 
 | Id | Fault | Hypothesis |

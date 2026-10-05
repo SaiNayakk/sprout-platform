@@ -35,6 +35,9 @@ sprout:
       - name: oms
         prefix: /api/oms
         target: ${GATEWAY_OMS_URL:http://127.0.0.1:8109}
+      - name: statements
+        prefix: /api/statements
+        target: ${GATEWAY_STATEMENTS_URL:http://127.0.0.1:8113}
       - name: bank
         prefix: /api/bank
         target: ${GATEWAY_BANK_URL:http://127.0.0.1:8107}

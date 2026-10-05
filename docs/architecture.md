@@ -49,6 +49,8 @@ flowchart LR
 | Payments | Each payment's story: deposits by UPI collect, withdrawals by payout, reconciliation | Hold balances (the ledger does) |
 | Orders (OMS) | Customers' orders, the risk checks before them, holdings, intraday positions, charges | Execute trades (the exchange does) or hold money (the ledger does) |
 | Sprout Bank | *Not Sprout*: a simulated customer bank with UPI PINs, so money can move end to end | Know anything about Sprout's books |
+| Statements | A customer's records: contract notes, funds statements, tax P&amp;L, holdings statements, read from the books | Store anything (it has no database) |
+| Reconciliation | Comparing every book with every other it should agree with, every day | Fix anything (a break is for a person) |
 | Settlement | Sprout's back office: checks each day's obligation against Sprout's books, moves and books the money, settles clients | Decide what was traded (the order service and the exchange do) |
 | Sprout Stock Exchange | *Not Sprout*: a simulated exchange that executes brokers' orders against the simulated market | Know who Sprout's customers are or what they own |
 | Sprout Clearing Corporation | *Not Sprout*: nets each day's trades and settles them T+1 between members, the depository and the bank | Know anything about a member's books |
@@ -221,6 +223,22 @@ sequenceDiagram
   and afterwards demat holdings, unsettled money and clearing balances agree everywhere
   ([RECON-03](testing/chaos.md#recon-03)).
 
+## Records and reconciliation
+
+**Statements are read, never stored.** Contract notes, funds statements, profit and loss and holdings
+statements are built each time from the books that own the facts: executions from the order service,
+cash movements (with running balances) from the ledger, shares from the depository. Nothing is copied,
+so a statement can't disagree with the books it came from. Profit and loss follows the tax rules:
+delivery sales matched to purchases first in, first out, long-term after a year, intraday separate.
+
+**Reconciliation runs every day inside Sprout**, not only in pre-prod. Once each session (after midday
+market time, when the previous day has settled) and on demand, it compares seven pairs of books through
+their owners' APIs: the ledger with itself and with the bank; customers' held and unsettled money with
+their orders; executions with the exchange's trades; demat holdings with delivered shares; and the
+settlements. Records that move are compared twice, a moment apart, so money in flight isn't reported as
+a break; a book that can't be read is an `ERROR`, never a pass. Pre-prod checks that it agrees with the
+SQL reconciliations at the end of every run ([RECON-04](testing/chaos.md#recon-04)).
+
 ## Running many services on a phone
 
 Each JVM costs memory before it does any work. Measured on the phone-sized budget:
@@ -239,5 +257,5 @@ each service in its own Spring context with its own config, port and database sc
 |---|---|---|---|
 | edge | gateway, identity | 384 MB | Every request touches both |
 | trading | market data, orders (with risk) | 320 MB | The trading path; kept apart from sign-in so its faults can't stop people signing in ([ADR-010](decisions.md#adr-010-trading-host), [CHAOS-03](testing/chaos.md#chaos-03)); orders read prices on every placement and risk round |
-| money | ledger, accounts, payments, settlement | 320 MB | A payment needs all three, so they fail together anyway ([ADR-012](decisions.md#adr-012-money-host)) |
+| money | ledger, accounts, payments, settlement, statements, reconciliation | 320 MB | A payment needs all three, so they fail together anyway ([ADR-012](decisions.md#adr-012-money-host)) |
 | street | Sprout Bank, the Sprout Stock Exchange, the clearing corporation, the depository | 320 MB | The outside parties, simulated, kept apart from Sprout's own hosts as the real ones are |

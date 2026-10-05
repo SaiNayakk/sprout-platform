@@ -4,6 +4,7 @@ Every pre-prod run writes its evidence here: the release it tested, every end-to
 
 | Run (UTC) | Release | Result |
 |---|---|---|
+| [2026-10-05-0757-preprod](2026-10-05-0757-preprod/index.md) | identity 0.2.3, gateway 0.2.4, accounts 0.2.0, payments 0.1.0, ledger 0.3.0, settlement 0.1.0, statements 0.1.1, recon 0.1.0, bank 0.3.0, exchange 0.3.0, depository 0.2.0, clearing 0.1.0, marketdata 0.1.1, oms 0.3.0 | ✅ passed |
 | [2026-10-05-0705-preprod](2026-10-05-0705-preprod/index.md) | identity 0.2.3, gateway 0.2.4, accounts 0.2.0, payments 0.1.0, ledger 0.2.0, settlement 0.1.0, bank 0.2.0, exchange 0.2.0, depository 0.1.0, clearing 0.1.0, marketdata 0.1.1, oms 0.2.0 | ✅ passed |
 | [2026-10-05-0640-preprod](2026-10-05-0640-preprod/index.md) | identity 0.2.3, gateway 0.2.4, accounts 0.2.0, payments 0.1.0, ledger 0.2.0, settlement 0.1.0, bank 0.2.0, exchange 0.2.0, depository 0.1.0, clearing 0.1.0, marketdata 0.1.1, oms 0.2.0 | ❌ failed (chaos-05, chaos-06) |
 | [2026-10-05-0416-preprod](2026-10-05-0416-preprod/index.md) | identity 0.2.3, gateway 0.2.4, accounts 0.1.0, payments 0.1.0, ledger 0.2.0, bank 0.1.0, exchange 0.1.0, marketdata 0.1.1, oms 0.1.2 | ✅ passed |

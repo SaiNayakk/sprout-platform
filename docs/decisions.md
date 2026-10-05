@@ -225,3 +225,17 @@ paying turns a disagreement into a visible break instead of a silent loss.
 **Lost.** Simplifications: one member (Sprout) and a float standing for the rest of the market; whole
 settlement cycles rather than intraday pay-in deadlines; short deliveries closed out in cash at a fixed
 20% rather than through an auction.
+
+## ADR-018: Statements are a read model; reconciliation reads through APIs { #adr-018-records }
+
+**Decision.** The statements service has no database: every statement is built on request from the
+services that own the facts. The reconciliation service reads each book through its owner's API (never
+its database), compares twice before calling a difference a break, and keeps every run's findings.
+
+**Why.** A copy of the books can drift from them, and then a customer's statement and Sprout's books
+disagree, which is exactly what reconciliation exists to catch. Reading through APIs means
+reconciliation checks what customers and other services actually see, and keeps every service the only
+owner of its data.
+
+**Lost.** Statements cost a few calls each, and a year's P&amp;L reads a customer's whole history. Fine at
+Sprout's scale; at a real broker's, statements would be built once a day into a store of their own.
