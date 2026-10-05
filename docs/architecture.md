@@ -50,7 +50,9 @@ flowchart LR
 | Orders (OMS) | Customers' orders, the risk checks before them, holdings, intraday positions, charges | Execute trades (the exchange does) or hold money (the ledger does) |
 | Sprout Bank | *Not Sprout*: a simulated customer bank with UPI PINs, so money can move end to end | Know anything about Sprout's books |
 | Plans | Systematic investment plans: a monthly amount into a share, bought through the order service | Decide whether an order may go ahead (the order service does) |
-| Habits | Streaks, levels, badges, points, squads, readiness and Future You, worked out from trading history | Reward trading volume, or rank people by money |
+| Habits | Streaks, levels, badges, points, monthly challenges, Year Wrapped, squads, readiness and Future You, worked out from trading history | Reward trading volume, or rank people by money |
+| Goals | Pots invested in a share, with targets; round-ups from UPI spends, swept under AutoPay | Hold money itself (the ledger does), or take money without a mandate |
+| Rewards | What vested habit points buy (the vault), and referral rewards | Store points (habits works them out), or reward a sign-up |
 | Statements | A customer's records: contract notes, funds statements, tax P&amp;L, holdings statements, read from the books | Store anything (it has no database) |
 | Reconciliation | Comparing every book with every other it should agree with, every day | Fix anything (a break is for a person) |
 | Settlement | Sprout's back office: checks each day's obligation against Sprout's books, moves and books the money, settles clients | Decide what was traded (the order service and the exchange do) |
@@ -251,6 +253,40 @@ Sprout is built to reward investing regularly, never trading often.
 - **Readiness** (emergency fund, high-interest debt, horizon) gives plain advice before a first
   investment, and **Future You** shows what a monthly amount could grow to.
 
+## Goals and round-ups
+
+A **pot** saves towards something with a target and, if the customer likes, a date, and invests in one
+share. Money put in is the customer's own Sprout cash, set aside for the pot (never more than they have
+free across all pots); the goals service buys whole shares with it through the order service, tagged
+`goal:<pot>`, and what doesn't make a share waits for the next buy.
+
+**Round-ups** are how real micro-investing apps work, end to end:
+
+1. The customer sets up **AutoPay** in payments: Sprout asks Sprout Bank for a UPI AutoPay mandate (a
+   limit per debit, a stated purpose, and permission to share their spends). The customer approves it
+   once, in the bank, with their PIN.
+2. Each UPI payment the customer makes (to a demo merchant) is reported by the bank to Sprout, through
+   the bank's outbox in the payment's own transaction. Payments keeps these spends in arrival order.
+3. Goals reads the spends from where it got to (a cursor), and rounds each up for customers with
+   round-ups on: to the next ₹10, ₹50 or ₹100, one to three times over. A spend's id makes reading it
+   twice harmless.
+4. Once ₹100 is waiting, goals claims it for one **sweep** and asks payments to debit that much under
+   the mandate (the sweep's id is the debit's reference, so asking again never takes twice). The money
+   lands in the customer's Sprout balance through the ledger, like a deposit, and the pot buys its share.
+
+A refused sweep (the mandate revoked, not enough in the bank) leaves the round-ups waiting and isn't
+tried again for an hour; an unknown outcome is asked again with the same reference
+([ADR-021](decisions.md#adr-021-round-ups)).
+
+## Rewards
+
+What a customer can spend in the **vault** is their vested habit points (earned by investing month after
+month, kept only if the money stays invested), plus referral rewards, less what they've spent. It is
+worked out from habits each time, never stored, and a redemption is decided under a per-customer lock so
+two at once can't spend the same points. The vault's brands are fictional. **Referrals** reward the
+habit, not the sign-up: both get 500 points once the new customer has invested in 3 different months
+([ADR-022](decisions.md#adr-022-rewards)).
+
 ## Records and reconciliation
 
 **Statements are read, never stored.** Contract notes, funds statements, profit and loss and holdings
@@ -284,6 +320,6 @@ each service in its own Spring context with its own config, port and database sc
 | Host | Services | Memory limit | Why together |
 |---|---|---|---|
 | edge | gateway, identity | 384 MB | Every request touches both |
-| trading | market data, orders (with risk), plans, habits | 320 MB | The trading path; kept apart from sign-in so its faults can't stop people signing in ([ADR-010](decisions.md#adr-010-trading-host), [CHAOS-03](testing/chaos.md#chaos-03)); orders read prices on every placement and risk round |
-| money | ledger, accounts, payments, settlement, statements, reconciliation | 320 MB | A payment needs all three, so they fail together anyway ([ADR-012](decisions.md#adr-012-money-host)) |
+| trading | market data, orders (with risk), plans, habits, rewards | 320 MB | The trading path; kept apart from sign-in so its faults can't stop people signing in ([ADR-010](decisions.md#adr-010-trading-host), [CHAOS-03](testing/chaos.md#chaos-03)); orders read prices on every placement and risk round |
+| money | ledger, accounts, payments, settlement, statements, reconciliation, goals | 320 MB | A payment needs all three, so they fail together anyway ([ADR-012](decisions.md#adr-012-money-host)) |
 | street | Sprout Bank, the Sprout Stock Exchange, the clearing corporation, the depository | 320 MB | The outside parties, simulated, kept apart from Sprout's own hosts as the real ones are |

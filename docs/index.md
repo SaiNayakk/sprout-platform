@@ -21,26 +21,28 @@ regularly, holding, diversifying) rather than frequent trading.
 
 | Piece | Repository | Status |
 |---|---|---|
-| Contracts: every API and event, versioned | [sprout-contracts](https://github.com/SaiNayakk/sprout-contracts) | `v0.8.0` |
-| Identity: accounts, passwords, two-factor, sessions, tokens | [sprout-identity](https://github.com/SaiNayakk/sprout-identity) | `v0.2.3` |
-| Gateway: the only public door; auth, rate limits, routing, price streams | [sprout-gateway](https://github.com/SaiNayakk/sprout-gateway) | `v0.3.0` |
-| Market data: the simulated market, quotes, candles, live prices | [sprout-marketdata](https://github.com/SaiNayakk/sprout-marketdata) | `v0.1.1` |
-| Accounts: opening a Sprout account, simulated KYC | [sprout-accounts](https://github.com/SaiNayakk/sprout-accounts) | `v0.3.0` |
-| Ledger: the double-entry books, the source of truth for money | [sprout-ledger](https://github.com/SaiNayakk/sprout-ledger) | `v0.3.0` |
-| Payments: adding money by UPI, withdrawing | [sprout-payments](https://github.com/SaiNayakk/sprout-payments) | `v0.2.0` |
-| Orders: orders, risk checks, holdings, intraday positions, charges | [sprout-oms](https://github.com/SaiNayakk/sprout-oms) | `v0.5.0` |
-| Plans: systematic investment plans (SIPs) | [sprout-plans](https://github.com/SaiNayakk/sprout-plans) | `v0.2.0` |
-| Habits: streaks, badges, points, squads, readiness, Future You | [sprout-habits](https://github.com/SaiNayakk/sprout-habits) | `v0.2.0` |
-| Statements: contract notes, funds statements, tax P&amp;L, holdings statements | [sprout-statements](https://github.com/SaiNayakk/sprout-statements) | `v0.2.0` |
-| Reconciliation: every book against every other, every day | [sprout-recon](https://github.com/SaiNayakk/sprout-recon) | `v0.2.0` |
-| Settlement: Sprout's back office for T+1 settlement | [sprout-settlement](https://github.com/SaiNayakk/sprout-settlement) | `v0.2.0` |
-| Sprout Bank: a simulated customer bank with UPI PINs (not part of Sprout) | [sprout-bank](https://github.com/SaiNayakk/sprout-bank) | `v0.3.1` |
-| Sprout Stock Exchange: a simulated exchange (not part of Sprout) | [sprout-exchange](https://github.com/SaiNayakk/sprout-exchange) | `v0.4.0` |
-| Sprout Clearing Corporation: settles trades T+1 (not part of Sprout) | [sprout-clearing](https://github.com/SaiNayakk/sprout-clearing) | `v0.2.0` |
-| Sprout Depository: demat accounts (not part of Sprout) | [sprout-depository](https://github.com/SaiNayakk/sprout-depository) | `v0.2.0` |
+| Contracts: every API and event, versioned | [sprout-contracts](https://github.com/SaiNayakk/sprout-contracts) | `v0.10.0` |
+| Identity: accounts, passwords, two-factor, sessions, tokens | [sprout-identity](https://github.com/SaiNayakk/sprout-identity) | `v0.2.4` |
+| Gateway: the only public door; auth, rate limits, routing, price streams | [sprout-gateway](https://github.com/SaiNayakk/sprout-gateway) | `v0.3.1` |
+| Market data: the simulated market, quotes, candles, live prices | [sprout-marketdata](https://github.com/SaiNayakk/sprout-marketdata) | `v0.1.2` |
+| Accounts: opening a Sprout account, simulated KYC | [sprout-accounts](https://github.com/SaiNayakk/sprout-accounts) | `v0.3.1` |
+| Ledger: the double-entry books, the source of truth for money | [sprout-ledger](https://github.com/SaiNayakk/sprout-ledger) | `v0.3.1` |
+| Payments: adding money by UPI, withdrawing | [sprout-payments](https://github.com/SaiNayakk/sprout-payments) | `v0.3.0` |
+| Orders: orders, risk checks, holdings, intraday positions, charges | [sprout-oms](https://github.com/SaiNayakk/sprout-oms) | `v0.5.1` |
+| Plans: systematic investment plans (SIPs) | [sprout-plans](https://github.com/SaiNayakk/sprout-plans) | `v0.2.1` |
+| Habits: streaks, badges, points, challenges, Year Wrapped, squads, readiness, Future You | [sprout-habits](https://github.com/SaiNayakk/sprout-habits) | `v0.3.0` |
+| Goals: pots invested in a share, round-ups from UPI spends | [sprout-goals](https://github.com/SaiNayakk/sprout-goals) | `v0.1.0` |
+| Rewards: the vault and referrals | [sprout-rewards](https://github.com/SaiNayakk/sprout-rewards) | `v0.1.0` |
+| Statements: contract notes, funds statements, tax P&amp;L, holdings statements | [sprout-statements](https://github.com/SaiNayakk/sprout-statements) | `v0.2.1` |
+| Reconciliation: every book against every other, every day | [sprout-recon](https://github.com/SaiNayakk/sprout-recon) | `v0.2.1` |
+| Settlement: Sprout's back office for T+1 settlement | [sprout-settlement](https://github.com/SaiNayakk/sprout-settlement) | `v0.2.1` |
+| Sprout Bank: a simulated customer bank with UPI PINs (not part of Sprout) | [sprout-bank](https://github.com/SaiNayakk/sprout-bank) | `v0.4.0` |
+| Sprout Stock Exchange: a simulated exchange (not part of Sprout) | [sprout-exchange](https://github.com/SaiNayakk/sprout-exchange) | `v0.4.1` |
+| Sprout Clearing Corporation: settles trades T+1 (not part of Sprout) | [sprout-clearing](https://github.com/SaiNayakk/sprout-clearing) | `v0.2.1` |
+| Sprout Depository: demat accounts (not part of Sprout) | [sprout-depository](https://github.com/SaiNayakk/sprout-depository) | `v0.2.1` |
 | Platform: hosts, release manifests, pre-prod, these docs | [sprout-platform](https://github.com/SaiNayakk/sprout-platform) | this site |
 
-Next: the web app.
+Next: the public sandbox (rotating demo customers with real history), then the web app.
 
 ## How to read this site
 

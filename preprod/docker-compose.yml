@@ -58,6 +58,8 @@ services:
       GATEWAY_STATEMENTS_URL: http://money:8113
       GATEWAY_PLANS_URL: http://trading:8115
       GATEWAY_HABITS_URL: http://trading:8116
+      GATEWAY_GOALS_URL: http://money:8117
+      GATEWAY_REWARDS_URL: http://trading:8118
       EDGE_WARMUP_SIGNINS: ${EDGE_WARMUP_SIGNINS:-300}
       # pre-prod sits behind the test runner the way prod sits behind Cloudflare
       GATEWAY_TRUST_CF_IP: "true"
@@ -83,7 +85,7 @@ services:
       retries: 60
       start_period: 20s
 
-  # The trading host: market data, orders (with their risk checks), plans and habits. A separate JVM, so its faults
+  # The trading host: market data, orders (with their risk checks), plans, habits and rewards. A separate JVM, so its faults
   # can't take sign-in down (CHAOS-03).
   trading:
     build:
@@ -110,6 +112,10 @@ services:
       HABITS_DB_PASSWORD: preprod-only-not-a-secret
       HABITS_BIND: 0.0.0.0
       HABITS_ACCOUNTS_URL: http://money:8104
+      REWARDS_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=rewards
+      REWARDS_DB_PASSWORD: preprod-only-not-a-secret
+      REWARDS_BIND: 0.0.0.0
+      REWARDS_ACCOUNTS_URL: http://money:8104
       SPROUT_SERVICE_KEY: preprod-only-service-key
       EXCHANGE_SPROUT_MEMBER_KEY: preprod-only-member-key
       EXCHANGE_SPROUT_WEBHOOK_SECRET: preprod-only-exchange-webhook-secret
@@ -129,7 +135,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8103/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8109/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8115/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8116/actuator/health >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8103/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8109/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8115/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8116/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8118/actuator/health >/dev/null"]
       interval: 3s
       timeout: 3s
       retries: 60
@@ -174,6 +180,12 @@ services:
       RECON_DB_PASSWORD: preprod-only-not-a-secret
       RECON_BIND: 0.0.0.0
       RECON_CHECK_EVERY: 10s
+      GOALS_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=goals
+      GOALS_DB_PASSWORD: preprod-only-not-a-secret
+      GOALS_BIND: 0.0.0.0
+      GOALS_EVERY: 2s
+      GOALS_MARKETDATA_URL: http://trading:8103
+      GOALS_OMS_URL: http://trading:8109
       RECON_MARKETDATA_URL: http://trading:8103
       RECON_OMS_URL: http://trading:8109
       RECON_BANK_URL: http://street:8107
@@ -199,7 +211,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8106/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8104/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8105/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8112/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8113/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8114/actuator/health >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8106/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8104/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8105/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8112/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8113/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8114/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8117/actuator/health >/dev/null"]
       interval: 3s
       timeout: 3s
       retries: 60

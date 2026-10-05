@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/sh
-# The money host on the phone (ledger, accounts, payments, settlement, statements, recon), started by
+# The money host on the phone (ledger, accounts, payments, settlement, statements, recon, goals), started by
 # Backseat as `sh run.sh`.
 set -eu
 set -a
 . "$HOME/.sprout.env"
 set +a
 
-for svc in LEDGER ACCOUNTS PAYMENTS SETTLEMENT RECON; do
+for svc in LEDGER ACCOUNTS PAYMENTS SETTLEMENT RECON GOALS; do
   schema=$(echo "$svc" | tr 'A-Z' 'a-z')
   export "${svc}_DB_URL=jdbc:postgresql://127.0.0.1:5432/sprout?currentSchema=$schema"
   export "${svc}_DB_USER=sprout"
