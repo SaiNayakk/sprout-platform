@@ -26,6 +26,18 @@ def compose(*args, check=True):
     return subprocess.run(["docker", "compose", "-f", COMPOSE_FILE, *args], capture_output=True, text=True, check=check)
 
 
+HOSTS = ("edge", "trading", "money", "street")
+
+
+def all_healthy():
+    """Every host's health check passes (each checks every service it runs, not just the first to start)."""
+    for host in HOSTS:
+        r = compose("ps", "--format", "{{.Health}}", host, check=False)
+        if r.stdout.strip() != "healthy":
+            return False
+    return True
+
+
 def inside(service, url):
     """GETs a URL from inside a container (health and monitoring ports aren't published)."""
     r = compose("exec", "-T", service, "wget", "-qO-", url, check=False)
@@ -234,6 +246,12 @@ def chaos_03():
 
 # ── money ────────────────────────────────────────────────────────────────────
 
+def sql_text(query):
+    """A single text value from the database, or None."""
+    r = compose("exec", "-T", "postgres", "psql", "-U", "sprout", "-d", "sprout", "-tAc", query, check=False)
+    return r.stdout.strip() or None
+
+
 def sql(query):
     """A number from the database, read inside the postgres container."""
     r = compose("exec", "-T", "postgres", "psql", "-U", "sprout", "-d", "sprout", "-tAc", query, check=False)
@@ -419,8 +437,94 @@ def recon_02():
          ("nothing left hanging", stuck == 0)])
 
 
+# ── settlement ───────────────────────────────────────────────────────────────
+
+def lines_where(day, condition=None):
+    extra = f" AND l.status = '{condition}'" if condition else ""
+    return sql("SELECT COUNT(*) FROM clearing.lines l JOIN clearing.settlements s ON s.id = l.settlement_id "
+               f"WHERE s.trade_date = '{day}'{extra}")
+
+
+def settle_01():
+    """The first trade date of the run (the E2E suite's) settles T+1, end to end."""
+    first = sql_text("SELECT MIN(trade_date)::text FROM oms.orders WHERE status = 'FILLED'")
+    if not first:
+        raise RuntimeError("no trades to settle")
+    status = lambda: sql_text(f"SELECT status FROM settlement.settlements WHERE trade_date = '{first}'")
+    took = wait_until(lambda: status() in ("COMPLETED", "BREAK"), 15 * 60, 2)
+    final = status()
+    cc = sql_text(f"SELECT status || ' ' || funds_direction || ' ' || funds_paise FROM clearing.settlements WHERE trade_date = '{first}'")
+    shorts = lines_where(first, "SHORT")
+    breaks = sql("SELECT COUNT(*) FROM settlement.settlements WHERE status = 'BREAK'")
+    released = sql(f"SELECT COUNT(*) FROM oms.settled_days WHERE trade_date = '{first}'")
+    return result(
+        "SETTLE-01", "A trading day settles T+1",
+        "Once the next session begins, the clearing corporation nets the day's trades, takes in the sellers' shares, "
+        "and tells Sprout what it owes or is owed; Sprout's back office finds that matches its own books exactly (no break), "
+        "the money moves through Sprout Bank, buyers' shares reach their demat accounts, and clients' sale proceeds "
+        "become cash. All within one session of the trade date.",
+        [("Trade date", first),
+         ("Back office", f"{final} after {took} s" if took is not None else f"{final} (timed out)"),
+         ("Clearing corporation (status, funds, paise)", cc),
+         ("Lines / delivered / short", f"{lines_where(first)} / {lines_where(first, 'DELIVERED')} / {shorts}"),
+         ("Breaks", breaks),
+         ("Clients settled for the day", released)],
+        [("settled end to end", final == "COMPLETED"),
+         ("the obligation matched Sprout's books (no break)", breaks == 0),
+         ("nobody was short", shorts == 0),
+         ("clients' proceeds and shares released", released == 1)])
+
+
+def recon_03():
+    settled = "SELECT trade_date FROM oms.settled_days"
+    # shares: what the depository holds for each client = what Sprout says is delivered (held less T1)
+    shares = sql("""WITH ours AS (
+                        SELECT a.bo_id, h.symbol, h.quantity - h.t1_quantity AS qty
+                        FROM oms.holdings h JOIN accounts.accounts a ON a.user_id = h.user_id
+                        WHERE h.quantity - h.t1_quantity <> 0),
+                    theirs AS (
+                        SELECT bo_id, symbol, quantity AS qty FROM depository.holdings
+                        WHERE quantity <> 0 AND bo_id IN (SELECT bo_id FROM depository.accounts WHERE NOT settlement))
+                    SELECT COUNT(*) FROM ours o FULL JOIN theirs t ON t.bo_id = o.bo_id AND t.symbol = o.symbol
+                    WHERE COALESCE(o.qty, 0) <> COALESCE(t.qty, 0)""")
+    # money: each client's unsettled money is exactly the proceeds of days not yet settled
+    unsettled = sql(f"""WITH expected AS (
+                            SELECT user_id, SUM(unsettled_paise) AS paise FROM oms.orders
+                            WHERE status = 'FILLED' AND trade_date NOT IN ({settled}) GROUP BY user_id),
+                        held AS (
+                            SELECT CAST(substring(name FROM 10 FOR 36) AS uuid) AS user_id, balance_paise AS paise
+                            FROM ledger.accounts WHERE name LIKE 'customer:%:unsettled')
+                        SELECT COUNT(*) FROM expected e FULL JOIN held h ON h.user_id = e.user_id
+                        WHERE COALESCE(e.paise, 0) <> COALESCE(h.paise, 0)""")
+    # clearing balances: what's still owed either way is only the unsettled days' trades
+    unsettled_days = f"FROM oms.orders WHERE status = 'FILLED' AND trade_date NOT IN ({settled})"
+    open_payable = sql("SELECT COALESCE(SUM(CASE WHEN product = 'CNC' AND side = 'BUY' THEN fill_price_paise * quantity "
+                       "WHEN product = 'MIS' AND realised_pnl_paise < 0 THEN -realised_pnl_paise ELSE 0 END), 0) " + unsettled_days)
+    open_receivable = sql("SELECT COALESCE(SUM(CASE WHEN product = 'CNC' AND side = 'SELL' THEN fill_price_paise * quantity "
+                          "WHEN product = 'MIS' AND realised_pnl_paise > 0 THEN realised_pnl_paise ELSE 0 END), 0) " + unsettled_days)
+    payable = sql("SELECT COALESCE(SUM(balance_paise), 0) FROM ledger.accounts WHERE name = 'sprout:clearing-payable'")
+    receivable = sql("SELECT COALESCE(SUM(balance_paise), 0) FROM ledger.accounts WHERE name = 'sprout:clearing-receivable'")
+    days = sql("SELECT COUNT(*) FROM oms.settled_days")
+    rupees = lambda p: f"₹{(p or 0) / 100:,.2f}"
+    return result(
+        "RECON-03", "After settlement, shares and money agree everywhere",
+        "For every client, the shares the depository holds in their demat account are exactly the delivered shares Sprout "
+        "shows them; their unsettled money is exactly the proceeds of days not yet settled; and what the ledger says Sprout "
+        "owes or is owed by the clearing corporation is exactly the unsettled days' trades.",
+        [("Trade dates settled", days),
+         ("Clients whose demat holdings differ from Sprout's", shares),
+         ("Clients whose unsettled money is wrong", unsettled),
+         ("Owed to clearing: ledger / unsettled trades", f"{rupees(payable)} / {rupees(open_payable)}"),
+         ("Owed by clearing: ledger / unsettled trades", f"{rupees(receivable)} / {rupees(open_receivable)}")],
+        [("at least one day settled", (days or 0) >= 1),
+         ("demat holdings match", shares == 0),
+         ("unsettled money matches", unsettled == 0),
+         ("clearing balances are only the unsettled days'", payable == open_payable and receivable == open_receivable)])
+
+
 EXPERIMENTS = {"CHAOS-01": chaos_01, "CHAOS-02": chaos_02, "CHAOS-03": chaos_03, "CHAOS-04": chaos_04,
-               "CHAOS-05": chaos_05, "CHAOS-06": chaos_06, "RECON-01": recon_01, "RECON-02": recon_02}
+               "CHAOS-05": chaos_05, "CHAOS-06": chaos_06, "SETTLE-01": settle_01, "RECON-01": recon_01, "RECON-02": recon_02,
+               "RECON-03": recon_03}
 
 
 def main():
@@ -430,6 +534,9 @@ def main():
     failed = []
     for eid in wanted:
         print(f"> {eid}", flush=True)
+        # each experiment starts from a steady state: an earlier one may have just restarted a host
+        if wait_until(all_healthy, 180, 2) is None:
+            print("  (hosts not all healthy after 180 s; running anyway)", flush=True)
         try:
             r = EXPERIMENTS[eid]()
         except Exception as e:

@@ -1,6 +1,8 @@
 package app.sprout.hosts.street;
 
 import app.sprout.bank.BankApplication;
+import app.sprout.clearing.ClearingApplication;
+import app.sprout.depository.DepositoryApplication;
 import app.sprout.exchange.ExchangeApplication;
 import app.sprout.hosts.common.HostLogFields.HostInfo;
 import org.slf4j.Logger;
@@ -8,9 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
- * The street host: the outside parties Sprout deals with, simulated. Sprout Bank and the Sprout Stock
- * Exchange; clearing and the depository as they arrive. Kept apart from Sprout's own hosts, as the
- * real ones are.
+ * The street host: the outside parties Sprout deals with, simulated: Sprout Bank, the Sprout Stock
+ * Exchange, the depository and the clearing corporation. Kept apart from Sprout's own hosts, as the
+ * real ones are. The clearing corporation starts last: it settles through all the others.
  */
 public final class StreetHost {
 
@@ -31,7 +33,9 @@ public final class StreetHost {
         HostInfo host = HostInfo.load();
         ConfigurableApplicationContext bank = BankApplication.builder().properties(host.loggingDefaults()).run(args);
         ConfigurableApplicationContext exchange = ExchangeApplication.builder().properties(host.loggingDefaults()).run(args);
-        log.info("Street host up: Sprout Bank and the exchange running");
-        return new ConfigurableApplicationContext[] {bank, exchange};
+        ConfigurableApplicationContext depository = DepositoryApplication.builder().properties(host.loggingDefaults()).run(args);
+        ConfigurableApplicationContext clearing = ClearingApplication.builder().properties(host.loggingDefaults()).run(args);
+        log.info("Street host up: Sprout Bank, the exchange, the depository and the clearing corporation running");
+        return new ConfigurableApplicationContext[] {bank, exchange, depository, clearing};
     }
 }

@@ -3,8 +3,8 @@
 #
 # - token-signing key: new key; everyone is signed out and signs in again.
 # - database password: new password, applied to the `sprout` role.
-# - keys services use with each other (service key, bank partner key and callback secret, exchange
-#   member key and callback secret): new values; both sides read the same file, so they still agree.
+# - keys services use with each other (service key; bank, exchange, depository and clearing keys and
+#   callback secrets): new values; both sides read the same file, so they still agree.
 # - NOT rotated: the two-factor encryption key and the PAN pepper. Stored data depends on them
 #   (two-factor secrets are encrypted with one, PAN fingerprints are made with the other), so changing
 #   them needs a re-encryption step that doesn't exist yet.
@@ -27,7 +27,9 @@ import sys
 path, new = sys.argv[1], sys.argv[2]
 fresh = {"SPROUT_DB_PASSWORD": new}
 for name in ("SPROUT_SERVICE_KEY", "BANK_SPROUT_PARTNER_KEY", "BANK_SPROUT_WEBHOOK_SECRET",
-             "EXCHANGE_SPROUT_MEMBER_KEY", "EXCHANGE_SPROUT_WEBHOOK_SECRET"):
+             "EXCHANGE_SPROUT_MEMBER_KEY", "EXCHANGE_SPROUT_WEBHOOK_SECRET", "EXCHANGE_CLEARING_KEY",
+             "BANK_CLEARING_PARTNER_KEY", "BANK_CLEARING_WEBHOOK_SECRET", "DEPOSITORY_SPROUT_PARTICIPANT_KEY",
+             "DEPOSITORY_CLEARING_KEY", "CLEARING_SPROUT_MEMBER_KEY", "CLEARING_SPROUT_WEBHOOK_SECRET"):
     fresh[name] = secrets.token_urlsafe(32)
 out = []
 for line in open(path).read().splitlines():

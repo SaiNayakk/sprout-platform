@@ -1,0 +1,50 @@
+{
+  "id": "SETTLE-01",
+  "title": "A trading day settles T+1",
+  "hypothesis": "Once the next session begins, the clearing corporation nets the day's trades, takes in the sellers' shares, and tells Sprout what it owes or is owed; Sprout's back office finds that matches its own books exactly (no break), the money moves through Sprout Bank, buyers' shares reach their demat accounts, and clients' sale proceeds become cash. All within one session of the trade date.",
+  "observations": [
+    {
+      "what": "Trade date",
+      "value": "2026-10-05"
+    },
+    {
+      "what": "Back office",
+      "value": "COMPLETED after 744.6 s"
+    },
+    {
+      "what": "Clearing corporation (status, funds, paise)",
+      "value": "SETTLED PAY 2953730"
+    },
+    {
+      "what": "Lines / delivered / short",
+      "value": "5 / 3 / 0"
+    },
+    {
+      "what": "Breaks",
+      "value": 0
+    },
+    {
+      "what": "Clients settled for the day",
+      "value": 1
+    }
+  ],
+  "checks": [
+    {
+      "what": "settled end to end",
+      "pass": true
+    },
+    {
+      "what": "the obligation matched Sprout's books (no break)",
+      "pass": true
+    },
+    {
+      "what": "nobody was short",
+      "pass": true
+    },
+    {
+      "what": "clients' proceeds and shares released",
+      "pass": true
+    }
+  ],
+  "pass": true
+}

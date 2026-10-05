@@ -76,7 +76,11 @@ path = sys.argv[1]
 have = {l.split("=", 1)[0] for l in open(path) if "=" in l}
 new = {"SPROUT_SERVICE_KEY": secrets.token_urlsafe(32), "BANK_SPROUT_PARTNER_KEY": secrets.token_urlsafe(32),
        "BANK_SPROUT_WEBHOOK_SECRET": secrets.token_urlsafe(32), "ACCOUNTS_PAN_PEPPER": secrets.token_urlsafe(32),
-       "EXCHANGE_SPROUT_MEMBER_KEY": secrets.token_urlsafe(32), "EXCHANGE_SPROUT_WEBHOOK_SECRET": secrets.token_urlsafe(32)}
+       "EXCHANGE_SPROUT_MEMBER_KEY": secrets.token_urlsafe(32), "EXCHANGE_SPROUT_WEBHOOK_SECRET": secrets.token_urlsafe(32),
+       "EXCHANGE_CLEARING_KEY": secrets.token_urlsafe(32), "BANK_CLEARING_PARTNER_KEY": secrets.token_urlsafe(32),
+       "BANK_CLEARING_WEBHOOK_SECRET": secrets.token_urlsafe(32), "DEPOSITORY_SPROUT_PARTICIPANT_KEY": secrets.token_urlsafe(32),
+       "DEPOSITORY_CLEARING_KEY": secrets.token_urlsafe(32), "CLEARING_SPROUT_MEMBER_KEY": secrets.token_urlsafe(32),
+       "CLEARING_SPROUT_WEBHOOK_SECRET": secrets.token_urlsafe(32)}
 missing = {k: v for k, v in new.items() if k not in have}
 if missing:
     with open(path, "a") as f:

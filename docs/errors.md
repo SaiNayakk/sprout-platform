@@ -103,6 +103,18 @@ A different order already has this `clientOrderId`.
 ### MARKET_CLOSED, PRICE_OUT_OF_BAND, INVALID_TICK { #exchange_rules }
 The exchange's rules; nothing was recorded.
 
+## Sprout Depository and Clearing Corporation (outside parties)
+
+### INSUFFICIENT_SECURITIES { #insufficient_securities }
+A pay-in for more shares than the client holds; refused whole, nothing moved. Settlement treats it as a
+short delivery.
+
+### INSTRUCTION_CONFLICT { #instruction_conflict }
+A different transfer already used this instruction id.
+
+### CLIENT_CONFLICT { #client_conflict }
+The client code is already registered with a different demat account.
+
 ## Sprout Bank
 
 ### WEAK_PIN { #weak_pin }

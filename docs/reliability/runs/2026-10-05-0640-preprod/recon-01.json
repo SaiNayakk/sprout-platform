@@ -1,0 +1,38 @@
+{
+  "id": "RECON-01",
+  "title": "The books agree with the bank",
+  "hypothesis": "After every test and every failure above: the ledger balances (assets equal liabilities), and what it says Sprout holds at the bank is exactly what Sprout Bank says it holds, to the paisa.",
+  "observations": [
+    {
+      "what": "Ledger assets / liabilities",
+      "value": "\u20b9474,062.95 / \u20b9474,062.95"
+    },
+    {
+      "what": "Ledger: Sprout's money at the bank",
+      "value": "\u20b9474,062.95"
+    },
+    {
+      "what": "Sprout Bank: Sprout's account",
+      "value": "\u20b9474,062.95"
+    },
+    {
+      "what": "Withdrawals still in progress",
+      "value": 0
+    }
+  ],
+  "checks": [
+    {
+      "what": "the ledger balances",
+      "pass": true
+    },
+    {
+      "what": "the ledger matches the bank",
+      "pass": true
+    },
+    {
+      "what": "nothing left in progress",
+      "pass": true
+    }
+  ],
+  "pass": true
+}

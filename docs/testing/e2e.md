@@ -142,7 +142,8 @@ linked to it. Pre-prod's bank lets payment requests wait 30 seconds before they 
 
 ### E2E-50 { #e2e-50 }
 **Open a bank account with a UPI PIN, then a Sprout account linked to it.** The bank account starts with
-₹1,00,000 of pretend money; the Sprout account is `ACTIVE`, shows the PAN only masked, and has no money yet.
+₹1,00,000 of pretend money; the Sprout account is `ACTIVE`, shows the PAN only masked, has no money yet,
+and has a demat account at the depository.
 
 ### E2E-51 { #e2e-51 }
 **KYC refuses the underage, business PANs, unknown UPI addresses and a second account per PAN.**

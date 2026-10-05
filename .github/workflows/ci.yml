@@ -46,7 +46,7 @@ jobs:
   preprod:
     # The release gate: a fresh environment, every test, evidence, then destroyed.
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45   # includes waiting for a real T+1 settlement (up to one accelerated session)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4

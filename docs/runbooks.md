@@ -74,6 +74,22 @@ an outage: the entry stays in `oms.ledger_outbox` with `last_error`, retried eve
 it is skipped. Find the order by the entry's reference, fix the cause, and the next round posts it.
 RECON-02 fails while any entry is unposted.
 
+## A settlement is a break
+
+The clearing corporation's obligation for a trade date didn't match Sprout's books, so the back office
+stopped with nothing paid. `GET /v1/settlements` on the settlement service (with the service key) shows
+the reason: the money differs, or a client's shares bought or sold do. Compare the clearing
+corporation's lines (`GET /member/v1/settlements/{id}`) with the order service's summary of the day.
+Usually one side is missing an execution: check the exchange's trade tape and the order service's
+outbox. Fix the books (never by editing the journal), then set the settlement back to `RECEIVED` to
+check it again.
+
+## A settlement waits for funds
+
+The clearing corporation is `AWAITING_FUNDS` until Sprout's payment appears in its bank statement with the
+obligation's reference. The back office pays as soon as the obligation matches; if Sprout Bank refused
+(not enough in Sprout's account), the payment is retried every round. Check `sprout@sproutbank`'s balance.
+
 ## A customer owes Sprout (dues)
 
 An intraday loss bigger than the customer's money (a gap through the 90% early close) leaves `dues`. The
