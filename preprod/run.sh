@@ -24,7 +24,7 @@ RUN_ID="$(date -u +%Y-%m-%d-%H%M)-preprod"
 RUN_START=$(date +%s)
 OUT="$ROOT/preprod/out"
 RUN_DIR="$ROOT/docs/reliability/runs/$RUN_ID"
-rm -rf "$OUT" && mkdir -p "$OUT/e2e" "$OUT/keys" "$RUN_DIR"
+rm -rf "$OUT" && mkdir -p "$OUT/e2e" "$OUT/keys" "$RUN_DIR" && chmod 777 "$OUT"  # k6 runs as its own user and writes its summary here
 # a throwaway signing key, made by the same program as the phone's: identity reads it from a file
 # exactly as in production (a generated in-memory key once hid a bug in that path)
 java "$ROOT/deploy/phone/KeyGen.java" "$OUT/keys/signing.pem" && chmod 644 "$OUT/keys/signing.pem"
