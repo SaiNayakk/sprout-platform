@@ -69,6 +69,7 @@ def phase(scenario):
 warm, steady = phase("warmup"), phase("steady")
 thresholds = [(name, rule, t.get("ok", False)) for name, m in k6.items() for rule, t in m.get("thresholds", {}).items()]
 fanout = load(os.path.join(out, "perf-03-summary.json"))
+orders = load(os.path.join(out, "perf-04-summary.json"))
 cold_k6 = (load(os.path.join(out, "perf-02-k6-summary.json")) or {}).get("metrics", {})
 cold_dur = cold_k6.get("http_req_duration{scenario:cold}", {}).get("values", {})
 cold_failed = cold_k6.get("http_req_failed{scenario:cold}", {}).get("values", {})
@@ -85,7 +86,7 @@ def peak_memory(host):
     return peak
 
 
-chaos = [load(p) for p in sorted(glob.glob(os.path.join(out, "chaos-*.json")) + glob.glob(os.path.join(out, "settle-*.json"))
+chaos = [load(p) for p in sorted(glob.glob(os.path.join(out, "trace-*.json"))) + sorted(glob.glob(os.path.join(out, "chaos-*.json")) + glob.glob(os.path.join(out, "settle-*.json"))
                                   + glob.glob(os.path.join(out, "recon-*.json")))]
 chaos = [c for c in chaos if c]
 
@@ -137,6 +138,18 @@ if fanout:
           f"{fanout['seqGaps'] / max(1, fanout['ticksReceived']) * 100:.1f}% of ticks |", "",
           "Pass when every stream opens and stays open, p95 is under 250 ms and p99 under 1 s.", ""]
 
+if orders:
+    L += ["## PERF-04: orders under load", "",
+          f"{orders['customers']} funded customers place market buys through the gateway at a steady {orders['ordersPerSecond']} "
+          f"orders a second for {orders['seconds']} s, each through the risk checks, the ledger and the exchange. Afterwards "
+          "every customer's holdings are compared with what their filled orders bought.", "",
+          "| Measure | Value |", "|---|---|",
+          f"| Orders filled | {orders['filled']} of {orders['orders']} |",
+          f"| Placement latency p50 / p95 / p99 / max | {ms(orders['p50Ms'])} / {ms(orders['p95Ms'])} / {ms(orders['p99Ms'])} / {ms(orders['maxMs'])} |",
+          f"| Server errors / failed calls | {orders['serverErrors']} / {orders['clientErrors']} |",
+          f"| Holdings that don't match what was bought | {orders['holdingsMismatched']} |", "",
+          "Pass when every order fills, nothing fails server-side, holdings match exactly, p95 is under 1 s and p99 under 2 s.", ""]
+
 L += ["## Memory under load", "", "| Host | Peak | Limit |", "|---|---|---|"]
 for host, limit in (("edge", 384), ("trading", 320), ("money", 320), ("street", 320)):
     peak = peak_memory(host)
@@ -155,8 +168,8 @@ if os.path.exists(os.path.join(out, "grafana-edge.png")):
 
 L += ["## Files", "", "- `e2e/`: JUnit reports", "- `perf-01-k6-summary.json`: every k6 metric",
       "- `perf-02-k6-summary.json`: sign-in straight after a restart",
-      "- `perf-03-summary.json`: the fan-out result", "- `memory-during.txt`: host memory and CPU every 5 s under load",
-      "- `chaos-*.json`: each experiment's observations and checks",
+      "- `perf-03-summary.json`: the fan-out result", "- `perf-04-summary.json`: the order load result", "- `memory-during.txt`: host memory and CPU every 5 s under load",
+      "- `trace-*.json`, `chaos-*.json`, `settle-*.json`, `recon-*.json`: each experiment's observations and checks",
       "- `edge.log`, `trading.log`, `money.log`, `street.log`: the hosts' structured logs for the whole run"]
 if os.path.exists(os.path.join(out, "metrics.jsonl")):
     L.append("- `metrics.jsonl`: counters queried from Prometheus at the end of the run")

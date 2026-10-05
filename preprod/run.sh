@@ -84,6 +84,9 @@ if "${COMPOSE[@]}" up -d --wait edge >/dev/null 2>&1 && echo "edge ready again a
 
 log "PERF-03: price fan-out"
 if "${COMPOSE[@]}" --profile tools run --rm loadgen -Dgroups=perf -De2e.excludedGroups= ; then stage perf-03 pass; else stage perf-03 fail; fi
+
+log "PERF-04: orders under load"
+if "${COMPOSE[@]}" --profile tools run --rm loadgen -Dgroups=perf-orders -De2e.excludedGroups= ; then stage perf-04 pass; else stage perf-04 fail; fi
 kill $sampler 2>/dev/null
 
 log "Chaos experiments"

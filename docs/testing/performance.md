@@ -160,10 +160,37 @@ Nothing grows with time or leaks: most of the headroom is heap the JVM keeps aft
 design. So nothing changes now. When orders and risk join this host (Phase 3), its budget goes to
 320 MB with a 160 MB heap; the phone has room for that.
 
+## PERF-04: orders under load { #perf-04 }
+
+**Hypothesis.** 20 funded customers placing market buys at a steady 5 orders a second for 60 s (far
+above what the phone will see) all get their orders filled, nothing fails for a server-side reason,
+placement p95 stays under 1 s and p99 under 2 s, and afterwards every customer holds exactly the shares
+their filled orders bought: nothing lost or doubled under load.
+
+**Why.** An order is the most expensive request Sprout serves: the gateway, the order service's risk
+check under a per-customer lock, accounts, the ledger (balance, then the outbox), the exchange and back.
+It crosses three hosts.
+
+| Setting | Value |
+|---|---|
+| Client | [`Perf04OrderLoadTest`](https://github.com/SaiNayakk/sprout-platform/blob/main/e2e/src/test/java/app/sprout/e2e/Perf04OrderLoadTest.java), run by the `loadgen` container |
+| Customers | 20, each funded with ₹50,000 through the real deposit flow, all at once, each from its own address |
+| Load | 300 market buys of 1 share (8 cheap symbols, chosen at random), 5 a second |
+| Checked after | each customer's holdings against what their filled orders bought, share by share |
+
+### Finding: same-name customers raced for one UPI address { #perf-04-vpa-race }
+
+The first trial never reached the orders: funding 20 customers at once failed. Every test customer is
+called Meera Iyer, and Sprout Bank chose a UPI address by checking which of `meera.iyer@`,
+`meera.iyer1@`, and so on was free, then inserting it. Customers opening at the same moment picked the
+same address; the second insert hit the unique key and was told "You already have a Sprout Bank
+account", which was untrue. Fixed in bank 0.3.1: the plain name first, then the name with a random
+number, and another try if the address was taken meanwhile; a test opens 20 same-name accounts at once.
+The old scan also cost one query per earlier customer with the same name.
+
 ## Planned
 
 | Id | What | When |
 |---|---|---|
 | PERF-05 | Authenticated reads (`GET /users/me`) at 100/s: the gateway's token verification cost | With the next gateway release |
-| PERF-04 | Order placement through to execution report, end to end | Phase 2 (orders) |
 | SOAK-01 | Sign-in at 5/s for 1 hour: memory must stay flat (no leak) | Before the first phone release of each host |

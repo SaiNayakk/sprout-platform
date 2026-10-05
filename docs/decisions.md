@@ -254,3 +254,19 @@ investing, with time in the market, pushes the other way.
 
 **Lost.** Each picture reads the customer's history (a year per call). Fine for a squad of 12; at scale,
 habits would be kept incrementally from the stream of executions.
+
+## ADR-020: One request, one trace, started at the gateway { #adr-020-one-request-one-trace }
+
+**Decision.** The gateway drops every trace header a client sends and starts the trace itself. Every
+service carries the request id and the current trace onward on every call it makes, through one small
+`Onward` component per service rather than a shared library.
+
+**Why.** A customer's order touches the gateway, the order service, accounts, the ledger and the exchange;
+without one id and one trace across them, a slow or failed order means reading five logs by timestamp.
+Accepting a client's trace would let anyone attach their traffic to another request's trace, force
+sampling (cost) or carry baggage into every service. Each service keeps its own copy of `Onward`
+(about 40 lines) because a shared runtime library would couple every service's release to it, which the
+polyrepo exists to avoid.
+
+**Lost.** A browser or partner can't continue its own trace into Sprout. The same few lines exist in
+ten repositories.
