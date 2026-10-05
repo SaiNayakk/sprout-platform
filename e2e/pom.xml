@@ -11,7 +11,7 @@
   <description>End-to-end tests run against a deployed environment, through the gateway, as a client would.</description>
 
   <properties>
-    <e2e.excludedGroups>perf</e2e.excludedGroups>
+    <e2e.excludedGroups>perf,perf-orders</e2e.excludedGroups>
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sprout.baseUrl>http://localhost:8100</sprout.baseUrl>
@@ -38,7 +38,7 @@
           <systemPropertyVariables>
             <sprout.baseUrl>${sprout.baseUrl}</sprout.baseUrl>
           </systemPropertyVariables>
-          <!-- performance tests run only when asked: -Dgroups=perf -->
+          <!-- performance tests run only when asked: -Dgroups=perf or -Dgroups=perf-orders -->
           <excludedGroups>${e2e.excludedGroups}</excludedGroups>
           <!-- report names carry the E2E ids used in the docs -->
           <statelessTestsetReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">

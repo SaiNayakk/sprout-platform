@@ -8,6 +8,14 @@ Every experiment starts from a steady state: the run waits until every host's he
 (each checks all the services in that host, not only the first one to start), because the experiment
 before may have just restarted one.
 
+## TRACE-01: one request, followed through every service { #trace-01 }
+
+Not a fault but a check, run first: an order is placed with a known request id and a forged `traceparent`
+from the client. Every log line any host writes for that request id (the order service booking it, the
+exchange filling it) must carry the same trace id, and that trace must be the gateway's own, never the
+client's. Read from the hosts' structured logs, so it runs on every pre-prod run, with or without trace
+export.
+
 ## CHAOS-01: the database goes away { #chaos-01 }
 
 | | |
@@ -143,6 +151,17 @@ its 30 s from a timestamp that asking the exchange kept moving; see
 [Incidents](../incidents.md)). After the fix: accepted as `PENDING` in 2.1 s with ₹3,593.37 blocked;
 `REJECTED` as `UNAVAILABLE` 28.5 s after the exchange came back; cash back to exactly ₹20,000.00.
 
+## CHAOS-07: the money host goes away during trading { #chaos-07 }
+
+| | |
+|---|---|
+| **Steady state** | A customer has ₹20,000 in Sprout and has just bought 2 shares; the market is open. |
+| **Fault** | Stop the money host (ledger, accounts, payments, settlement, statements, recon), then buy again. |
+| **Hypothesis** | Trading fails safe: the order is refused at once with `503 UPSTREAM_UNAVAILABLE` and nothing is placed or blocked, while prices and the order list stay readable (they don't need the money host). When the money host is back, orders go through again within 180 s, and the customer's cash is exactly the deposit less every fill and its charges. |
+
+Unlike CHAOS-06 (exchange down, so an order's fate is unknown and it is left `PENDING`), here nothing has
+happened yet when the order service finds the books unreachable, so refusing is safe and honest.
+
 ## SETTLE-01: a trading day settles T+1 { #settle-01 }
 
 Not a fault but the whole of settlement, run near the end, after the experiments above have stopped
@@ -175,7 +194,6 @@ SQL checks above read from their databases.
 
 | Id | Fault | Hypothesis |
 |---|---|---|
-| CHAOS-07 | Identity's context crashes inside the edge host | Gateway answers `503` fast; circuit opens after repeated failures and closes after recovery |
 | CHAOS-08 | Postgres slows to 3 s per query (network latency injected) | Requests fail inside the gateway budget; no thread pile-up; memory stays under the limit |
 | CHAOS-09 | Edge host killed mid-traffic | Supervisor restarts it; clients see errors for under 30 s; no half-written sessions |
 | CHAOS-10 | Signing key rotated while tokens are live | Old tokens keep working until they expire; new tokens use the new key |
@@ -183,3 +201,4 @@ SQL checks above read from their databases.
 | CHAOS-12 | The phone loses its network (region down) | The laptop region takes traffic; see [Reliability](../reliability/index.md) |
 | CHAOS-13 | The market clock stalls (engine thread stuck) | Health turns `DOWN` within 30 s; the host is restarted; clients resync |
 | CHAOS-14 | The order service is down when the exchange executes a resting order | The exchange keeps the execution and retries; once orders is back, it is booked exactly once |
+| CHAOS-15 | Identity's context crashes inside the edge host | Gateway answers `503` fast; circuit opens after repeated failures and closes after recovery |

@@ -44,7 +44,7 @@ def inside(service, url):
     return json.loads(r.stdout) if r.returncode == 0 and r.stdout.strip() else None
 
 
-def call(method, path, body=None, token=None, ip="198.19.200.1", timeout=10, key=None):
+def call(method, path, body=None, token=None, ip="198.19.200.1", timeout=10, key=None, headers=None):
     """Returns (status, json body, headers with lower-case names, seconds)."""
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(BASE + path, data=data, method=method)
@@ -55,6 +55,8 @@ def call(method, path, body=None, token=None, ip="198.19.200.1", timeout=10, key
         req.add_header("Authorization", "Bearer " + token)
     if key:
         req.add_header("Idempotency-Key", key)
+    for name, value in (headers or {}).items():
+        req.add_header(name, value)
     start = time.monotonic()
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -395,6 +397,98 @@ def chaos_06():
          ("every paisa back", after.get("cash") == "20000.00" and after.get("blocked") == "0.00")])
 
 
+def chaos_07():
+    ip = "198.19.207.1"
+    token = customer(ip)
+    fund(token, ip, "20000")
+    wait_for_open_market(30)
+    buy = {"symbol": "HARBOR", "side": "BUY", "quantity": 2, "orderType": "MARKET", "product": "CNC"}
+    _, before, _, _ = call("POST", "/api/oms/v1/orders", buy, token=token, ip=ip, key=str(uuid.uuid4()))
+    orders = lambda: call("GET", "/api/oms/v1/orders", token=token, ip=ip)
+    count_before = len(orders()[1].get("orders", []))
+    compose("stop", "money")
+    status, refused, _, took = call("POST", "/api/oms/v1/orders", buy, token=token, ip=ip, key=str(uuid.uuid4()))
+    listed, during, _, _ = orders()
+    quotes, _, _, _ = call("GET", "/api/marketdata/v1/quotes?symbols=HARBOR", token=token, ip=ip)
+    compose("start", "money")
+    fills = [before]
+
+    def probe():  # a one-share buy: refused (and nothing placed) until the money host answers, then filled
+        st, body, _, _ = call("POST", "/api/oms/v1/orders", dict(buy, quantity=1), token=token, ip=ip, key=str(uuid.uuid4()))
+        if st == 201:
+            fills.append(body)
+        return st == 201
+    back = wait_until(probe, 180, 2)
+    _, after, _, _ = call("POST", "/api/oms/v1/orders", buy, token=token, ip=ip, key=str(uuid.uuid4()))
+    fills.append(after)
+    # the books: cash is the deposit less exactly the fills and their charges
+    spent = sum(float(o.get("value", 0)) + float((o.get("charges") or {}).get("total", 0)) for o in fills)
+    f = funds(token, ip)
+    expected_cash = round(20000 - spent, 2)
+    return result(
+        "CHAOS-07", "The money host goes away during trading",
+        "With the ledger, accounts and payments unreachable, trading fails safe: a new order is refused at once with a clear "
+        "503 and nothing is placed or blocked, while prices and the order book stay readable. When the money host is back, "
+        "orders go through again within 180 s and the books match every fill to the paisa.",
+        [("Order while the money host was down", f"{status} {refused.get('code')} in {took * 1000:,.0f} ms"),
+         ("Order list / quotes while down", f"{listed} ({len(during.get('orders', []))} orders, {count_before} before) / {quotes}"),
+         ("Orders accepted again after", f"{back} s" if back is not None else "never"),
+         ("Orders placed in all", ", ".join(f"{o.get('quantity')} {o.get('status')}" for o in fills)),
+         ("Cash / blocked after", f"{f.get('cash')} / {f.get('blocked')} (expected cash {expected_cash:.2f})")],
+        [("refused as unavailable, not left hanging", status == 503 and refused.get("code") == "UPSTREAM_UNAVAILABLE"),
+         ("answered without waiting", took < 6),
+         ("nothing was placed while down", listed == 200 and len(during.get("orders", [])) == count_before),
+         ("prices kept flowing", quotes == 200),
+         ("trading resumed within 180 s", back is not None and back <= 180),
+         ("every order placed filled", all(o.get("status") == "FILLED" for o in fills)),
+         ("nothing blocked is left over", f.get("blocked") == "0.00"),
+         ("the books match every fill", f.get("cash") is not None and abs(float(f["cash"]) - expected_cash) < 0.005)])
+
+
+def logged(host, request_id):
+    """The structured log lines a host wrote for one request id."""
+    lines = []
+    for raw in compose("logs", "--no-color", "--since", "10m", host, check=False).stdout.splitlines():
+        _, _, rest = raw.partition("| ")
+        if request_id in rest:
+            try:
+                lines.append(json.loads(rest))
+            except ValueError:
+                pass
+    return [x for x in lines if x.get("requestId") == request_id]
+
+
+def trace_01():
+    ip = "198.19.208.1"
+    token = customer(ip)
+    fund(token, ip, "5000")
+    wait_for_open_market(30)
+    request_id = "trace01-" + uuid.uuid4().hex[:12]
+    forged = "0af7651916cd43dd8448eb211c80319c"
+    status, o, headers, _ = call("POST", "/api/oms/v1/orders", {"symbol": "HARBOR", "side": "BUY", "quantity": 1, "orderType": "MARKET",
+                                                                "product": "CNC"}, token=token, ip=ip, key=str(uuid.uuid4()),
+                                 headers={"X-Request-Id": request_id, "traceparent": f"00-{forged}-b7ad6b7169203331-01"})
+    time.sleep(3)  # let the logs flush
+    seen = {host: logged(host, request_id) for host in HOSTS}
+    traces = {x.get("traceId") for lines in seen.values() for x in lines}
+    services = sorted({x.get("sprout.service", x.get("service.name")) for lines in seen.values() for x in lines})
+    return result(
+        "TRACE-01", "One request, followed through every service",
+        "An order placed with a request id (and a forged trace from the client) can be followed from the gateway through the "
+        "order service to the exchange: every service's log lines for it carry the same request id and the same trace, "
+        "and that trace is the gateway's own, never the client's.",
+        [("Order", f"{status} {o.get('status')}"),
+         ("Request id echoed by the gateway", headers.get("x-request-id")),
+         ("Log lines with the request id, by host", ", ".join(f"{h} {len(v)}" for h, v in seen.items())),
+         ("Services that logged it", ", ".join(s for s in services if s) or "none"),
+         ("Trace ids on those lines", ", ".join(sorted(t for t in traces if t)) or "none")],
+        [("the order filled", status == 201 and o.get("status") == "FILLED"),
+         ("the gateway kept the request id", headers.get("x-request-id") == request_id),
+         ("the order service and the exchange both logged it", bool(seen["trading"]) and bool(seen["street"])),
+         ("one trace across every service", len(traces) == 1 and None not in traces),
+         ("the gateway's trace, not the client's", forged not in traces)])
+
+
 def recon_02():
     # let in-flight callbacks and ledger postings land first
     wait_until(lambda: sql("SELECT COUNT(*) FROM oms.ledger_outbox WHERE posted_at IS NULL") == 0
@@ -545,8 +639,8 @@ def recon_04():
          ("all seven checks ran", len(checks) == 7)])
 
 
-EXPERIMENTS = {"CHAOS-01": chaos_01, "CHAOS-02": chaos_02, "CHAOS-03": chaos_03, "CHAOS-04": chaos_04,
-               "CHAOS-05": chaos_05, "CHAOS-06": chaos_06, "SETTLE-01": settle_01, "RECON-01": recon_01, "RECON-02": recon_02,
+EXPERIMENTS = {"TRACE-01": trace_01, "CHAOS-01": chaos_01, "CHAOS-02": chaos_02, "CHAOS-03": chaos_03, "CHAOS-04": chaos_04,
+               "CHAOS-05": chaos_05, "CHAOS-06": chaos_06, "CHAOS-07": chaos_07, "SETTLE-01": settle_01, "RECON-01": recon_01, "RECON-02": recon_02,
                "RECON-03": recon_03, "RECON-04": recon_04}
 
 

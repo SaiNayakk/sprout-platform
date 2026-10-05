@@ -293,4 +293,5 @@ services:
     environment:
       MAVEN_ARGS: --no-transfer-progress
       PERF_OUT: /out/perf-03-summary.json
+      PERF04_OUT: /out/perf-04-summary.json
     entrypoint: ["sh", "-c", "cp -r /e2e /tmp/e2e && rm -rf /tmp/e2e/target && exec mvn -q -B -f /tmp/e2e/pom.xml test -Dsprout.baseUrl=http://edge:8100 \"$$@\"", "loadgen"]

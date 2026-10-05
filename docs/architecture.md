@@ -61,13 +61,21 @@ flowchart LR
 ## A request, end to end
 
 1. The gateway gives the request an id (or keeps a valid one), and strips any header a client could use
-   to pretend to be someone else (`X-User-Id` and friends).
+   to pretend to be someone else (`X-User-Id` and friends). It also drops any trace a client sends
+   (`traceparent` and the like) and starts its own, so no one can attach their requests to someone
+   else's trace or force sampling.
 2. It applies the rate limit for that client and route. Sign-in routes get a much tighter limit.
 3. For a protected route it verifies the access token locally against identity's published keys
    (JWKS, cached), then forwards the request with the verified user id.
 4. It forwards with a 2 s connect and 5 s total timeout behind a circuit breaker, so a sick service
    fails fast instead of piling up waiting requests.
 5. Identity answers. Every error is an [RFC 9457 problem](errors.md) with a stable `code`.
+
+Every call any service then makes to another carries the same request id (`X-Request-Id`) and the
+gateway's trace (W3C `traceparent`), so one customer action can be followed through every service's logs,
+and appears as one trace when traces are exported
+([TRACE-01](testing/chaos.md#trace-01), [ADR-020](decisions.md#adr-020-one-request-one-trace)).
+Work a service starts on a schedule carries that work's own trace.
 
 ## Sign-in and tokens
 

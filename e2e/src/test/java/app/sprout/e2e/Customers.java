@@ -25,11 +25,14 @@ final class Customers {
      */
     static String funded(Client c, BigDecimal deposit) throws InterruptedException {
         String token = c.account(Client.newEmail()).path("accessToken").asText();
-        String vpa = c.post("/api/bank/v1/accounts", Map.of("holderName", "Meera Iyer", "upiPin", PIN), token).body().path("vpa").asText();
+        Client.Response bank = c.post("/api/bank/v1/accounts", Map.of("holderName", "Meera Iyer", "upiPin", PIN), token);
+        assertThat(bank.status()).as(bank.body().toString()).isEqualTo(201);
+        String vpa = bank.body().path("vpa").asText();
         ThreadLocalRandom r = ThreadLocalRandom.current();
         String pan = "AB" + (char) ('A' + r.nextInt(26)) + "P" + (char) ('A' + r.nextInt(26)) + String.format("%04d", r.nextInt(10_000)) + "K";
-        assertThat(c.post("/api/accounts/v1/accounts", Map.of("legalName", "Meera Iyer", "dateOfBirth", "1996-08-21", "pan", pan,
-                "bankVpa", vpa), token).status()).isEqualTo(201);
+        Client.Response account = c.post("/api/accounts/v1/accounts", Map.of("legalName", "Meera Iyer", "dateOfBirth", "1996-08-21", "pan", pan,
+                "bankVpa", vpa), token);
+        assertThat(account.status()).as(account.body().toString()).isEqualTo(201);
         JsonNode d = c.send("POST", "/api/payments/v1/deposits", Map.of("amount", deposit.toPlainString()),
                 Map.of("Authorization", "Bearer " + token, "Idempotency-Key", UUID.randomUUID().toString())).body();
         String request = c.get("/api/bank/v1/requests?status=PENDING", token).body().path("requests").get(0).path("id").asText();
