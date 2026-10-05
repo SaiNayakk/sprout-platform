@@ -6,12 +6,13 @@ import app.sprout.hosts.common.NoDatabase;
 import app.sprout.marketdata.MarketDataApplication;
 import app.sprout.oms.OmsApplication;
 import app.sprout.plans.PlansApplication;
+import app.sprout.rewards.RewardsApplication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
- * The trading host: market data, the order service with its risk checks, plans (SIPs) and habits,
+ * The trading host: market data, the order service with its risk checks, plans (SIPs), habits and rewards,
  * each in its own Spring context, as in the edge host. Orders read prices on every placement and risk
  * round, and plans and habits work from orders, so they live together.
  *
@@ -45,7 +46,8 @@ public final class TradingHost {
                 .run(args);
         ConfigurableApplicationContext plans = PlansApplication.builder().properties(host.loggingDefaults()).run(args);
         ConfigurableApplicationContext habits = HabitsApplication.builder().properties(host.loggingDefaults()).run(args);
-        log.info("Trading host up: market data, orders, plans and habits running");
-        return new ConfigurableApplicationContext[] {marketData, oms, plans, habits};
+        ConfigurableApplicationContext rewards = RewardsApplication.builder().properties(host.loggingDefaults()).run(args);
+        log.info("Trading host up: market data, orders, plans, habits and rewards running");
+        return new ConfigurableApplicationContext[] {marketData, oms, plans, habits, rewards};
     }
 }

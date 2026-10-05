@@ -86,7 +86,8 @@ class HabitsJourneysTest {
         assertThat(h.path("streak").path("months").asInt()).isEqualTo(1);
         assertThat(h.path("level").path("name").asText()).isEqualTo("Seedling");
         assertThat(h.path("badges").findValuesAsText("code")).contains("FIRST_INVESTMENT", "FIRST_PLAN_INSTALMENT");
-        assertThat(h.path("points").path("pending").asInt()).as("100 for the month, 50 for the instalment").isEqualTo(150);
+        assertThat(h.path("points").path("pending").asInt()).as("100 for the month, 50 for the instalment, 50 for the plan-on-track challenge")
+                .isEqualTo(200);
         assertThat(h.path("points").path("vested").asInt()).isZero();
     }
 

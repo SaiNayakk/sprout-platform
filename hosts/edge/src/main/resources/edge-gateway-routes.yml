@@ -41,6 +41,12 @@ sprout:
       - name: habits
         prefix: /api/habits
         target: ${GATEWAY_HABITS_URL:http://127.0.0.1:8116}
+      - name: goals
+        prefix: /api/goals
+        target: ${GATEWAY_GOALS_URL:http://127.0.0.1:8117}
+      - name: rewards
+        prefix: /api/rewards
+        target: ${GATEWAY_REWARDS_URL:http://127.0.0.1:8118}
       - name: statements
         prefix: /api/statements
         target: ${GATEWAY_STATEMENTS_URL:http://127.0.0.1:8113}

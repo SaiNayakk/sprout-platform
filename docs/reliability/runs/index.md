@@ -4,6 +4,7 @@ Every pre-prod run writes its evidence here: the release it tested, every end-to
 
 | Run (UTC) | Release | Result |
 |---|---|---|
+| [2026-10-05-1641-preprod](2026-10-05-1641-preprod/index.md) | identity 0.2.4, gateway 0.3.1, accounts 0.3.1, payments 0.3.0, ledger 0.3.1, settlement 0.2.1, statements 0.2.1, recon 0.2.1, goals 0.1.0, bank 0.4.0, exchange 0.4.1, depository 0.2.1, clearing 0.2.1, marketdata 0.1.2, oms 0.5.1, plans 0.2.1, habits 0.3.0, rewards 0.1.0 | ✅ passed |
 | [2026-10-05-1532-preprod](2026-10-05-1532-preprod/index.md) | identity 0.2.4, gateway 0.3.1, accounts 0.3.1, payments 0.2.0, ledger 0.3.1, settlement 0.2.1, statements 0.2.1, recon 0.2.1, bank 0.3.1, exchange 0.4.1, depository 0.2.1, clearing 0.2.1, marketdata 0.1.2, oms 0.5.1, plans 0.2.1, habits 0.2.1 | ✅ passed |
 | [2026-10-05-1502-preprod](2026-10-05-1502-preprod/index.md) | identity 0.2.3, gateway 0.3.0, accounts 0.3.0, payments 0.2.0, ledger 0.3.0, settlement 0.2.0, statements 0.2.0, recon 0.2.0, bank 0.3.1, exchange 0.4.0, depository 0.2.0, clearing 0.2.0, marketdata 0.1.1, oms 0.5.0, plans 0.2.0, habits 0.2.0 | ❌ failed (trace-01) |
 | [2026-10-05-1342-preprod](2026-10-05-1342-preprod/index.md) | identity 0.2.3, gateway 0.2.4, accounts 0.2.0, payments 0.1.0, ledger 0.3.0, settlement 0.1.0, statements 0.1.1, recon 0.1.0, bank 0.3.0, exchange 0.3.0, depository 0.2.0, clearing 0.1.0, marketdata 0.1.1, oms 0.4.0, plans 0.1.0, habits 0.1.0 | ✅ passed |

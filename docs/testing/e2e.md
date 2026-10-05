@@ -262,6 +262,37 @@ and first plan instalment badges, and 150 points pending until the money has sta
 ### E2E-84 { #e2e-84 }
 **Readiness gives plain advice, and Future You shows what a monthly amount could become.**
 
+## Goals and rewards
+
+### E2E-90 { #e2e-90 }
+**AutoPay is asked for by Sprout and approved once in Sprout Bank with the PIN**; the customer sees the
+purpose and that spends will be shared before approving.
+
+### E2E-91 { #e2e-91 }
+**Money put in a pot buys whole shares of its share**, through the real order service, tagged with the
+pot; more than the customer has free is refused.
+
+### E2E-92 { #e2e-92 }
+**A UPI spend is rounded up, swept under AutoPay into the pot, and invested**: ₹701 at a merchant with
+₹100 round-ups three times over sweeps ₹297, and the bank account loses the spend and the round-up,
+each once.
+
+### E2E-93 { #e2e-93 }
+**Without AutoPay, spends aren't shared and nothing is taken.**
+
+### E2E-94 { #e2e-94 }
+**A UPI payment with the wrong PIN is refused and moves nothing.**
+
+### E2E-95 { #e2e-95 }
+**The vault spends only vested points**: a new investor's pending points can't buy anything yet.
+
+### E2E-96 { #e2e-96 }
+**A friend's referral code links two customers; nothing is earned until the friend invests for 3
+months**, and a code can't be used on yourself.
+
+### E2E-97 { #e2e-97 }
+**This month's challenges and the year wrapped follow from what was bought.**
+
 ## Results
 
 The latest results, case by case, are in each run's evidence page under

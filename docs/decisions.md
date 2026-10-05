@@ -270,3 +270,35 @@ polyrepo exists to avoid.
 
 **Lost.** A browser or partner can't continue its own trace into Sprout. The same few lines exist in
 ten repositories.
+
+## ADR-021: Round-ups through a UPI AutoPay mandate and shared spends, read as a feed { #adr-021-round-ups }
+
+**Decision.** Round-ups use a UPI AutoPay mandate the customer approves once in their bank: the bank
+reports the customer's spends to Sprout while the mandate is active, and Sprout debits the rounded-up
+total under it. Payments keeps the spends in arrival order; goals reads them as a feed from a stored
+cursor, and every sweep is one debit whose reference is made before it is asked for.
+
+**Why.** It is how real round-up apps work in India: no PIN for every ₹4, but nothing taken without a
+standing permission the customer can see and revoke in their own bank. A feed with a cursor, rather
+than payments calling goals, keeps payments from knowing who uses spends, and makes a missed read
+harmless (the next one starts from the cursor; a spend's id stops it counting twice). A sweep claims
+its round-ups before the debit is asked for, so a debit whose answer was lost is asked again with the
+same reference and never taken twice.
+
+**Lost.** Round-ups arrive a few seconds after the spend, not at once. Sweeping waits for ₹100, so small
+spenders see round-ups wait. A refused sweep waits an hour, so fixing the mandate isn't instant.
+
+## ADR-022: Rewards spend points habits works out; nothing is stored but choices { #adr-022-rewards }
+
+**Decision.** The rewards service stores only what customers chose (redemptions, referral codes and
+links). What they can spend is worked out each time: vested habit points from habits, plus referral
+rewards, less what they have spent. A redemption is decided under a per-customer advisory lock.
+Referrals are rewarded when either side looks, once the new customer has invested in 3 months.
+
+**Why.** A stored points balance would be a second record of the habit, drifting from the trading
+history it is supposed to reflect (ADR-019). Spending is the one thing that must be serialised, and
+a lock per customer does that without a balance row to keep right.
+
+**Lost.** Each vault read asks habits for the customer's picture (a year of history). Rewarding
+referrals when someone looks means a friend's reward appears the next time either opens rewards, not
+the moment the third month's purchase is made.

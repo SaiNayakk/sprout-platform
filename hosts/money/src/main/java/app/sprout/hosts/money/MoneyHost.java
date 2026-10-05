@@ -1,6 +1,7 @@
 package app.sprout.hosts.money;
 
 import app.sprout.accounts.AccountsApplication;
+import app.sprout.goals.GoalsApplication;
 import app.sprout.hosts.common.HostLogFields.HostInfo;
 import app.sprout.hosts.common.NoDatabase;
 import app.sprout.ledger.LedgerApplication;
@@ -13,8 +14,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
- * The money host: the ledger, accounts, payments, the settlement back office, statements and
- * reconciliation, each in its own Spring context with its own config, port and database schema
+ * The money host: the ledger, accounts, payments, the settlement back office, statements,
+ * reconciliation and goals (pots and round-ups), each in its own Spring context with its own config, port and database schema
  * (statements has none). They share a JVM because they all move or report money through the ledger:
  * if it is down, none of them can work anyway.
  */
@@ -44,7 +45,8 @@ public final class MoneyHost {
                 .properties("spring.autoconfigure.exclude=" + NoDatabase.EXCLUDES)   // statements reads the books; it has no database
                 .run(args);
         ConfigurableApplicationContext recon = ReconApplication.builder().properties(host.loggingDefaults()).run(args);
-        log.info("Money host up: ledger, accounts, payments, settlement, statements and recon running in one JVM");
-        return new ConfigurableApplicationContext[] {ledger, accounts, payments, settlement, statements, recon};
+        ConfigurableApplicationContext goals = GoalsApplication.builder().properties(host.loggingDefaults()).run(args);
+        log.info("Money host up: ledger, accounts, payments, settlement, statements, recon and goals running in one JVM");
+        return new ConfigurableApplicationContext[] {ledger, accounts, payments, settlement, statements, recon, goals};
     }
 }
