@@ -241,6 +241,27 @@ settle (they are T1 at Sprout).
 ### E2E-74 { #e2e-74 }
 **Statements are only for signed-in customers with an account.**
 
+## Habits
+
+Each case starts with a funded customer, in the trading window.
+
+### E2E-80 { #e2e-80 }
+**A plan started now buys its first instalment at once**, through the real order service and exchange:
+whole shares within the amount, a delivery order tagged with the plan, the shares in holdings.
+
+### E2E-81 { #e2e-81 }
+**A plan whose amount can't buy one share skips the month and says why**; the plan can be paused.
+
+### E2E-82 { #e2e-82 }
+**The habit picture follows from what was bought**: a one-month streak, Seedling, the first investment
+and first plan instalment badges, and 150 points pending until the money has stayed invested 30 days.
+
+### E2E-83 { #e2e-83 }
+**Squads rank friends by the habit, and show a range only by choice.**
+
+### E2E-84 { #e2e-84 }
+**Readiness gives plain advice, and Future You shows what a monthly amount could become.**
+
 ## Results
 
 The latest results, case by case, are in each run's evidence page under

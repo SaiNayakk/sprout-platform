@@ -1,0 +1,42 @@
+{
+  "id": "CHAOS-05",
+  "title": "Payments is down when the customer approves",
+  "hypothesis": "The customer approves in the bank while the money host is down. The bank keeps the news and retries; when the money host is back, the deposit completes within 120 s and is credited exactly once.",
+  "observations": [
+    {
+      "what": "Approval in the bank (money host down)",
+      "value": "200 APPROVED"
+    },
+    {
+      "what": "Deposit completed after the money host started",
+      "value": "7.2 s"
+    },
+    {
+      "what": "Sprout cash / bank balance",
+      "value": "750.00 / 99250.00"
+    },
+    {
+      "what": "Ledger entries for this deposit",
+      "value": 1
+    }
+  ],
+  "checks": [
+    {
+      "what": "the customer could still approve",
+      "pass": true
+    },
+    {
+      "what": "completed within 120 s of the money host returning",
+      "pass": true
+    },
+    {
+      "what": "credited exactly once",
+      "pass": true
+    },
+    {
+      "what": "the bank's side matches",
+      "pass": true
+    }
+  ],
+  "pass": true
+}
