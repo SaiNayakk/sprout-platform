@@ -113,8 +113,9 @@ class MarketDataJourneysTest {
             assertThat(s.status).isEqualTo(200);
             List<EventStream.Event> ticks = s.await("tick", 40, Duration.ofSeconds(10));
             assertThat(ticks).hasSizeGreaterThanOrEqualTo(40);
-            assertThat(s.events.get(0).name()).isEqualTo("market");
-            assertThat(s.events.subList(1, 3)).extracting(EventStream.Event::name).containsOnly("quote");
+            List<EventStream.Event> seen = List.copyOf(s.events); // ticks keep arriving; read a snapshot
+            assertThat(seen.get(0).name()).isEqualTo("market");
+            assertThat(seen.subList(1, 3)).extracting(EventStream.Event::name).containsOnly("quote");
 
             Map<String, Long> seq = new HashMap<>();
             s.named("quote").forEach(q -> seq.put(q.data().path("symbol").asText(), q.data().path("seq").asLong()));
