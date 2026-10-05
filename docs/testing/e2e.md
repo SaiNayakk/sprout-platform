@@ -175,6 +175,49 @@ the bank's signature changes nothing.
 ### E2E-59 { #e2e-59 }
 **An unanswered payment request expires, and so does the deposit.**
 
+## Trading
+
+Each case starts with a new customer who has added ₹50,000 the Phase 2 way (a deposit approved in Sprout
+Bank with the UPI PIN), and waits until the market is open with at least half an hour to the close.
+Prices move while the tests run, so they check identities (what was paid equals the value plus charges;
+what the customer has equals what they put in plus profit less charges) rather than fixed numbers.
+
+### E2E-60 { #e2e-60 }
+**Buy for delivery at the market.** The exchange executes it at the market price; there is no brokerage
+but there is STT; cash goes down by exactly the value plus charges; the shares show as T1.
+
+### E2E-61 { #e2e-61 }
+**Sell only what you hold; the proceeds wait for settlement.** Selling more than held is rejected; a sale's
+value less charges is `unsettled`.
+
+### E2E-62 { #e2e-62 }
+**A limit order away from the market rests with its money blocked; cancelling gives back every paisa.**
+
+### E2E-63 { #e2e-63 }
+**An order beyond your money is rejected and blocks nothing.**
+
+### E2E-64 { #e2e-64 }
+**Intraday round trip.** Buying holds a fifth of the value as margin; selling closes the position, books the
+profit or loss and releases the margin; cash + unsettled − dues equals the deposit plus the P&amp;L less both
+orders' charges, whichever way the price went.
+
+### E2E-65 { #e2e-65 }
+**Intraday lets you sell first and buy back; delivery doesn't let you sell what you don't own.** One order
+can't flip a short into a long.
+
+### E2E-66 { #e2e-66 }
+**The exchange's rules.** Prices off the tick and outside the day's band are rejected; unknown shares are
+refused as `UNKNOWN_INSTRUMENT`.
+
+### E2E-67 { #e2e-67 }
+**Retrying an order with the same `Idempotency-Key` places it once.**
+
+### E2E-68 { #e2e-68 }
+**Nobody else can see or cancel my orders.**
+
+### E2E-69 { #e2e-69 }
+**A forged execution report is refused**, even through the gateway with a valid user token.
+
 ## Results
 
 The latest results, case by case, are in each run's evidence page under

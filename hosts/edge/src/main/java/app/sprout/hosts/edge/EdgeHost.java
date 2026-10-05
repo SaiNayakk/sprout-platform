@@ -2,6 +2,7 @@ package app.sprout.hosts.edge;
 
 import app.sprout.gateway.GatewayApplication;
 import app.sprout.hosts.common.HostLogFields.HostInfo;
+import app.sprout.hosts.common.NoDatabase;
 import app.sprout.identity.IdentityApplication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,14 +20,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 public final class EdgeHost {
 
     private static final Logger log = LoggerFactory.getLogger(EdgeHost.class);
-
-    /** The gateway has no database; don't let the shared classpath give it one. */
-    static final String GATEWAY_EXCLUDES = String.join(",",
-            "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration",
-            "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration",
-            "org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration",
-            "org.springframework.boot.autoconfigure.jdbc.JdbcClientAutoConfiguration",
-            "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration");
 
     private EdgeHost() {}
 
@@ -47,7 +40,7 @@ public final class EdgeHost {
                 .run(args);
         ConfigurableApplicationContext gateway = GatewayApplication.builder()
                 .properties(host.loggingDefaults())
-                .properties("spring.autoconfigure.exclude=" + GATEWAY_EXCLUDES,
+                .properties("spring.autoconfigure.exclude=" + NoDatabase.EXCLUDES,   // the gateway has no database
                         // this deployment's routes replace the gateway's built-in list
                         "spring.config.additional-location=classpath:/edge-gateway-routes.yml")
                 .run(args);

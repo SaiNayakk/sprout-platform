@@ -54,6 +54,7 @@ services:
       GATEWAY_ACCOUNTS_URL: http://money:8104
       GATEWAY_PAYMENTS_URL: http://money:8105
       GATEWAY_BANK_URL: http://street:8107
+      GATEWAY_OMS_URL: http://trading:8109
       EDGE_WARMUP_SIGNINS: ${EDGE_WARMUP_SIGNINS:-300}
       # pre-prod sits behind the test runner the way prod sits behind Cloudflare
       GATEWAY_TRUST_CF_IP: "true"
@@ -79,17 +80,27 @@ services:
       retries: 60
       start_period: 20s
 
-  # The trading host: market data (orders and risk later). A separate JVM, so its faults can't
-  # take sign-in down (CHAOS-03).
+  # The trading host: market data and orders (with their risk checks). A separate JVM, so its faults
+  # can't take sign-in down (CHAOS-03).
   trading:
     build:
       context: ..
       dockerfile: preprod/Dockerfile.host
       args:
         HOST: trading
-        XMX: 128m
+        XMX: 160m
     environment:
       MARKETDATA_BIND: 0.0.0.0
+      OMS_BIND: 0.0.0.0
+      OMS_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=oms
+      OMS_DB_PASSWORD: preprod-only-not-a-secret
+      OMS_ACCOUNTS_URL: http://money:8104
+      OMS_LEDGER_URL: http://money:8106
+      OMS_EXCHANGE_URL: http://street:8108
+      OMS_RMS_EVERY: 1s
+      SPROUT_SERVICE_KEY: preprod-only-service-key
+      EXCHANGE_SPROUT_MEMBER_KEY: preprod-only-member-key
+      EXCHANGE_SPROUT_WEBHOOK_SECRET: preprod-only-exchange-webhook-secret
       # accelerated so a full session (and the close, and the next day) fits in a pre-prod run
       MARKETDATA_CLOCK: ACCELERATED
       MARKETDATA_SPEED: ${MARKETDATA_SPEED:-30}
@@ -99,12 +110,14 @@ services:
       MANAGEMENT_OTLP_METRICS_EXPORT_STEP: 10s
       OTEL_METRICS_URL: http://lgtm:4318/v1/metrics
       OTEL_TRACES_URL: http://lgtm:4318/v1/traces
-    mem_limit: 256m                     # the phone's budget for this host
+    mem_limit: 320m                     # the phone's budget for this host
     depends_on:
       nats:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8103/actuator/health >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8103/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8109/actuator/health >/dev/null"]
       interval: 3s
       timeout: 3s
       retries: 60
@@ -155,14 +168,14 @@ services:
       retries: 60
       start_period: 20s
 
-  # The street host: Sprout Bank (the outside world, simulated).
+  # The street host: Sprout Bank and the Sprout Stock Exchange (the outside world, simulated).
   street:
     build:
       context: ..
       dockerfile: preprod/Dockerfile.host
       args:
         HOST: street
-        XMX: 128m
+        XMX: 160m
     environment:
       BANK_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=bank
       BANK_DB_PASSWORD: preprod-only-not-a-secret
@@ -170,17 +183,24 @@ services:
       BANK_COLLECT_TTL: 30s             # short, so E2E can watch a request expire
       BANK_SPROUT_PARTNER_KEY: preprod-only-partner-key
       BANK_SPROUT_WEBHOOK_SECRET: preprod-only-webhook-secret
+      EXCHANGE_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=exchange
+      EXCHANGE_DB_PASSWORD: preprod-only-not-a-secret
+      EXCHANGE_BIND: 0.0.0.0
+      EXCHANGE_MARKETDATA_URL: http://trading:8103
+      EXCHANGE_SPROUT_MEMBER_KEY: preprod-only-member-key
+      EXCHANGE_SPROUT_WEBHOOK_SECRET: preprod-only-exchange-webhook-secret
+      EXCHANGE_SPROUT_CALLBACK_URL: http://trading:8109/internal/v1/exchange-events
       LOG_FORMAT: ecs
       OTEL_ENABLED: ${OTEL_ENABLED:-false}
       MANAGEMENT_OTLP_METRICS_EXPORT_STEP: 10s
       OTEL_METRICS_URL: http://lgtm:4318/v1/metrics
       OTEL_TRACES_URL: http://lgtm:4318/v1/traces
-    mem_limit: 256m
+    mem_limit: 320m
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8107/actuator/health >/dev/null"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8107/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8108/actuator/health >/dev/null"]
       interval: 3s
       timeout: 3s
       retries: 60

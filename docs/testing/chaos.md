@@ -126,14 +126,35 @@ liabilities), what the ledger says Sprout holds at the bank equals what Sprout B
 paisa, and no withdrawal is left in progress. Real brokers reconcile like this every day; a difference
 means money moved on one side only.
 
+## CHAOS-06: the exchange goes away mid-order { #chaos-06 }
+
+| | |
+|---|---|
+| **Steady state** | A customer has ₹20,000 in Sprout; the market is open. |
+| **Fault** | Stop the street host (Sprout Bank and the exchange), then buy 2 shares at the market. |
+| **Hypothesis** | The order is accepted with its money blocked and left `PENDING`: Sprout doesn't know whether the exchange got it, so it doesn't guess. When the exchange is back, the order service asks it, learns the order never arrived, rejects it within 120 s and gives back every paisa. |
+
+The first run failed: the order was never given up on, its ₹3,597.77 left blocked (the reconciler measured
+its 30 s from a timestamp that asking the exchange kept moving; see
+[Incidents](../incidents.md)). After the fix: accepted as `PENDING` in 2.1 s with ₹3,593.37 blocked;
+`REJECTED` as `UNAVAILABLE` 28.5 s after the exchange came back; cash back to exactly ₹20,000.00.
+
+## RECON-02: orders, the exchange and the ledger agree { #recon-02 }
+
+Run last, like RECON-01: every order Sprout booked as executed was executed by the exchange at the same
+price and quantity, and the exchange executed nothing Sprout hasn't booked; for every customer, the money
+the ledger holds for orders equals what their working orders and open positions say; every ledger entry
+the order service decided on has been posted; no order is left waiting on the exchange.
+
 ## Planned
 
 | Id | Fault | Hypothesis |
 |---|---|---|
-| CHAOS-04 | Identity's context crashes inside the edge host | Gateway answers `503` fast; circuit opens after repeated failures and closes after recovery |
-| CHAOS-05 | Postgres slows to 3 s per query (network latency injected) | Requests fail inside the gateway budget; no thread pile-up; memory stays under the limit |
-| CHAOS-06 | Edge host killed mid-traffic | Supervisor restarts it; clients see errors for under 30 s; no half-written sessions |
-| CHAOS-07 | Signing key rotated while tokens are live | Old tokens keep working until they expire; new tokens use the new key |
-| CHAOS-08 | Disk fills on the database volume | Writes fail with `503`, reads keep working, nothing corrupts |
-| CHAOS-09 | The phone loses its network (region down) | The laptop region takes traffic; see [Reliability](../reliability/index.md) |
-| CHAOS-10 | The market clock stalls (engine thread stuck) | Health turns `DOWN` within 30 s; the host is restarted; clients resync |
+| CHAOS-07 | Identity's context crashes inside the edge host | Gateway answers `503` fast; circuit opens after repeated failures and closes after recovery |
+| CHAOS-08 | Postgres slows to 3 s per query (network latency injected) | Requests fail inside the gateway budget; no thread pile-up; memory stays under the limit |
+| CHAOS-09 | Edge host killed mid-traffic | Supervisor restarts it; clients see errors for under 30 s; no half-written sessions |
+| CHAOS-10 | Signing key rotated while tokens are live | Old tokens keep working until they expire; new tokens use the new key |
+| CHAOS-11 | Disk fills on the database volume | Writes fail with `503`, reads keep working, nothing corrupts |
+| CHAOS-12 | The phone loses its network (region down) | The laptop region takes traffic; see [Reliability](../reliability/index.md) |
+| CHAOS-13 | The market clock stalls (engine thread stuck) | Health turns `DOWN` within 30 s; the host is restarted; clients resync |
+| CHAOS-14 | The order service is down when the exchange executes a resting order | The exchange keeps the execution and retries; once orders is back, it is booked exactly once |

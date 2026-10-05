@@ -137,7 +137,7 @@ if fanout:
           "Pass when every stream opens and stays open, p95 is under 250 ms and p99 under 1 s.", ""]
 
 L += ["## Memory under load", "", "| Host | Peak | Limit |", "|---|---|---|"]
-for host, limit in (("edge", 384), ("trading", 256), ("money", 320), ("street", 256)):
+for host, limit in (("edge", 384), ("trading", 320), ("money", 320), ("street", 320)):
     peak = peak_memory(host)
     L.append(f"| {host} | {f'{peak:.0f} MiB' if peak else 'n/a'} | {limit} MiB |")
 L.append("")

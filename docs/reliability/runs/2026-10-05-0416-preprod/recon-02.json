@@ -1,0 +1,54 @@
+{
+  "id": "RECON-02",
+  "title": "Orders, the exchange and the ledger agree",
+  "hypothesis": "After every test and every failure above: each order Sprout booked as executed was executed by the exchange, at the same price and quantity, and nothing the exchange executed is missing from Sprout; the money the ledger holds for each customer is exactly what their working orders and open positions say; every ledger entry Sprout decided on has been posted.",
+  "observations": [
+    {
+      "what": "Orders executed (Sprout) / trades (exchange)",
+      "value": "8 / 8"
+    },
+    {
+      "what": "Executed orders that differ from the exchange",
+      "value": 0
+    },
+    {
+      "what": "Exchange executions Sprout hasn't booked",
+      "value": 0
+    },
+    {
+      "what": "Customers whose held money doesn't match their orders",
+      "value": 0
+    },
+    {
+      "what": "Ledger entries not yet posted",
+      "value": 0
+    },
+    {
+      "what": "Orders still waiting on the exchange after 2 minutes",
+      "value": 0
+    }
+  ],
+  "checks": [
+    {
+      "what": "every executed order matches the exchange",
+      "pass": true
+    },
+    {
+      "what": "nothing executed is missing",
+      "pass": true
+    },
+    {
+      "what": "held money matches orders and positions",
+      "pass": true
+    },
+    {
+      "what": "every ledger entry posted",
+      "pass": true
+    },
+    {
+      "what": "nothing left hanging",
+      "pass": true
+    }
+  ],
+  "pass": true
+}

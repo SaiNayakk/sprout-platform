@@ -1,14 +1,16 @@
 package app.sprout.hosts.street;
 
 import app.sprout.bank.BankApplication;
+import app.sprout.exchange.ExchangeApplication;
 import app.sprout.hosts.common.HostLogFields.HostInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
- * The street host: the outside parties Sprout deals with, simulated. Sprout Bank now; the exchange,
- * clearing and the depository as they arrive. Kept apart from Sprout's own hosts, as the real ones are.
+ * The street host: the outside parties Sprout deals with, simulated. Sprout Bank and the Sprout Stock
+ * Exchange; clearing and the depository as they arrive. Kept apart from Sprout's own hosts, as the
+ * real ones are.
  */
 public final class StreetHost {
 
@@ -28,7 +30,8 @@ public final class StreetHost {
     public static ConfigurableApplicationContext[] start(String... args) {
         HostInfo host = HostInfo.load();
         ConfigurableApplicationContext bank = BankApplication.builder().properties(host.loggingDefaults()).run(args);
-        log.info("Street host up: Sprout Bank running");
-        return new ConfigurableApplicationContext[] {bank};
+        ConfigurableApplicationContext exchange = ExchangeApplication.builder().properties(host.loggingDefaults()).run(args);
+        log.info("Street host up: Sprout Bank and the exchange running");
+        return new ConfigurableApplicationContext[] {bank, exchange};
     }
 }

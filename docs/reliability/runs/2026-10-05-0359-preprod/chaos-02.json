@@ -1,0 +1,58 @@
+{
+  "id": "CHAOS-02",
+  "title": "NATS goes away",
+  "hypothesis": "With NATS stopped, prices keep streaming to clients and quotes keep working; the trading host stays healthy. When NATS returns, market data reconnects by itself within 30 s and publishes again.",
+  "observations": [
+    {
+      "what": "NATS connected before",
+      "value": true
+    },
+    {
+      "what": "Ticks streamed to a client in the 10 s NATS was down",
+      "value": 154
+    },
+    {
+      "what": "Trading host health while NATS was down",
+      "value": "UP"
+    },
+    {
+      "what": "Quote while NATS was down",
+      "value": "200 in 10 ms"
+    },
+    {
+      "what": "Reconnected after NATS started",
+      "value": "2.8 s"
+    },
+    {
+      "what": "Events published in 3 s after reconnecting",
+      "value": 592
+    }
+  ],
+  "checks": [
+    {
+      "what": "prices kept streaming",
+      "pass": true
+    },
+    {
+      "what": "the stream stayed open",
+      "pass": true
+    },
+    {
+      "what": "the host stayed healthy",
+      "pass": true
+    },
+    {
+      "what": "quotes kept working",
+      "pass": true
+    },
+    {
+      "what": "reconnected within 30 s",
+      "pass": true
+    },
+    {
+      "what": "publishing again",
+      "pass": true
+    }
+  ],
+  "pass": true
+}
