@@ -340,8 +340,87 @@ def recon_01():
          ("nothing left in progress", stuck == 0)])
 
 
+# ── trading ──────────────────────────────────────────────────────────────────
+
+def funds(token, ip):
+    return call("GET", "/api/oms/v1/funds", token=token, ip=ip)[1]
+
+
+def chaos_06():
+    ip = "198.19.206.1"
+    token = customer(ip)
+    fund(token, ip, "20000")
+    wait_for_open_market(30)
+    compose("stop", "street")
+    status, o, _, took = call("POST", "/api/oms/v1/orders", {"symbol": "HARBOR", "side": "BUY", "quantity": 2, "orderType": "MARKET",
+                                                            "product": "CNC"}, token=token, ip=ip, key=str(uuid.uuid4()))
+    during = funds(token, ip)
+    compose("start", "street")
+    order = lambda: call("GET", f"/api/oms/v1/orders/{o.get('id')}", token=token, ip=ip)[1]
+    ended = wait_until(lambda: order().get("status") not in ("PENDING", None), 120, 1)
+    final = order()
+    after = funds(token, ip)
+    return result(
+        "CHAOS-06", "The exchange goes away mid-order",
+        "With the exchange unreachable, an order is accepted with its money blocked and left PENDING (its fate unknown, "
+        "so not guessed); when the exchange is back, the reconciler finds it never arrived, rejects it within 120 s, "
+        "and every paisa blocked for it is back.",
+        [("Order while the exchange was down", f"{status} {o.get('status')} in {took * 1000:,.0f} ms, blocked ₹{o.get('blocked')}"),
+         ("Cash / blocked while down", f"{during.get('cash')} / {during.get('blocked')}"),
+         ("Ended after the exchange came back", f"{final.get('status')} after {ended} s" if ended is not None else "never"),
+         ("Rejection", (final.get("rejection") or {}).get("code")),
+         ("Cash / blocked after", f"{after.get('cash')} / {after.get('blocked')}")],
+        [("accepted, money blocked, outcome left open", status == 201 and o.get("status") == "PENDING" and float(o.get("blocked", 0)) > 0),
+         ("answered without waiting for the exchange", took < 6),
+         ("ended within 120 s of the exchange returning", ended is not None and ended <= 120),
+         ("rejected as never placed (not filled from nowhere)", final.get("status") == "REJECTED"),
+         ("every paisa back", after.get("cash") == "20000.00" and after.get("blocked") == "0.00")])
+
+
+def recon_02():
+    # let in-flight callbacks and ledger postings land first
+    wait_until(lambda: sql("SELECT COUNT(*) FROM oms.ledger_outbox WHERE posted_at IS NULL") == 0
+               and sql("SELECT COUNT(*) FROM exchange.outbox WHERE delivered_at IS NULL") == 0, 60, 1)
+    filled = sql("SELECT COUNT(*) FROM oms.orders WHERE status = 'FILLED'")
+    trades = sql("SELECT COUNT(*) FROM exchange.trades")
+    mismatched = sql("""SELECT COUNT(*) FROM oms.orders o LEFT JOIN exchange.orders e ON e.client_order_id = o.id::text
+                        WHERE o.status = 'FILLED' AND (e.status IS DISTINCT FROM 'FILLED' OR e.price_paise <> o.fill_price_paise
+                                                       OR e.quantity <> o.quantity)""")
+    orphans = sql("""SELECT COUNT(*) FROM exchange.orders e LEFT JOIN oms.orders o ON e.client_order_id = o.id::text
+                     WHERE e.status = 'FILLED' AND o.status IS DISTINCT FROM 'FILLED'""")
+    holds = sql("""WITH expected AS (
+                       SELECT user_id, SUM(paise) AS paise FROM (
+                           SELECT user_id, blocked_paise AS paise FROM oms.orders
+                           UNION ALL SELECT user_id, margin_paise FROM oms.positions) x GROUP BY user_id),
+                   held AS (
+                       SELECT CAST(substring(name FROM 10 FOR 36) AS uuid) AS user_id, balance_paise AS paise
+                       FROM ledger.accounts WHERE name LIKE 'customer:%:order-hold')
+                   SELECT COUNT(*) FROM expected e FULL JOIN held h ON h.user_id = e.user_id
+                   WHERE COALESCE(e.paise, 0) <> COALESCE(h.paise, 0)""")
+    unposted = sql("SELECT COUNT(*) FROM oms.ledger_outbox WHERE posted_at IS NULL")
+    # placed (or sent) over 2 minutes ago and still unconfirmed; not updated_at, which every question touches
+    stuck = sql("SELECT COUNT(*) FROM oms.orders WHERE status = 'PENDING' AND COALESCE(sent_at, created_at) < now() - interval '2 minutes'")
+    return result(
+        "RECON-02", "Orders, the exchange and the ledger agree",
+        "After every test and every failure above: each order Sprout booked as executed was executed by the exchange, "
+        "at the same price and quantity, and nothing the exchange executed is missing from Sprout; the money the ledger "
+        "holds for each customer is exactly what their working orders and open positions say; every ledger entry "
+        "Sprout decided on has been posted.",
+        [("Orders executed (Sprout) / trades (exchange)", f"{filled} / {trades}"),
+         ("Executed orders that differ from the exchange", mismatched),
+         ("Exchange executions Sprout hasn't booked", orphans),
+         ("Customers whose held money doesn't match their orders", holds),
+         ("Ledger entries not yet posted", unposted),
+         ("Orders still waiting on the exchange after 2 minutes", stuck)],
+        [("every executed order matches the exchange", mismatched == 0 and filled == trades),
+         ("nothing executed is missing", orphans == 0),
+         ("held money matches orders and positions", holds == 0),
+         ("every ledger entry posted", unposted == 0),
+         ("nothing left hanging", stuck == 0)])
+
+
 EXPERIMENTS = {"CHAOS-01": chaos_01, "CHAOS-02": chaos_02, "CHAOS-03": chaos_03, "CHAOS-04": chaos_04,
-               "CHAOS-05": chaos_05, "RECON-01": recon_01}
+               "CHAOS-05": chaos_05, "CHAOS-06": chaos_06, "RECON-01": recon_01, "RECON-02": recon_02}
 
 
 def main():

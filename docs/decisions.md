@@ -161,3 +161,49 @@ reconciled against the bank (RECON-01). Every other service asks it; none keeps 
 
 **Lost.** An extra call per balance read. Cheap at Sprout's scale; at real scale it would be a read model
 fed from the journal.
+
+## ADR-014: A simulated exchange that trades against the simulated market { #adr-014-exchange }
+
+**Decision.** The Sprout Stock Exchange is its own service in the street host, with a member API like a
+real exchange's (orders named by the broker's id, signed execution reports). It is a deep market anchored
+to the simulated price: every execution is for the whole quantity at the last traded price; limit orders
+rest until the price reaches them. It reads prices by polling market data, not from the NATS tick stream.
+
+**Why.** A real order book needs other traders; there are none, so the market itself is the other side.
+Keeping the exchange a separate party (its own keys, callbacks and database) means Sprout's order service
+has to handle everything a real one does: rejections, lost answers, late callbacks, expiries. Polling gives
+the exchange the latest price (all it needs) and lets it notice when it can't trust its prices, and refuse
+orders instead of guessing; it doesn't depend on NATS staying up.
+
+**Lost.** Partial fills, queue position and market impact: a big order executes in one go at the last
+price. Fine for a simulation of a retail broker; a later phase could add depth.
+
+## ADR-015: Orders and risk in one service, ledger entries through an outbox { #adr-015-oms }
+
+**Decision.** Risk checks live inside the order service (not a separate risk service). Every ledger
+movement after placement (fills, releases) is decided in the same database transaction as the order
+change that implies it, written to an outbox, and posted to the ledger in order under a fixed
+idempotency key. Only the hold at placement is posted directly, because placing depends on its answer;
+a hold whose answer was lost is undone by re-posting it (the ledger answers with the original or books
+it now) and then releasing it.
+
+**Why.** Risk needs the customer's working orders and positions at the moment of placing, under the same
+lock; across services that would be a distributed lock or a race. The outbox means an execution is
+never booked without its money moving, or the money moved twice, whatever crashes in between. Entries
+never depend on balances read at posting time, so a retry posts exactly what was decided.
+
+**Lost.** The order service is bigger than one responsibility. It can be split (risk as a library or a
+service) once there's a reason; the boundary is in the code already.
+
+## ADR-016: Realistic products and charges, settlement later { #adr-016-products }
+
+**Decision.** Both delivery and intraday (5x, shorting, auto square-off at 15:20), market and limit
+orders, after-market orders, and a discount broker's real charges. Sale proceeds and today's shares
+stay unsettled until T+1, which arrives with clearing in Phase 4.
+
+**Why.** A broker gives its customers the services the market offers, even ones it would rather they
+used sparingly; the habit-building features come later as friction, not as missing products. Real
+charges make the numbers honest: a customer sees what trading costs.
+
+**Lost.** Until Phase 4, sale proceeds can't be reinvested or withdrawn. Visible in funds as
+`unsettled`, so nobody is surprised.

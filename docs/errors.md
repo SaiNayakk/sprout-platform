@@ -80,6 +80,29 @@ ones. `GET /v1/instruments` lists them all.
 Ledger only (services, never the app): an entry whose debits and credits differ, an account name that
 isn't a known kind, or an idempotency key reused for a different entry.
 
+## Orders
+
+Most refusals of an order are the order itself, `REJECTED` with a `rejection.code`, as a broker's order
+book shows them: `INSUFFICIENT_FUNDS`, `INSUFFICIENT_HOLDINGS`, `MARKET_CLOSED` (place an AMO instead),
+`MARKET_OPEN` (an AMO while the market is open), `INTRADAY_CLOSED` (no new intraday positions after 15:20),
+`POSITION_FLIP` (close the position before trading the other way), `PRICE_OUT_OF_BAND`, `INVALID_TICK`,
+`UNAVAILABLE` (part of Sprout or the exchange couldn't be reached; nothing was placed). The problems below
+are requests that were wrong.
+
+### UNKNOWN_INSTRUMENT { #unknown_instrument_order }
+No tradable share with that symbol (an index can't be bought).
+
+### ORDER_NOT_OPEN { #order_not_open }
+Too late to cancel: the order already executed, expired or was rejected.
+
+## Sprout Stock Exchange (members only)
+
+### DUPLICATE_ORDER_ID { #duplicate_order_id }
+A different order already has this `clientOrderId`.
+
+### MARKET_CLOSED, PRICE_OUT_OF_BAND, INVALID_TICK { #exchange_rules }
+The exchange's rules; nothing was recorded.
+
 ## Sprout Bank
 
 ### WEAK_PIN { #weak_pin }

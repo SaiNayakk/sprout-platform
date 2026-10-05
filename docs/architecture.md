@@ -47,7 +47,9 @@ flowchart LR
 | Accounts | Who the customer is (simulated KYC) and which bank account their money comes from | Hold money |
 | Ledger | The money: double-entry books, balances, the journal | Know why money moves, or talk to banks |
 | Payments | Each payment's story: deposits by UPI collect, withdrawals by payout, reconciliation | Hold balances (the ledger does) |
+| Orders (OMS) | Customers' orders, the risk checks before them, holdings, intraday positions, charges | Execute trades (the exchange does) or hold money (the ledger does) |
 | Sprout Bank | *Not Sprout*: a simulated customer bank with UPI PINs, so money can move end to end | Know anything about Sprout's books |
+| Sprout Stock Exchange | *Not Sprout*: a simulated exchange that executes brokers' orders against the simulated market | Know who Sprout's customers are or what they own |
 
 ## A request, end to end
 
@@ -133,6 +135,48 @@ sequenceDiagram
   by the bank ([CHAOS-05](testing/chaos.md#chaos-05)).
 - **The books are checked against the bank** after every pre-prod run ([RECON-01](testing/chaos.md#recon-01)).
 
+## Trading
+
+An order goes from the customer to the order service (OMS), which checks it and blocks its money in the
+ledger, then to the Sprout Stock Exchange, which executes it against the simulated market. The
+exchange's answer, or its signed callback, or (if both are lost) the OMS asking it, books the execution.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant OMS as Orders (OMS)
+  participant MD as Market data
+  participant Led as Ledger
+  participant Ex as Exchange
+  App->>OMS: POST /orders (Idempotency-Key)
+  OMS->>MD: price, trading hours, instrument rules
+  Note over OMS: risk checks under a per-customer lock
+  OMS->>Led: block money: debit cash, credit order-hold (refused if not enough)
+  OMS->>Ex: order (clientOrderId = order id)
+  Ex-->>OMS: FILLED at the market price (or OPEN, resting)
+  Note over OMS: one transaction: order, holdings or position, ledger entry to post
+  OMS->>Led: post the fill: hold released, value to clearing, charges to taxes and income, rest back to cash
+  Ex-->>OMS: signed callback for later executions, expiries, cancels
+```
+
+- **Delivery (`CNC`)**: a buy blocks its value plus charges; the execution takes the real value and
+  charges and gives back the rest. Shares bought today are T1 until settlement. A sell needs the shares
+  (counting those already being sold); its proceeds are `unsettled` until T+1.
+- **Intraday (`MIS`)**: 5x leverage, so a fifth of the value is held as margin while the position is open;
+  short selling allowed. Closing books the profit (to `unsettled`) or loss (from the margin). Every
+  position is closed by Sprout at 15:20 (₹50 + GST), or earlier if its loss reaches 90% of its margin; a
+  loss beyond the customer's money becomes dues, recovered from their next deposit.
+- **Charges** are a discount broker's: no delivery brokerage, intraday ₹20 or 0.03%; STT, exchange
+  charges, SEBI fees, stamp duty and GST, each to its own ledger account.
+- **After-market orders** wait in the OMS and go out at the next open.
+- **Unknown outcomes are asked about, not guessed.** An order the exchange never confirmed stays
+  `PENDING`; the OMS asks the exchange, and rejects it (releasing its money) only once the exchange
+  says it never got it ([CHAOS-06](testing/chaos.md#chaos-06)).
+- **Orders, the exchange and the ledger are reconciled** after every pre-prod run
+  ([RECON-02](testing/chaos.md#recon-02)).
+
+Settlement (T+1: shares delivered, sale proceeds usable) is Phase 4.
+
 ## Running many services on a phone
 
 Each JVM costs memory before it does any work. Measured on the phone-sized budget:
@@ -150,6 +194,6 @@ each service in its own Spring context with its own config, port and database sc
 | Host | Services | Memory limit | Why together |
 |---|---|---|---|
 | edge | gateway, identity | 384 MB | Every request touches both |
-| trading | market data (orders and risk to come) | 256 MB | The trading path; kept apart from sign-in so its faults can't stop people signing in ([ADR-010](decisions.md#adr-010-trading-host), [CHAOS-03](testing/chaos.md#chaos-03)) |
+| trading | market data, orders (with risk) | 320 MB | The trading path; kept apart from sign-in so its faults can't stop people signing in ([ADR-010](decisions.md#adr-010-trading-host), [CHAOS-03](testing/chaos.md#chaos-03)); orders read prices on every placement and risk round |
 | money | ledger, accounts, payments | 320 MB | A payment needs all three, so they fail together anyway ([ADR-012](decisions.md#adr-012-money-host)) |
-| street | Sprout Bank (the exchange, clearing and depository to come) | 256 MB | The outside parties, simulated, kept apart from Sprout's own hosts as the real ones are |
+| street | Sprout Bank, the Sprout Stock Exchange (clearing and depository to come) | 320 MB | The outside parties, simulated, kept apart from Sprout's own hosts as the real ones are |

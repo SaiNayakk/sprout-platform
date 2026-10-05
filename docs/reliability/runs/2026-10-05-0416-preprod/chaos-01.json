@@ -1,0 +1,50 @@
+{
+  "id": "CHAOS-01",
+  "title": "The database goes away",
+  "hypothesis": "With Postgres stopped, sign-in answers 503 with Retry-After in under 3 s (never hanging until the gateway's 5 s timeout), and recovers within 30 s of Postgres returning, without a restart.",
+  "observations": [
+    {
+      "what": "Before (wrong password, so 401 is healthy)",
+      "value": "401 in 334 ms"
+    },
+    {
+      "what": "Database down, try 1",
+      "value": "503 in 2,022 ms"
+    },
+    {
+      "what": "Database down, try 2",
+      "value": "503 in 2,018 ms"
+    },
+    {
+      "what": "Database down, try 3",
+      "value": "503 in 2,021 ms"
+    },
+    {
+      "what": "Retry-After",
+      "value": "5"
+    },
+    {
+      "what": "Answering normally again after Postgres started",
+      "value": "7.3 s"
+    }
+  ],
+  "checks": [
+    {
+      "what": "503 UPSTREAM_UNAVAILABLE every time",
+      "pass": true
+    },
+    {
+      "what": "each in under 3 s",
+      "pass": true
+    },
+    {
+      "what": "with Retry-After",
+      "pass": true
+    },
+    {
+      "what": "recovered within 30 s without a restart",
+      "pass": true
+    }
+  ],
+  "pass": true
+}

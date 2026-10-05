@@ -13,7 +13,7 @@
 
   <groupId>app.sprout.hosts</groupId>
   <artifactId>trading-host</artifactId>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
   <name>trading-host</name>
   <description>One JVM for the trading services: market data now; orders and risk as they arrive.</description>
 
@@ -23,6 +23,7 @@
   <properties>
     <java.version>21</java.version>
     <sprout-marketdata.version>0.1.1</sprout-marketdata.version>
+    <sprout-oms.version>0.1.2</sprout-oms.version>
   </properties>
 
 
@@ -31,6 +32,11 @@
       <groupId>com.github.SaiNayakk</groupId>
       <artifactId>sprout-marketdata</artifactId>
       <version>${sprout-marketdata.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.SaiNayakk</groupId>
+      <artifactId>sprout-oms</artifactId>
+      <version>${sprout-oms.version}</version>
     </dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
   </dependencies>

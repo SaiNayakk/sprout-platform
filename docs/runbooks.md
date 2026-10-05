@@ -60,6 +60,26 @@ RECON-01 compares the ledger's `sprout:bank` with Sprout's account at Sprout Ban
 money moved on one side only. Stop withdrawals, list both sides' movements since the last matching
 run, and fix with a reversing ledger entry (never an edit; the journal can't be edited).
 
+## An order is stuck in PENDING
+
+Its money is blocked, not lost: the exchange didn't confirm it. The order service asks the exchange about
+it every few seconds; if the exchange has it, its state is applied, and if the exchange says it never
+got it, the order is rejected and the money released after 30 seconds ([CHAOS-06](testing/chaos.md#chaos-06)).
+Check that the street host is up.
+
+## The order service logs "The ledger refused"
+
+An entry the order service decided on (a fill or a release) was refused by the ledger. That is a bug, not
+an outage: the entry stays in `oms.ledger_outbox` with `last_error`, retried every round, and nothing after
+it is skipped. Find the order by the entry's reference, fix the cause, and the next round posts it.
+RECON-02 fails while any entry is unposted.
+
+## A customer owes Sprout (dues)
+
+An intraday loss bigger than the customer's money (a gap through the 90% early close) leaves `dues`. The
+risk round takes them from the customer's cash whenever there is some, so their next deposit pays them off
+first. Nothing to do unless they stay unpaid.
+
 ## NATS is down
 
 Prices keep reaching clients; only events for other services stop, and they are dropped rather than

@@ -1,14 +1,17 @@
 package app.sprout.hosts.trading;
 
 import app.sprout.hosts.common.HostLogFields.HostInfo;
+import app.sprout.hosts.common.NoDatabase;
 import app.sprout.marketdata.MarketDataApplication;
+import app.sprout.oms.OmsApplication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
- * The trading host: market data today; orders and risk join it as they're built, each in its own
- * Spring context, as in the edge host.
+ * The trading host: market data, and the order service with its risk checks, each in its own
+ * Spring context, as in the edge host. Orders read prices on every placement and every risk round,
+ * so they live next to the prices.
  *
  * <p>It is a separate JVM from the edge host on purpose: a fault here (a stuck market clock, a
  * flood of price streams, running out of memory) must not take sign-in down with it. CHAOS-03
@@ -33,8 +36,12 @@ public final class TradingHost {
         HostInfo host = HostInfo.load();
         ConfigurableApplicationContext marketData = MarketDataApplication.builder()
                 .properties(host.loggingDefaults())
+                .properties("spring.autoconfigure.exclude=" + NoDatabase.EXCLUDES)   // market data has no database
                 .run(args);
-        log.info("Trading host up: market data running");
-        return new ConfigurableApplicationContext[] {marketData};
+        ConfigurableApplicationContext oms = OmsApplication.builder()
+                .properties(host.loggingDefaults())
+                .run(args);
+        log.info("Trading host up: market data and orders running");
+        return new ConfigurableApplicationContext[] {marketData, oms};
     }
 }
