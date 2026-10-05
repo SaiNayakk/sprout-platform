@@ -32,7 +32,7 @@ def inside(service, url):
     return json.loads(r.stdout) if r.returncode == 0 and r.stdout.strip() else None
 
 
-def call(method, path, body=None, token=None, ip="198.19.200.1", timeout=10):
+def call(method, path, body=None, token=None, ip="198.19.200.1", timeout=10, key=None):
     """Returns (status, json body, headers with lower-case names, seconds)."""
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(BASE + path, data=data, method=method)
@@ -41,6 +41,8 @@ def call(method, path, body=None, token=None, ip="198.19.200.1", timeout=10):
         req.add_header("Content-Type", "application/json")
     if token:
         req.add_header("Authorization", "Bearer " + token)
+    if key:
+        req.add_header("Idempotency-Key", key)
     start = time.monotonic()
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -230,7 +232,116 @@ def chaos_03():
          ("market data back within 60 s", recovered is not None and recovered <= 60)])
 
 
-EXPERIMENTS = {"CHAOS-01": chaos_01, "CHAOS-02": chaos_02, "CHAOS-03": chaos_03}
+# ── money ────────────────────────────────────────────────────────────────────
+
+def sql(query):
+    """A number from the database, read inside the postgres container."""
+    r = compose("exec", "-T", "postgres", "psql", "-U", "sprout", "-d", "sprout", "-tAc", query, check=False)
+    out = r.stdout.strip()
+    return int(out) if out.lstrip("-").isdigit() else None
+
+
+def customer(ip):
+    """A signed-in user with a Sprout Bank account (PIN 2580) and a Sprout account. Returns the token."""
+    token = new_token(ip)
+    bank = call("POST", "/api/bank/v1/accounts", {"holderName": "Chaos Test", "upiPin": "2580"}, token=token, ip=ip)[1]
+    n = uuid.uuid4().int
+    pan = "AB" + chr(65 + n % 26) + "P" + chr(65 + (n // 26) % 26) + f"{n % 10000:04d}" + "K"
+    call("POST", "/api/accounts/v1/accounts", {"legalName": "Chaos Test", "dateOfBirth": "1995-01-01", "pan": pan,
+                                               "bankVpa": bank["vpa"]}, token=token, ip=ip)
+    return token
+
+
+def deposit_status(token, ip, deposit_id):
+    return call("GET", f"/api/payments/v1/deposits/{deposit_id}", token=token, ip=ip)[1].get("status")
+
+
+def fund(token, ip, amount):
+    d = call("POST", "/api/payments/v1/deposits", {"amount": amount}, token=token, ip=ip, key=str(uuid.uuid4()))[1]
+    req = call("GET", "/api/bank/v1/requests?status=PENDING", token=token, ip=ip)[1]["requests"][0]
+    call("POST", f"/api/bank/v1/requests/{req['id']}/approve", {"upiPin": "2580"}, token=token, ip=ip)
+    wait_until(lambda: deposit_status(token, ip, d["id"]) == "COMPLETED", 20)
+
+
+def balances(token, ip):
+    b = call("GET", "/api/payments/v1/balance", token=token, ip=ip)[1]
+    bank = call("GET", "/api/bank/v1/accounts/me", token=token, ip=ip)[1]
+    return b.get("available"), b.get("withdrawing"), bank.get("balance")
+
+
+def chaos_04():
+    ip = "198.19.204.1"
+    token = customer(ip)
+    fund(token, ip, "1000")
+    compose("stop", "street")
+    start = time.monotonic()
+    status, w, _, took = call("POST", "/api/payments/v1/withdrawals", {"amount": "400"}, token=token, ip=ip, key=str(uuid.uuid4()))
+    during = balances(token, ip)
+    compose("start", "street")
+    done = wait_until(lambda: call("GET", f"/api/payments/v1/withdrawals/{w.get('id')}", token=token, ip=ip)[1].get("status") == "COMPLETED", 90, 1)
+    after = balances(token, ip)
+    return result(
+        "CHAOS-04", "Sprout Bank goes away mid-withdrawal",
+        "With the bank unreachable, a withdrawal is accepted and the money held (never lost, never paid twice); "
+        "when the bank returns, the reconciler finishes it within 90 s and the money arrives in the bank exactly once.",
+        [("Withdrawal while the bank was down", f"{status} {w.get('status')} in {took * 1000:,.0f} ms"),
+         ("Available / withdrawing / bank balance while down", " / ".join(str(x) for x in during)),
+         ("Completed after the bank came back", f"{done} s" if done is not None else "never"),
+         ("Available / withdrawing / bank balance after", " / ".join(str(x) for x in after))],
+        [("accepted and held, not refused or lost", status == 201 and w.get("status") == "PROCESSING" and during[0] == "600.00" and during[1] == "400.00"),
+         ("answered without waiting for the bank", took < 6),
+         ("completed within 90 s of the bank returning", done is not None and done <= 90),
+         ("paid exactly once", after == ("600.00", "0.00", "99400.00"))])
+
+
+def chaos_05():
+    ip = "198.19.205.1"
+    token = customer(ip)
+    d = call("POST", "/api/payments/v1/deposits", {"amount": "750"}, token=token, ip=ip, key=str(uuid.uuid4()))[1]
+    req = call("GET", "/api/bank/v1/requests?status=PENDING", token=token, ip=ip)[1]["requests"][0]
+    compose("stop", "money")
+    approved, body, _, _ = call("POST", f"/api/bank/v1/requests/{req['id']}/approve", {"upiPin": "2580"}, token=token, ip=ip)
+    time.sleep(5)  # the bank tries to tell payments, and fails
+    compose("start", "money")
+    done = wait_until(lambda: deposit_status(token, ip, d["id"]) == "COMPLETED", 120, 1)
+    available, _, bank = balances(token, ip)
+    credited = sql(f"SELECT COUNT(*) FROM ledger.journal_entries WHERE reference = '{d['id']}'")
+    return result(
+        "CHAOS-05", "Payments is down when the customer approves",
+        "The customer approves in the bank while the money host is down. The bank keeps the news and retries; "
+        "when the money host is back, the deposit completes within 120 s and is credited exactly once.",
+        [("Approval in the bank (money host down)", f"{approved} {body.get('status')}"),
+         ("Deposit completed after the money host started", f"{done} s" if done is not None else "never"),
+         ("Sprout cash / bank balance", f"{available} / {bank}"),
+         ("Ledger entries for this deposit", credited)],
+        [("the customer could still approve", approved == 200),
+         ("completed within 120 s of the money host returning", done is not None and done <= 120),
+         ("credited exactly once", available == "750.00" and credited == 1),
+         ("the bank's side matches", bank == "99250.00")])
+
+
+def recon_01():
+    ledger_bank = sql("SELECT balance_paise FROM ledger.accounts WHERE name = 'sprout:bank'") or 0
+    bank_holds = sql("SELECT balance_paise FROM bank.accounts WHERE vpa = 'sprout@sproutbank'") or 0
+    assets = sql("SELECT COALESCE(SUM(balance_paise), 0) FROM ledger.accounts WHERE kind = 'ASSET'")
+    liabilities = sql("SELECT COALESCE(SUM(balance_paise), 0) FROM ledger.accounts WHERE kind = 'LIABILITY'")
+    stuck = sql("SELECT COUNT(*) FROM payments.withdrawals WHERE status = 'PROCESSING'")
+    rupees = lambda p: f"₹{p / 100:,.2f}"
+    return result(
+        "RECON-01", "The books agree with the bank",
+        "After every test and every failure above: the ledger balances (assets equal liabilities), and what it says "
+        "Sprout holds at the bank is exactly what Sprout Bank says it holds, to the paisa.",
+        [("Ledger assets / liabilities", f"{rupees(assets)} / {rupees(liabilities)}"),
+         ("Ledger: Sprout's money at the bank", rupees(ledger_bank)),
+         ("Sprout Bank: Sprout's account", rupees(bank_holds)),
+         ("Withdrawals still in progress", stuck)],
+        [("the ledger balances", assets == liabilities),
+         ("the ledger matches the bank", ledger_bank == bank_holds),
+         ("nothing left in progress", stuck == 0)])
+
+
+EXPERIMENTS = {"CHAOS-01": chaos_01, "CHAOS-02": chaos_02, "CHAOS-03": chaos_03, "CHAOS-04": chaos_04,
+               "CHAOS-05": chaos_05, "RECON-01": recon_01}
 
 
 def main():

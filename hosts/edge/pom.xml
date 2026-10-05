@@ -22,7 +22,7 @@
        Each version X.Y.Z is built from tag vX.Y.Z of its repository by ../install-services.sh. -->
   <properties>
     <java.version>21</java.version>
-    <sprout-identity.version>0.2.2</sprout-identity.version>
+    <sprout-identity.version>0.2.3</sprout-identity.version>
     <sprout-gateway.version>0.2.4</sprout-gateway.version>
   </properties>
 
@@ -51,6 +51,11 @@
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
         <includes><include>sprout-host.properties</include></includes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <excludes><exclude>sprout-host.properties</exclude></excludes>
       </resource>
     </resources>
     <plugins>

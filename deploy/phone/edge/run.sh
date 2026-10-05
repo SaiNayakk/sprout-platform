@@ -17,5 +17,5 @@ export GATEWAY_JWKS_URL=http://127.0.0.1:8101/.well-known/jwks.json
 export GATEWAY_MARKETDATA_URL=http://127.0.0.1:8103
 export LOG_FORMAT=ecs
 
-exec java -XX:+UseSerialGC -Xms32m -Xmx160m -Xss512k -XX:MaxMetaspaceSize=192m \
+java -XX:+UseSerialGC -Xms32m -Xmx160m -Xss512k -XX:MaxMetaspaceSize=192m \
   -XX:ReservedCodeCacheSize=48m -XX:TieredStopAtLevel=1 -jar edge-host.jar

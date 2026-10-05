@@ -44,11 +44,16 @@ services:
       IDENTITY_DB_USER: sprout
       IDENTITY_DB_PASSWORD: preprod-only-not-a-secret
       IDENTITY_TOTP_KEY: cHJlcHJvZC1vbmx5LTMyLWJ5dGUtdGVzdC1rZXkhISE=
+      # like the phone: the signing key comes from a file (run.sh makes a throwaway one per run)
+      IDENTITY_SIGNING_KEY_PATH: /keys/signing.pem
       IDENTITY_BIND: 0.0.0.0
       GATEWAY_BIND: 0.0.0.0
       GATEWAY_IDENTITY_URL: http://127.0.0.1:8101
       GATEWAY_JWKS_URL: http://127.0.0.1:8101/.well-known/jwks.json
       GATEWAY_MARKETDATA_URL: http://trading:8103
+      GATEWAY_ACCOUNTS_URL: http://money:8104
+      GATEWAY_PAYMENTS_URL: http://money:8105
+      GATEWAY_BANK_URL: http://street:8107
       EDGE_WARMUP_SIGNINS: ${EDGE_WARMUP_SIGNINS:-300}
       # pre-prod sits behind the test runner the way prod sits behind Cloudflare
       GATEWAY_TRUST_CF_IP: "true"
@@ -59,6 +64,8 @@ services:
       SPRING_APPLICATION_JSON: '{"management.metrics.distribution.percentiles-histogram.http.server.requests": true}'
       OTEL_METRICS_URL: http://lgtm:4318/v1/metrics
       OTEL_TRACES_URL: http://lgtm:4318/v1/traces
+    volumes:
+      - ./out/keys:/keys:ro
     ports:
       - "8100:8100"
     mem_limit: 384m                     # the phone's budget for this host
@@ -98,6 +105,82 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8103/actuator/health >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+      start_period: 15s
+
+  # The money host: ledger, accounts and payments. Throwaway secrets, shared with the street host
+  # where the two must agree (the bank partner key and the callback signing secret).
+  money:
+    build:
+      context: ..
+      dockerfile: preprod/Dockerfile.host
+      args:
+        HOST: money
+        XMX: 160m
+    environment:
+      LEDGER_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=ledger
+      ACCOUNTS_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=accounts
+      PAYMENTS_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=payments
+      LEDGER_DB_PASSWORD: preprod-only-not-a-secret
+      ACCOUNTS_DB_PASSWORD: preprod-only-not-a-secret
+      PAYMENTS_DB_PASSWORD: preprod-only-not-a-secret
+      LEDGER_BIND: 0.0.0.0
+      ACCOUNTS_BIND: 0.0.0.0
+      PAYMENTS_BIND: 0.0.0.0
+      ACCOUNTS_BANK_URL: http://street:8107
+      ACCOUNTS_PAN_PEPPER: preprod-only-pan-pepper
+      PAYMENTS_ACCOUNTS_URL: http://127.0.0.1:8104
+      PAYMENTS_LEDGER_URL: http://127.0.0.1:8106
+      PAYMENTS_BANK_URL: http://street:8107
+      PAYMENTS_CALLBACK_URL: http://money:8105/internal/v1/bank-events
+      PAYMENTS_RECONCILE_EVERY: 5s
+      SPROUT_SERVICE_KEY: preprod-only-service-key
+      BANK_SPROUT_PARTNER_KEY: preprod-only-partner-key
+      BANK_SPROUT_WEBHOOK_SECRET: preprod-only-webhook-secret
+      LOG_FORMAT: ecs
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      MANAGEMENT_OTLP_METRICS_EXPORT_STEP: 10s
+      OTEL_METRICS_URL: http://lgtm:4318/v1/metrics
+      OTEL_TRACES_URL: http://lgtm:4318/v1/traces
+    mem_limit: 320m                     # the phone's budget for this host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8106/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8104/actuator/health >/dev/null && wget -qO- http://127.0.0.1:8105/actuator/health >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+      start_period: 20s
+
+  # The street host: Sprout Bank (the outside world, simulated).
+  street:
+    build:
+      context: ..
+      dockerfile: preprod/Dockerfile.host
+      args:
+        HOST: street
+        XMX: 128m
+    environment:
+      BANK_DB_URL: jdbc:postgresql://postgres:5432/sprout?currentSchema=bank
+      BANK_DB_PASSWORD: preprod-only-not-a-secret
+      BANK_BIND: 0.0.0.0
+      BANK_COLLECT_TTL: 30s             # short, so E2E can watch a request expire
+      BANK_SPROUT_PARTNER_KEY: preprod-only-partner-key
+      BANK_SPROUT_WEBHOOK_SECRET: preprod-only-webhook-secret
+      LOG_FORMAT: ecs
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      MANAGEMENT_OTLP_METRICS_EXPORT_STEP: 10s
+      OTEL_METRICS_URL: http://lgtm:4318/v1/metrics
+      OTEL_TRACES_URL: http://lgtm:4318/v1/traces
+    mem_limit: 256m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8107/actuator/health >/dev/null"]
       interval: 3s
       timeout: 3s
       retries: 60

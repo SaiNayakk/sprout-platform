@@ -4,6 +4,7 @@ Every pre-prod run writes its evidence here: the release it tested, every end-to
 
 | Run (UTC) | Release | Result |
 |---|---|---|
+| [2026-10-05-0118-preprod](2026-10-05-0118-preprod/index.md) | identity 0.2.3, gateway 0.2.4, accounts 0.1.0, payments 0.1.0, ledger 0.1.0, bank 0.1.0, marketdata 0.1.1 | ✅ passed |
 | [2026-10-04-2152-preprod](2026-10-04-2152-preprod/index.md) | identity 0.2.2, gateway 0.2.4, marketdata 0.1.1 | ✅ passed |
 | [2026-10-04-2021-preprod](2026-10-04-2021-preprod/index.md) | identity 0.2.1, gateway 0.2.4, marketdata 0.1.0 | ✅ passed |
 | [2026-10-03-2333-preprod](2026-10-03-2333-preprod/index.md) | gateway v0.1.0, identity v0.2.1 | ✅ passed |

@@ -1,0 +1,39 @@
+# The gateway's routes in this deployment. Which services exist, and where, belongs to the platform,
+# not to the gateway's own code; this file replaces the gateway's built-in list (EdgeHost loads it).
+sprout:
+  gateway:
+    routes:
+      - name: identity
+        prefix: /api/identity
+        target: ${GATEWAY_IDENTITY_URL:http://127.0.0.1:8101}
+        public:
+          - POST /v1/users
+          - POST /v1/sessions
+          - POST /v1/sessions/totp
+          - POST /v1/tokens/refresh
+          - GET /.well-known/jwks.json
+        auth-limited:
+          - POST /v1/users
+          - POST /v1/sessions
+          - POST /v1/sessions/totp
+          - POST /v1/tokens/refresh
+      - name: marketdata
+        prefix: /api/marketdata
+        target: ${GATEWAY_MARKETDATA_URL:http://127.0.0.1:8103}
+        public:
+          - GET /v1/market
+          - GET /v1/instruments
+          - GET /v1/instruments/{symbol}
+        streams:
+          - GET /v1/stream
+      - name: accounts
+        prefix: /api/accounts
+        target: ${GATEWAY_ACCOUNTS_URL:http://127.0.0.1:8104}
+      - name: payments
+        prefix: /api/payments
+        target: ${GATEWAY_PAYMENTS_URL:http://127.0.0.1:8105}
+      - name: bank
+        prefix: /api/bank
+        target: ${GATEWAY_BANK_URL:http://127.0.0.1:8107}
+        public:
+          - GET /app

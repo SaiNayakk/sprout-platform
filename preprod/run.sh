@@ -24,7 +24,10 @@ RUN_ID="$(date -u +%Y-%m-%d-%H%M)-preprod"
 RUN_START=$(date +%s)
 OUT="$ROOT/preprod/out"
 RUN_DIR="$ROOT/docs/reliability/runs/$RUN_ID"
-rm -rf "$OUT" && mkdir -p "$OUT/e2e" "$RUN_DIR"
+rm -rf "$OUT" && mkdir -p "$OUT/e2e" "$OUT/keys" "$RUN_DIR"
+# a throwaway signing key, made by the same program as the phone's: identity reads it from a file
+# exactly as in production (a generated in-memory key once hid a bug in that path)
+java "$ROOT/deploy/phone/KeyGen.java" "$OUT/keys/signing.pem" && chmod 644 "$OUT/keys/signing.pem"
 status=0
 log() { printf '\n\033[1m> %s\033[0m\n' "$*"; }
 stage() { echo "$1=$2" >> "$OUT/stages.txt"; [ "$2" = pass ] || status=1; }
@@ -41,7 +44,7 @@ trap cleanup EXIT
 
 log "Building the hosts from their release manifests"
 "$ROOT/hosts/install-services.sh" || { echo "building the services at their release tags failed"; exit 1; }
-for host in edge trading; do
+for host in edge trading money street; do
   (cd "$ROOT/hosts/$host" && mvn -q -B -DskipTests package) || { echo "$host host build failed"; exit 1; }
 done
 
@@ -58,7 +61,7 @@ if "${COMPOSE[@]}" "${profiles[@]}" up -d --build --wait; then
       && echo "Dashboard: http://localhost:3000/d/sprout-edge"
   fi
 else
-  "${COMPOSE[@]}" logs edge trading | tail -80; stage environment fail; exit 1
+  "${COMPOSE[@]}" logs edge trading money street | tail -120; stage environment fail; exit 1
 fi
 
 log "End-to-end suite"
@@ -67,7 +70,7 @@ if (cd "$ROOT/e2e" && mvn -q -B test -Dsprout.baseUrl=http://localhost:8100); th
 cp "$ROOT"/e2e/target/surefire-reports/TEST-*.xml "$OUT/e2e/" 2>/dev/null
 
 # memory and CPU of the hosts every 5 s while under load
-( while sleep 5; do docker stats --no-stream --format '{{.Name}} {{.MemUsage}} {{.CPUPerc}}' | grep -E "edge|trading"; done ) > "$OUT/memory-during.txt" &
+( while sleep 5; do docker stats --no-stream --format '{{.Name}} {{.MemUsage}} {{.CPUPerc}}' | grep -E "edge|trading|money|street"; done ) > "$OUT/memory-during.txt" &
 sampler=$!
 
 log "PERF-01: sign-in throughput"
@@ -88,7 +91,7 @@ python "$ROOT/preprod/chaos.py" "$OUT" || status=1
 
 log "Collecting evidence"
 "${COMPOSE[@]}" logs --no-color edge > "$OUT/edge.log" 2>&1
-"${COMPOSE[@]}" logs --no-color trading > "$OUT/trading.log" 2>&1
+for host in trading money street; do "${COMPOSE[@]}" logs --no-color $host > "$OUT/$host.log" 2>&1; done
 if [ "$OBS" = true ]; then
   sleep 20   # let the last metrics export land
   for q in 'sum by (result) (identity_signins_total)' \
