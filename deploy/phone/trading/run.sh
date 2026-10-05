@@ -16,6 +16,10 @@ for svc in OMS PLANS HABITS REWARDS; do
   export "${svc}_BIND=127.0.0.1"
 done
 export LOG_FORMAT=ecs
+if [ "${SPROUT_SANDBOX:-false}" = true ]; then
+  export MARKETDATA_CLOCK=ACCELERATED   # the sandbox's market runs fast, so its fictional customers build months of history
+  export MARKETDATA_SPEED=30
+fi
 # accounts, ledger and the exchange default to 127.0.0.1 on their ports
 
 java -XX:+UseSerialGC -Xms32m -Xmx160m -Xss512k -XX:MaxMetaspaceSize=192m \

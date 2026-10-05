@@ -22,6 +22,9 @@ for svc in DEPOSITORY CLEARING; do
   export "${svc}_BIND=127.0.0.1"
 done
 export LOG_FORMAT=ecs
+if [ "${SPROUT_SANDBOX:-false}" = true ]; then
+  export BANK_PAYROLL_FLOAT=100000000.00   # the sandbox's fictional payroll pays its fictional customers
+fi
 # everything else (market data, the order service's and back office's callbacks) defaults to 127.0.0.1
 
 java -XX:+UseSerialGC -Xms32m -Xmx160m -Xss512k -XX:MaxMetaspaceSize=192m \

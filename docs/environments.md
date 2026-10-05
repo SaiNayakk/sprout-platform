@@ -37,6 +37,10 @@ evidence and destroys it, volumes included.
 | `k6` | Load generator for request/response performance tests | n/a |
 | `loadgen` | Java load generator for price streams, on the same clock as the services | n/a |
 
+Pre-prod runs as the public sandbox (`SPROUT_SANDBOX=true`): its fifteen fictional customers are set up
+and live every session of the fast market while the tests run, so every release is also checked with
+real background activity, and reconciliation must still find the books exact at the end.
+
 Limits mirror what the phone can give each host, so a memory regression fails in pre-prod first.
 Configuration mirrors production too: identity loads its signing key from a file, as on the phone (a
 generated in-memory key once hid a bug in exactly that path; see [Incidents](incidents.md)).

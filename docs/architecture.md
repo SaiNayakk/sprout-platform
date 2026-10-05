@@ -53,6 +53,7 @@ flowchart LR
 | Habits | Streaks, levels, badges, points, monthly challenges, Year Wrapped, squads, readiness and Future You, worked out from trading history | Reward trading volume, or rank people by money |
 | Goals | Pots invested in a share, with targets; round-ups from UPI spends, swept under AutoPay | Hold money itself (the ledger does), or take money without a mandate |
 | Rewards | What vested habit points buy (the vault), and referral rewards | Store points (habits works them out), or reward a sign-up |
+| Sandbox | The public demo: fictional customers set up and living through the same APIs as anyone, for visitors to explore as | Run anywhere but the sandbox; store a password; act on a real customer |
 | Statements | A customer's records: contract notes, funds statements, tax P&amp;L, holdings statements, read from the books | Store anything (it has no database) |
 | Reconciliation | Comparing every book with every other it should agree with, every day | Fix anything (a break is for a person) |
 | Settlement | Sprout's back office: checks each day's obligation against Sprout's books, moves and books the money, settles clients | Decide what was traded (the order service and the exchange do) |
@@ -287,6 +288,30 @@ two at once can't spend the same points. The vault's brands are fictional. **Ref
 habit, not the sign-up: both get 500 points once the new customer has invested in 3 different months
 ([ADR-022](decisions.md#adr-022-rewards)).
 
+## The public sandbox
+
+Anyone can explore Sprout without signing up, as one of fifteen fictional customers: five women, five
+men, and five non-binary people or people of other genders, from across India, each with their own
+pronouns, city, story and way of investing. Every way of investing (steady plans, round-ups, a goal,
+just starting, exploring) appears once in every group, so no group is given a stereotype. Visitors
+choose a group (or no preference) and get whoever in it was explored least recently.
+
+**Their history is real** ([ADR-023](decisions.md#adr-023-sandbox)). The sandbox's market runs fast, and
+every trading session each fictional person lives their way through the same APIs as a customer: paid
+monthly by a fictional payroll, money added when cash runs low, UPI spends at the demo merchants rounded
+up and swept, pots topped up, shares bought and now and then one sold, plans buying on their own. Their
+streaks, statements and reconciliation are as real as anyone's, because nothing about them is written
+around the services.
+
+They are set up the same way, step by step: a sign-in (an identity **demo user**), a bank account with a
+UPI PIN, a Sprout account through KYC, a first deposit approved in the bank, then AutoPay and round-ups,
+a plan or a pot, readiness, one of three mixed squads, and a friend's referral code. A demo user signs
+in like anyone, with a new long random password set just before each sign-in (none is stored); it can't
+turn on two-factor and never locks after wrong passwords, so no visitor can spoil one for the next.
+
+The sandbox runs only where `SPROUT_SANDBOX=true` (pre-prod, and the public demo on the phone); identity
+refuses demo users anywhere else.
+
 ## Records and reconciliation
 
 **Statements are read, never stored.** Contract notes, funds statements, profit and loss and holdings
@@ -319,7 +344,7 @@ each service in its own Spring context with its own config, port and database sc
 
 | Host | Services | Memory limit | Why together |
 |---|---|---|---|
-| edge | gateway, identity | 384 MB | Every request touches both |
+| edge | gateway, identity, and the sandbox where it runs | 384 MB | Every request touches both |
 | trading | market data, orders (with risk), plans, habits, rewards | 320 MB | The trading path; kept apart from sign-in so its faults can't stop people signing in ([ADR-010](decisions.md#adr-010-trading-host), [CHAOS-03](testing/chaos.md#chaos-03)); orders read prices on every placement and risk round |
 | money | ledger, accounts, payments, settlement, statements, reconciliation, goals | 320 MB | A payment needs all three, so they fail together anyway ([ADR-012](decisions.md#adr-012-money-host)) |
 | street | Sprout Bank, the Sprout Stock Exchange, the clearing corporation, the depository | 320 MB | The outside parties, simulated, kept apart from Sprout's own hosts as the real ones are |
