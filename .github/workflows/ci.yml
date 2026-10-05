@@ -37,6 +37,7 @@ jobs:
           bash -n preprod/run.sh
           bash -n hosts/install-services.sh
           python -m py_compile preprod/report.py preprod/chaos.py
+          python deploy/phone/check-scripts.py
       - name: Build the docs (broken links fail)
         run: |
           pip install -r docs/requirements.txt
