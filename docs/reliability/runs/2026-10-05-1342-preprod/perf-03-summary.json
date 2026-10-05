@@ -1,0 +1,15 @@
+{
+  "clients" : 200,
+  "symbolsPerClient" : 5,
+  "seconds" : 60,
+  "opened" : 200,
+  "failedToOpen" : 0,
+  "endedEarly" : 0,
+  "ticksReceived" : 510383,
+  "ticksPerSecond" : 8506.383333333333,
+  "seqGaps" : 12037,
+  "p50Ms" : 5,
+  "p95Ms" : 21,
+  "p99Ms" : 39,
+  "maxMs" : 205
+}
