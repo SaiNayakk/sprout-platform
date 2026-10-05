@@ -79,8 +79,7 @@ new = {"SPROUT_SERVICE_KEY": secrets.token_urlsafe(32), "BANK_SPROUT_PARTNER_KEY
 missing = {k: v for k, v in new.items() if k not in have}
 if missing:
     with open(path, "a") as f:
-        f.writelines(f"{k}={v}
-" for k, v in missing.items())
+        f.writelines(f"{k}={v}\n" for k, v in missing.items())
 print("> added server secrets: " + (", ".join(missing) if missing else "none needed"))
 PY
 if [ ! -f "$KEYS/signing.pem" ]; then
