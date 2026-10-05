@@ -48,6 +48,12 @@ public final class EdgeHost {
         if (signIns > 0) {
             WarmUp.run(identity, gateway, signIns);
         }
+        // the public sandbox's fictional customers, only where this deployment is the sandbox
+        if (Boolean.parseBoolean(System.getenv().getOrDefault("SPROUT_SANDBOX", "false"))) {
+            ConfigurableApplicationContext sandbox = app.sprout.sandbox.SandboxApplication.builder().properties(host.loggingDefaults()).run(args);
+            log.info("Edge host up: identity, gateway and the sandbox running in one JVM");
+            return new ConfigurableApplicationContext[] {identity, gateway, sandbox};
+        }
         log.info("Edge host up: identity and gateway running in one JVM");
         return new ConfigurableApplicationContext[] {identity, gateway};
     }

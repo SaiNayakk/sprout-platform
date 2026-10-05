@@ -293,6 +293,16 @@ months**, and a code can't be used on yourself.
 ### E2E-97 { #e2e-97 }
 **This month's challenges and the year wrapped follow from what was bought.**
 
+## The public sandbox
+
+### E2E-100 { #e2e-100 }
+**A visitor chooses who to explore as and is signed in as them, a real customer**: the person's name,
+an account with money in it, a deposit on record; and two-factor can't be turned on for them.
+
+### E2E-101 { #e2e-101 }
+**Visitors in the same group are given different people, least recently explored first**; an unknown
+group is refused.
+
 ## Results
 
 The latest results, case by case, are in each run's evidence page under

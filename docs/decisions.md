@@ -302,3 +302,20 @@ a lock per customer does that without a balance row to keep right.
 **Lost.** Each vault read asks habits for the customer's picture (a year of history). Rewarding
 referrals when someone looks means a friend's reward appears the next time either opens rewards, not
 the moment the third month's purchase is made.
+
+## ADR-023: The sandbox's history is lived, on a fast clock, never written in { #adr-023-sandbox }
+
+**Decision.** The public sandbox's fictional customers get their history by living it: the sandbox's
+market runs 30 times real speed (a trading day in about 13 minutes, a month in about 5 hours), and every
+session each person acts through the same APIs as any customer. Nothing is imported or written into a
+service's database around its API.
+
+**Why.** Habits, statements, settlement and reconciliation all work from executed trades and the books.
+History written in around them would either break reconciliation (trades the exchange never saw) or need
+an import path that exists only for the demo. Lived history keeps every number on every screen honest,
+and the sandbox exercises the whole system continuously, which pre-prod now does too: it runs as the
+sandbox, so the fictional customers live alongside every test and the books must still agree at the end.
+
+**Lost.** Time in the sandbox isn't the calendar: a visitor sees October pass in an afternoon. A new
+sandbox needs a few hours before its people have months behind them. Fifteen people acting every session
+cost the phone some CPU.
