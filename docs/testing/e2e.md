@@ -5,7 +5,7 @@ talks to a running environment **only through the gateway**, exactly as a client
 the released services together, not any one service's code.
 
 Each case has a stable id. Ids are grouped: `0x` happy journeys, `1x` input validation, `2x` sign-in
-protection, `3x` attacks and the edge, `4x` market data.
+protection, `3x` attacks and the edge, `4x` market data, `5x` money.
 
 ```bash
 mvn -f e2e/pom.xml test -Dsprout.baseUrl=http://localhost:8100
@@ -134,6 +134,46 @@ checked against the one-minute candles published afterwards: the live feed and t
 ### E2E-47 { #e2e-47 }
 **A bad stream request is refused before it starts.** An unknown symbol gets `404`, more than 50
 symbols `400`, and no token `401`, each as a normal JSON problem rather than a broken stream.
+
+## Money
+
+Each case starts with a new customer who has a Sprout Bank account (UPI PIN set) and a Sprout account
+linked to it. Pre-prod's bank lets payment requests wait 30 seconds before they expire.
+
+### E2E-50 { #e2e-50 }
+**Open a bank account with a UPI PIN, then a Sprout account linked to it.** The bank account starts with
+₹1,00,000 of pretend money; the Sprout account is `ACTIVE`, shows the PAN only masked, and has no money yet.
+
+### E2E-51 { #e2e-51 }
+**KYC refuses the underage, business PANs, unknown UPI addresses and a second account per PAN.**
+
+### E2E-52 { #e2e-52 }
+**Add money: approved in the bank with the PIN, it arrives in Sprout.** The deposit waits, the bank shows a
+request from "Sprout Investments", the customer approves it with the PIN, and the deposit completes: Sprout
+cash up by exactly the amount, the bank balance down by exactly the amount.
+
+### E2E-53 { #e2e-53 }
+**Wrong PINs count down; declining ends the deposit; nothing moves.**
+
+### E2E-54 { #e2e-54 }
+**Retrying with the same `Idempotency-Key` makes one deposit and one bank request.**
+
+### E2E-55 { #e2e-55 }
+**Withdraw: never more than you have; what you take arrives in the bank.**
+
+### E2E-56 { #e2e-56 }
+**Ten withdrawals racing for money that covers five: exactly five succeed.** The ledger's locking means no
+money is ever spent twice, however the requests interleave.
+
+### E2E-57 { #e2e-57 }
+**A forged bank callback is refused.** Even through the gateway with a valid user token, a callback without
+the bank's signature changes nothing.
+
+### E2E-58 { #e2e-58 }
+**Nobody else can see my payments or approve my bank requests.**
+
+### E2E-59 { #e2e-59 }
+**An unanswered payment request expires, and so does the deposit.**
 
 ## Results
 

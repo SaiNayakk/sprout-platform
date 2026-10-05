@@ -24,6 +24,9 @@ second region.
 | A service is slow | Gateway timeout of 5 s; circuit breaker opens after repeated failures so clients fail fast | Gateway tests; CHAOS-05 planned |
 | The trading host dies | Sign-in unaffected (separate JVM); market data `503` fast; open streams end so clients reconnect | [CHAOS-03](../testing/chaos.md#chaos-03) |
 | NATS is down | Prices keep streaming; events are dropped and counted, not queued; reconnects by itself | [CHAOS-02](../testing/chaos.md#chaos-02) |
+| The bank is unreachable | Withdrawals are held and finished by the reconciler; nothing lost or paid twice | [CHAOS-04](../testing/chaos.md#chaos-04) |
+| Payments is down when a customer approves | The bank retries its signed callback; credited exactly once | [CHAOS-05](../testing/chaos.md#chaos-05) |
+| Books drift from the bank | Ledger and bank compared to the paisa after every run | [RECON-01](../testing/chaos.md#recon-01) |
 | A slow streaming client | Gets the newest prices only (conflation); never slows the market or grows memory | Market data tests; [PERF-03](../testing/performance.md#perf-03) |
 | Abuse or a stuck client | Per-client rate limits, tighter on sign-in | [E2E-34](../testing/e2e.md#e2e-34) |
 | Stolen refresh token | Reuse detected, whole session ended | [E2E-30](../testing/e2e.md#e2e-30) |

@@ -85,7 +85,7 @@ def peak_memory(host):
     return peak
 
 
-chaos = [load(p) for p in sorted(glob.glob(os.path.join(out, "chaos-*.json")))]
+chaos = [load(p) for p in sorted(glob.glob(os.path.join(out, "chaos-*.json")) + glob.glob(os.path.join(out, "recon-*.json")))]
 chaos = [c for c in chaos if c]
 
 # ── the page ─────────────────────────────────────────────────────────────────
@@ -137,7 +137,7 @@ if fanout:
           "Pass when every stream opens and stays open, p95 is under 250 ms and p99 under 1 s.", ""]
 
 L += ["## Memory under load", "", "| Host | Peak | Limit |", "|---|---|---|"]
-for host, limit in (("edge", 384), ("trading", 256)):
+for host, limit in (("edge", 384), ("trading", 256), ("money", 320), ("street", 256)):
     peak = peak_memory(host)
     L.append(f"| {host} | {f'{peak:.0f} MiB' if peak else 'n/a'} | {limit} MiB |")
 L.append("")
@@ -156,7 +156,7 @@ L += ["## Files", "", "- `e2e/`: JUnit reports", "- `perf-01-k6-summary.json`: e
       "- `perf-02-k6-summary.json`: sign-in straight after a restart",
       "- `perf-03-summary.json`: the fan-out result", "- `memory-during.txt`: host memory and CPU every 5 s under load",
       "- `chaos-*.json`: each experiment's observations and checks",
-      "- `edge.log`, `trading.log`: the hosts' structured logs for the whole run"]
+      "- `edge.log`, `trading.log`, `money.log`, `street.log`: the hosts' structured logs for the whole run"]
 if os.path.exists(os.path.join(out, "metrics.jsonl")):
     L.append("- `metrics.jsonl`: counters queried from Prometheus at the end of the run")
 

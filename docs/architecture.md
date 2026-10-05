@@ -18,10 +18,23 @@ flowchart LR
     md[Market data]
     oms[Orders, planned]
   end
+  subgraph money [Money host JVM]
+    acc[Accounts]
+    pay[Payments]
+    led[Ledger]
+  end
+  subgraph street [Street host JVM: the outside world, simulated]
+    bank[Sprout Bank]
+  end
   gw -->|/api/identity| id
   gw -->|/api/marketdata, incl. live streams| md
-  gw -.->|planned| oms
-  id --> iddb[(identity schema)]
+  gw -->|/api/accounts| acc
+  gw -->|/api/payments| pay
+  gw -->|/api/bank| bank
+  pay --> led
+  pay --> acc
+  pay <-->|collect, payout / signed callbacks| bank
+  acc -->|is this UPI address real?| bank
   md -->|marketdata.tick| nats{{NATS}}
   nats -.->|planned| oms
 ```
@@ -31,6 +44,10 @@ flowchart LR
 | Gateway | The public edge: routing, verifying access tokens, rate limits, security headers, request ids | Store anything; know what a password is |
 | Identity | Users, password hashes, two-factor secrets, sessions, refresh tokens, signing keys | Know about money or orders |
 | Market data | The simulated market: instruments, the market clock, prices, candles; publishing every price change | Know who is watching or what they own |
+| Accounts | Who the customer is (simulated KYC) and which bank account their money comes from | Hold money |
+| Ledger | The money: double-entry books, balances, the journal | Know why money moves, or talk to banks |
+| Payments | Each payment's story: deposits by UPI collect, withdrawals by payout, reconciliation | Hold balances (the ledger does) |
+| Sprout Bank | *Not Sprout*: a simulated customer bank with UPI PINs, so money can move end to end | Know anything about Sprout's books |
 
 ## A request, end to end
 
@@ -86,6 +103,36 @@ Every tick is also published to NATS as a `marketdata.tick` event for the servic
 prices (orders, risk, the ledger). Clients never depend on NATS, so prices keep flowing when it is
 down ([CHAOS-02](testing/chaos.md#chaos-02)).
 
+## Money in and out
+
+The ledger is the only place balances live. Payments drives each payment through the ledger and the
+bank so that any step can be repeated safely and nothing is ever guessed.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant Pay as Payments
+  participant Bank as Sprout Bank
+  participant Led as Ledger
+  App->>Pay: POST /deposits (Idempotency-Key)
+  Pay->>Bank: collect request (reference = deposit id)
+  Note over App,Bank: the customer approves in Sprout Bank with their UPI PIN
+  Bank-->>Pay: signed callback COLLECT_APPROVED (retried until acknowledged)
+  Pay->>Led: debit sprout:bank, credit customer cash (key = deposit id)
+  App->>Pay: POST /withdrawals (Idempotency-Key)
+  Pay->>Led: hold: debit cash, credit withdrawal-hold (refused if not enough)
+  Pay->>Bank: payout (reference = withdrawal id)
+  Pay->>Led: settle: debit hold, credit sprout:bank (or release the hold if the bank refuses)
+```
+
+- **The bank's approval is the truth.** An approved collect request is credited even if payments had
+  given up on the deposit.
+- **Unknown outcomes are retried, never guessed.** A withdrawal whose payout got no answer stays
+  `PROCESSING` with its money held; the reconciler repeats the idempotent payout until the bank answers
+  ([CHAOS-04](testing/chaos.md#chaos-04)). A callback that arrives while payments is down is retried
+  by the bank ([CHAOS-05](testing/chaos.md#chaos-05)).
+- **The books are checked against the bank** after every pre-prod run ([RECON-01](testing/chaos.md#recon-01)).
+
 ## Running many services on a phone
 
 Each JVM costs memory before it does any work. Measured on the phone-sized budget:
@@ -104,3 +151,5 @@ each service in its own Spring context with its own config, port and database sc
 |---|---|---|---|
 | edge | gateway, identity | 384 MB | Every request touches both |
 | trading | market data (orders and risk to come) | 256 MB | The trading path; kept apart from sign-in so its faults can't stop people signing in ([ADR-010](decisions.md#adr-010-trading-host), [CHAOS-03](testing/chaos.md#chaos-03)) |
+| money | ledger, accounts, payments | 320 MB | A payment needs all three, so they fail together anyway ([ADR-012](decisions.md#adr-012-money-host)) |
+| street | Sprout Bank (the exchange, clearing and depository to come) | 256 MB | The outside parties, simulated, kept apart from Sprout's own hosts as the real ones are |

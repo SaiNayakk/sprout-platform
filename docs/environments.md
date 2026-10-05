@@ -30,12 +30,16 @@ evidence and destroys it, volumes included.
 | `postgres` | Postgres 18, the version the phone runs | 256 MB |
 | `edge` | The edge host jar (gateway, identity), same JVM flags as production | 384 MB |
 | `trading` | The trading host jar (market data), its market running 30 times real speed | 256 MB |
+| `money` | The money host jar (ledger, accounts, payments) | 320 MB |
+| `street` | The street host jar (Sprout Bank; payment requests expire after 30 s here) | 256 MB |
 | `nats` | NATS, for events between services | 64 MB |
 | `lgtm` | Grafana, Prometheus, Loki and Tempo (with `--observability`) | 1.5 GB |
 | `k6` | Load generator for request/response performance tests | n/a |
 | `loadgen` | Java load generator for price streams, on the same clock as the services | n/a |
 
 Limits mirror what the phone can give each host, so a memory regression fails in pre-prod first.
+Configuration mirrors production too: identity loads its signing key from a file, as on the phone (a
+generated in-memory key once hid a bug in exactly that path; see [Incidents](incidents.md)).
 
 | Stage | Fails the release when |
 |---|---|

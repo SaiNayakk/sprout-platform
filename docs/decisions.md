@@ -137,3 +137,27 @@ GitHub Pages (`https://sainayakk.github.io/sprout-contracts/maven`). Nothing in 
 uses JitPack any more.
 
 **Lost.** Nothing important. A host build takes about 40 seconds longer.
+
+## ADR-012: The money host, and the bank in the street host { #adr-012-money-host }
+
+**Decision.** The ledger, accounts and payments run together in a money host; Sprout Bank runs alone in a
+street host, where the other outside parties (exchange, clearing, depository) will join it.
+
+**Why.** A payment needs all three money services: if any is down, money can't move either way, so
+separating them would buy no availability and cost memory. The bank is a different organisation in real
+life; keeping it in another host (and another trust boundary: partner keys and signed callbacks, not
+internal calls) means Sprout's code can never take a shortcut into it.
+
+**Lost.** A bug in accounts can take down payments. Accepted for now; the boundary is the service, not
+the JVM, so they can be split later without code changes.
+
+## ADR-013: The ledger is the only place money lives { #adr-013-ledger }
+
+**Decision.** Balances exist only in the ledger, as double-entry postings in paise. Payments records what
+happened to each payment, never how much anyone has.
+
+**Why.** One source of truth that can't drift, can be proven to balance at any moment, and can be
+reconciled against the bank (RECON-01). Every other service asks it; none keeps its own copy.
+
+**Lost.** An extra call per balance read. Cheap at Sprout's scale; at real scale it would be a read model
+fed from the journal.

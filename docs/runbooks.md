@@ -39,6 +39,27 @@ which answers within about 2 s even when its database is down.
    Cloudflare's 100 s idle limit.
 3. Many `429`s on stream requests mean a client is opening streams without closing old ones.
 
+## A deposit was approved in the bank but isn't in Sprout
+
+1. Is the money host up? The bank keeps the approval and retries its callback (up to a minute apart)
+   until payments acknowledges it ([CHAOS-05](testing/chaos.md#chaos-05)).
+2. The reconciler also asks the bank about every deposit still waiting after 10 s, so even a lost
+   callback is found.
+3. Never credit by hand: post nothing to the ledger yourself. When payments sees the approval it
+   credits once, with the deposit id as the ledger's idempotency key.
+
+## A withdrawal is stuck in PROCESSING
+
+The money is held (it shows as `withdrawing`), not lost. It means the bank, or the ledger, didn't answer
+when payments asked. The reconciler repeats the idempotent payout every few seconds; it completes once
+the bank answers ([CHAOS-04](testing/chaos.md#chaos-04)). Check that the street host is up.
+
+## The books don't match the bank
+
+RECON-01 compares the ledger's `sprout:bank` with Sprout's account at Sprout Bank. A difference means
+money moved on one side only. Stop withdrawals, list both sides' movements since the last matching
+run, and fix with a reversing ledger entry (never an edit; the journal can't be edited).
+
 ## NATS is down
 
 Prices keep reaching clients; only events for other services stop, and they are dropped rather than

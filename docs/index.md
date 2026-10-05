@@ -21,13 +21,17 @@ regularly, holding, diversifying) rather than frequent trading.
 
 | Piece | Repository | Status |
 |---|---|---|
-| Contracts: every API and event, versioned | [sprout-contracts](https://github.com/SaiNayakk/sprout-contracts) | `v0.3.2` |
-| Identity: accounts, passwords, two-factor, sessions, tokens | [sprout-identity](https://github.com/SaiNayakk/sprout-identity) | `v0.2.2` |
+| Contracts: every API and event, versioned | [sprout-contracts](https://github.com/SaiNayakk/sprout-contracts) | `v0.4.0` |
+| Identity: accounts, passwords, two-factor, sessions, tokens | [sprout-identity](https://github.com/SaiNayakk/sprout-identity) | `v0.2.3` |
 | Gateway: the only public door; auth, rate limits, routing, price streams | [sprout-gateway](https://github.com/SaiNayakk/sprout-gateway) | `v0.2.4` |
 | Market data: the simulated market, quotes, candles, live prices | [sprout-marketdata](https://github.com/SaiNayakk/sprout-marketdata) | `v0.1.1` |
+| Accounts: opening a Sprout account, simulated KYC | [sprout-accounts](https://github.com/SaiNayakk/sprout-accounts) | `v0.1.0` |
+| Ledger: the double-entry books, the source of truth for money | [sprout-ledger](https://github.com/SaiNayakk/sprout-ledger) | `v0.1.0` |
+| Payments: adding money by UPI, withdrawing | [sprout-payments](https://github.com/SaiNayakk/sprout-payments) | `v0.1.0` |
+| Sprout Bank: a simulated customer bank with UPI PINs (not part of Sprout) | [sprout-bank](https://github.com/SaiNayakk/sprout-bank) | `v0.1.0` |
 | Platform: hosts, release manifests, pre-prod, these docs | [sprout-platform](https://github.com/SaiNayakk/sprout-platform) | this site |
 
-Next: accounts and the ledger (money in), then orders and the matching simulation, and the web app.
+Next: orders, risk checks and a simulated exchange (trading), then settlement, statements, and the web app.
 
 ## How to read this site
 

@@ -39,6 +39,25 @@ the workflow file was invalid and branch protection wasn't on yet.
 **What changed.** Branch protection is set up before the first merge in every repository, and merges
 wait for a green check, not just the absence of a red one.
 
+## 2026-10-05: the first production start found two bugs pre-prod couldn't
+
+**Impact.** Sprout's first deploy to the phone. Nothing was public yet.
+
+1. **The edge host wouldn't start: identity couldn't read its signing key from a file.** Nimbus's PEM
+   parser needs BouncyCastle, which isn't a dependency. Every test and pre-prod run had used a generated
+   in-memory key, so that path had never run.
+   *Changed:* identity `0.2.3` parses the key with the JDK, with a test that loads a key file shaped like
+   the phone's; **pre-prod now loads its signing key from a file too**, and immediately reproduced the bug
+   with the old version.
+2. **Every restart left the old process running.** Backseat, the phone's process supervisor, stopped an
+   app by walking its process tree with psutil; on Android that raises `AccessDenied`, and the code then
+   gave up on the whole tree, root included. The new copy found its port taken and crash-looped.
+   *Changed:* Backseat `v0.3.4` stops an app by signalling its process group, with a test that fakes
+   Android's refusal.
+
+**Lesson.** Pre-prod has to mirror production's configuration, not just its code: the same secrets
+*shape* (a key in a file, not generated), the same supervisor behaviour. Both bugs were in the gap.
+
 ## 2026-10-05: library releases didn't publish
 
 **Impact.** None in production. Four releases (contracts `v0.3.0`, `v0.3.1`; gateway `v0.2.0`, `v0.2.1`)

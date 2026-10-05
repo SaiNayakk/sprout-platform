@@ -7,5 +7,5 @@ export MARKETDATA_CLOCK=WALL                  # the market follows real Indian t
 export MARKETDATA_NATS_URL=nats://127.0.0.1:4222
 export LOG_FORMAT=ecs
 
-exec java -XX:+UseSerialGC -Xms32m -Xmx128m -Xss512k -XX:MaxMetaspaceSize=192m \
+java -XX:+UseSerialGC -Xms32m -Xmx128m -Xss512k -XX:MaxMetaspaceSize=192m \
   -XX:ReservedCodeCacheSize=48m -XX:TieredStopAtLevel=1 -jar trading-host.jar

@@ -97,6 +97,35 @@ orders or needlessly abandoned ones.
 `Retry-After: 5`, for normal requests and streams, with a regression test against an address that
 never answers.
 
+## CHAOS-04: Sprout Bank goes away mid-withdrawal { #chaos-04 }
+
+| | |
+|---|---|
+| **Steady state** | A customer has ₹1,000 in Sprout. |
+| **Fault** | Stop the street host (Sprout Bank), then withdraw ₹400. |
+| **Hypothesis** | The withdrawal is accepted and the money held (available ₹600, withdrawing ₹400): never refused, never lost, never paid twice. When the bank returns, the reconciler finishes it within 90 s and the bank receives ₹400 exactly once. |
+
+First run: accepted as `PROCESSING` in 2.1 s with the money held; completed 9.2 s after the bank came
+back; the customer's bank received exactly ₹400.
+
+## CHAOS-05: payments is down when the customer approves { #chaos-05 }
+
+| | |
+|---|---|
+| **Steady state** | A customer has asked to add ₹750; the request waits in Sprout Bank. |
+| **Fault** | Stop the money host, then approve the request in the bank with the PIN. |
+| **Hypothesis** | The customer can still approve (the bank is up). The bank keeps the approval and retries telling payments; once the money host is back, the deposit completes within 120 s and is credited exactly once. |
+
+First run: approved while payments was down; completed 10.2 s after the money host started; exactly one
+ledger entry for the deposit.
+
+## RECON-01: the books agree with the bank { #recon-01 }
+
+Not a fault but a check, run last, after every test and failure above: the ledger balances (assets equal
+liabilities), what the ledger says Sprout holds at the bank equals what Sprout Bank says Sprout holds, to the
+paisa, and no withdrawal is left in progress. Real brokers reconcile like this every day; a difference
+means money moved on one side only.
+
 ## Planned
 
 | Id | Fault | Hypothesis |

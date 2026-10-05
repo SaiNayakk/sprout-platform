@@ -47,6 +47,59 @@ See the [runbook](runbooks.md#sign-in-returns-503-upstream_unavailable).
 `404`. No instrument has this symbol. When several symbols were asked for, `detail` names the unknown
 ones. `GET /v1/instruments` lists them all.
 
+## Accounts
+
+### ACCOUNT_EXISTS { #account_exists }
+`409`. You already have one (a Sprout account, or a Sprout Bank account).
+
+### PAN_IN_USE { #pan_in_use }
+`409`. Another Sprout account already uses this PAN. One account per PAN.
+
+### KYC_REJECTED { #kyc_rejected }
+`422`. The (simulated) checks failed: under 18, a PAN that isn't an individual's, or not a PAN at all.
+`detail` says which.
+
+### VPA_NOT_FOUND { #vpa_not_found }
+`422`. No Sprout Bank account has that UPI address.
+
+### NO_ACCOUNT { #no_account }
+`404`. Open a Sprout account first.
+
+## Payments and the ledger
+
+### INSUFFICIENT_FUNDS { #insufficient_funds }
+`422`. More than your available balance. Nothing moved.
+
+### NOT_FOUND { #not_found_payment }
+`404`. No such deposit, withdrawal or bank request of yours.
+
+### INVALID_SIGNATURE { #invalid_signature }
+`401`. A bank callback without Sprout Bank's signature. Refused.
+
+### UNBALANCED, UNKNOWN_ACCOUNT, IDEMPOTENCY_CONFLICT { #unbalanced }
+Ledger only (services, never the app): an entry whose debits and credits differ, an account name that
+isn't a known kind, or an idempotency key reused for a different entry.
+
+## Sprout Bank
+
+### WEAK_PIN { #weak_pin }
+`400`. A UPI PIN is 4 or 6 digits, not all the same and not a run like `1234`.
+
+### INVALID_PIN { #invalid_pin }
+`422`. Wrong UPI PIN; `attemptsLeft` says how many tries remain.
+
+### PIN_LOCKED { #pin_locked }
+`423`. Three wrong PINs: approvals are locked for 15 minutes (`Retry-After`).
+
+### REQUEST_NOT_PENDING { #request_not_pending }
+`409`. The payment request was already approved, declined or expired.
+
+### INSUFFICIENT_BALANCE { #insufficient_balance }
+`422`. Not enough money in the bank account for this payment. The request stays waiting.
+
+### INVALID_PARTNER_KEY { #invalid_partner_key }
+`401`. A partner call without a valid `X-Partner-Key`.
+
 ## Identity
 
 ### WEAK_PASSWORD { #weak_password }

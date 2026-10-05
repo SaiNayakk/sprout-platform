@@ -8,7 +8,7 @@
 #   2. creates the `sprout` role and database
 #   3. writes the server keys to ~/.sprout.env and ~/.sprout/keys (owner-only)
 #   4. installs NATS from its official release, checksum-verified
-#   5. registers the Backseat apps: sprout-nats, sprout-trading, sprout-edge
+#   5. registers the Backseat apps: sprout-nats and the hosts (once each has had its first deploy)
 set -eu
 
 SPROUT="$HOME/sprout"
@@ -45,7 +45,9 @@ if pg_isready -q -h 127.0.0.1 -p 5432; then
   say "Postgres already running"
 else
   mkdir -p "$SPROUT/postgres"
-  printf '#!/data/data/com.termux/files/usr/bin/sh\nexec postgres -D "%s"\n' "$PGDATA" > "$SPROUT/postgres/run.sh"
+  # no exec: postgres changes into its data directory, and Backseat recognises the app by this
+  # shell staying in ~/sprout/postgres (an exec'd postgres wasn't re-adopted after an agent restart)
+  printf '#!/data/data/com.termux/files/usr/bin/sh\npostgres -D "%s"\n' "$PGDATA" > "$SPROUT/postgres/run.sh"
   register sprout-postgres "$SPROUT/postgres"
   i=0; until pg_isready -q -h 127.0.0.1 -p 5432; do i=$((i + 1)); [ $i -gt 30 ] && { echo "Postgres didn't start"; exit 1; }; sleep 1; done
   say "Postgres started"
@@ -67,6 +69,20 @@ PY
 else
   say "$ENV_FILE already exists; keeping it"
 fi
+# secrets added in later releases: appended if missing, existing ones never changed
+python3 - "$ENV_FILE" <<'PY'
+import secrets, sys
+path = sys.argv[1]
+have = {l.split("=", 1)[0] for l in open(path) if "=" in l}
+new = {"SPROUT_SERVICE_KEY": secrets.token_urlsafe(32), "BANK_SPROUT_PARTNER_KEY": secrets.token_urlsafe(32),
+       "BANK_SPROUT_WEBHOOK_SECRET": secrets.token_urlsafe(32), "ACCOUNTS_PAN_PEPPER": secrets.token_urlsafe(32)}
+missing = {k: v for k, v in new.items() if k not in have}
+if missing:
+    with open(path, "a") as f:
+        f.writelines(f"{k}={v}
+" for k, v in missing.items())
+print("> added server secrets: " + (", ".join(missing) if missing else "none needed"))
+PY
 if [ ! -f "$KEYS/signing.pem" ]; then
   java "$SPROUT/KeyGen.java" "$KEYS/signing.pem"
   say "generated the token-signing key"
@@ -114,9 +130,9 @@ fi
 cp "$SPROUT/nats-run.sh" "$SPROUT/nats/run.sh"
 
 # 5. Backseat apps (the hosts' own files arrive with each deploy)
-mkdir -p "$SPROUT/edge" "$SPROUT/trading"
+mkdir -p "$SPROUT/edge" "$SPROUT/trading" "$SPROUT/money" "$SPROUT/street"
 register sprout-nats "$SPROUT/nats"
-for host in trading edge; do
+for host in trading street money edge; do
   if [ -f "$SPROUT/$host/run.sh" ]; then
     register "sprout-$host" "$SPROUT/$host"
   else

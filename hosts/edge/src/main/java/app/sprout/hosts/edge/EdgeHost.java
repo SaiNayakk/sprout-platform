@@ -47,7 +47,9 @@ public final class EdgeHost {
                 .run(args);
         ConfigurableApplicationContext gateway = GatewayApplication.builder()
                 .properties(host.loggingDefaults())
-                .properties("spring.autoconfigure.exclude=" + GATEWAY_EXCLUDES)
+                .properties("spring.autoconfigure.exclude=" + GATEWAY_EXCLUDES,
+                        // this deployment's routes replace the gateway's built-in list
+                        "spring.config.additional-location=classpath:/edge-gateway-routes.yml")
                 .run(args);
         int signIns = Integer.parseInt(System.getenv().getOrDefault("EDGE_WARMUP_SIGNINS", "300"));
         if (signIns > 0) {
