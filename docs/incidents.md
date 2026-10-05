@@ -90,9 +90,9 @@ the release commands were chained so that a failure didn't stop the next step.
 **What changed.** The tag was withdrawn and `v0.2.1` released from a green commit. Release steps are
 chained so any failure stops everything after it. `v0.2.0` must never be used.
 
-## 2026-10: Phase 3's pre-prod runs found two bugs before release
+## 2026-10: Phase 3's pre-prod runs found three bugs before release
 
-**Impact.** None outside pre-prod: the gate did its job twice.
+**Impact.** None outside pre-prod: the gate did its job three times.
 
 1. **The trading host didn't start.** Adding the order service put database libraries on the trading
    host's classpath, so Spring Boot tried to give market data (which has no database) one too, and failed.
@@ -105,8 +105,16 @@ chained so any failure stops everything after it. `v0.2.0` must never be used.
    `updated_at` too and missed it the same way. Orders now record when they were sent, the give-up counts
    from that, the test runs the risk desk a round per simulated second, and RECON-02 counts from the send.
 
+3. **Placing an order while the exchange was gone took longer than the gateway waits** (CHAOS-06 on CI).
+   Locally it answered in 2.1 s; on CI it took over 5 s, so the customer got a `504` while their order
+   sat `PENDING` with its money blocked (safe, but invisible to them). Looking up a vanished host's name
+   isn't covered by the HTTP client's connect timeout. Every call from the order service now has a hard
+   deadline covering everything (3 s; 2 s for the exchange), and a test stalls the exchange to prove the
+   customer hears back in time and the order is settled later.
+
 **Lessons.** A timestamp that means "last looked at" can't also mean "how long it's been". Tests of
-anything time-based run at the real cadence, not in one jump.
+anything time-based run at the real cadence, not in one jump. A timeout setting isn't a deadline: bound
+the whole call.
 
 ## 2026-10: a pre-prod test read a list while it was still being written
 

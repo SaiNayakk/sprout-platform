@@ -28,7 +28,7 @@ regularly, holding, diversifying) rather than frequent trading.
 | Accounts: opening a Sprout account, simulated KYC | [sprout-accounts](https://github.com/SaiNayakk/sprout-accounts) | `v0.1.0` |
 | Ledger: the double-entry books, the source of truth for money | [sprout-ledger](https://github.com/SaiNayakk/sprout-ledger) | `v0.2.0` |
 | Payments: adding money by UPI, withdrawing | [sprout-payments](https://github.com/SaiNayakk/sprout-payments) | `v0.1.0` |
-| Orders: orders, risk checks, holdings, intraday positions, charges | [sprout-oms](https://github.com/SaiNayakk/sprout-oms) | `v0.1.2` |
+| Orders: orders, risk checks, holdings, intraday positions, charges | [sprout-oms](https://github.com/SaiNayakk/sprout-oms) | `v0.1.3` |
 | Sprout Bank: a simulated customer bank with UPI PINs (not part of Sprout) | [sprout-bank](https://github.com/SaiNayakk/sprout-bank) | `v0.1.0` |
 | Sprout Stock Exchange: a simulated exchange (not part of Sprout) | [sprout-exchange](https://github.com/SaiNayakk/sprout-exchange) | `v0.1.0` |
 | Platform: hosts, release manifests, pre-prod, these docs | [sprout-platform](https://github.com/SaiNayakk/sprout-platform) | this site |
