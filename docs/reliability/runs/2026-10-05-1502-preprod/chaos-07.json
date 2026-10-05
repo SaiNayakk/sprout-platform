@@ -1,0 +1,62 @@
+{
+  "id": "CHAOS-07",
+  "title": "The money host goes away during trading",
+  "hypothesis": "With the ledger, accounts and payments unreachable, trading fails safe: a new order is refused at once with a clear 503 and nothing is placed or blocked, while prices and the order book stay readable. When the money host is back, orders go through again within 180 s and the books match every fill to the paisa.",
+  "observations": [
+    {
+      "what": "Order while the money host was down",
+      "value": "503 UPSTREAM_UNAVAILABLE in 1,000 ms"
+    },
+    {
+      "what": "Order list / quotes while down",
+      "value": "200 (1 orders, 1 before) / 200"
+    },
+    {
+      "what": "Orders accepted again after",
+      "value": "8.7 s"
+    },
+    {
+      "what": "Orders placed in all",
+      "value": "2 FILLED, 1 FILLED, 2 FILLED"
+    },
+    {
+      "what": "Cash / blocked after",
+      "value": "11274.80 / 0.00 (expected cash 11274.80)"
+    }
+  ],
+  "checks": [
+    {
+      "what": "refused as unavailable, not left hanging",
+      "pass": true
+    },
+    {
+      "what": "answered without waiting",
+      "pass": true
+    },
+    {
+      "what": "nothing was placed while down",
+      "pass": true
+    },
+    {
+      "what": "prices kept flowing",
+      "pass": true
+    },
+    {
+      "what": "trading resumed within 180 s",
+      "pass": true
+    },
+    {
+      "what": "every order placed filled",
+      "pass": true
+    },
+    {
+      "what": "nothing blocked is left over",
+      "pass": true
+    },
+    {
+      "what": "the books match every fill",
+      "pass": true
+    }
+  ],
+  "pass": true
+}

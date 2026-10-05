@@ -23,9 +23,9 @@
   <properties>
     <java.version>21</java.version>
     <sprout-bank.version>0.3.1</sprout-bank.version>
-    <sprout-exchange.version>0.4.0</sprout-exchange.version>
-    <sprout-depository.version>0.2.0</sprout-depository.version>
-    <sprout-clearing.version>0.2.0</sprout-clearing.version>
+    <sprout-exchange.version>0.4.1</sprout-exchange.version>
+    <sprout-depository.version>0.2.1</sprout-depository.version>
+    <sprout-clearing.version>0.2.1</sprout-clearing.version>
   </properties>
 
 

@@ -22,12 +22,12 @@
        Each version X.Y.Z is built from tag vX.Y.Z of its repository by ../install-services.sh. -->
   <properties>
     <java.version>21</java.version>
-    <sprout-accounts.version>0.3.0</sprout-accounts.version>
+    <sprout-accounts.version>0.3.1</sprout-accounts.version>
     <sprout-payments.version>0.2.0</sprout-payments.version>
-    <sprout-ledger.version>0.3.0</sprout-ledger.version>
-    <sprout-settlement.version>0.2.0</sprout-settlement.version>
-    <sprout-statements.version>0.2.0</sprout-statements.version>
-    <sprout-recon.version>0.2.0</sprout-recon.version>
+    <sprout-ledger.version>0.3.1</sprout-ledger.version>
+    <sprout-settlement.version>0.2.1</sprout-settlement.version>
+    <sprout-statements.version>0.2.1</sprout-statements.version>
+    <sprout-recon.version>0.2.1</sprout-recon.version>
   </properties>
 
 
