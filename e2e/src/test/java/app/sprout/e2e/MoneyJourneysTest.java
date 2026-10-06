@@ -186,14 +186,16 @@ class MoneyJourneysTest {
     }
 
     @Test
-    @DisplayName("E2E-57 a forged bank callback is refused")
+    @DisplayName("E2E-57 a forged bank callback can't even reach payments from outside")
     void forgedCallback() {
         JsonNode d = deposit("10");
         Client.Response forged = c.send("POST", "/api/payments/internal/v1/bank-events",
                 Map.of("eventId", UUID.randomUUID().toString(), "type", "COLLECT_APPROVED", "requestId", UUID.randomUUID().toString(),
                         "reference", d.path("id").asText(), "amount", "10.00", "occurredAt", "2026-10-05T00:00:00Z"),
                 Map.of("Authorization", "Bearer " + token, "X-Bank-Signature", "sha256=" + "0".repeat(64)));
-        assertThat(forged.code()).isEqualTo("INVALID_SIGNATURE");
+        // the gateway never forwards what services call each other on; the signature check behind it is covered in payments' own tests
+        assertThat(forged.status()).isEqualTo(404);
+        assertThat(forged.code()).isEqualTo("NOT_FOUND");
         assertThat(available()).isEqualTo("0.00");
     }
 

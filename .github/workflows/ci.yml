@@ -38,6 +38,12 @@ jobs:
           bash -n hosts/install-services.sh
           python -m py_compile preprod/report.py preprod/chaos.py
           python deploy/phone/check-scripts.py
+          bash -n deploy/laptop/up.sh
+      - name: The laptop deployment still renders from pre-prod's compose file
+        run: |
+          python deploy/laptop/render.py
+          docker compose --env-file deploy/laptop/data/.env -f deploy/laptop/docker-compose.yml config -q
+          if grep -q "preprod-only" deploy/laptop/docker-compose.yml; then echo "a throwaway secret reached the laptop file"; exit 1; fi
       - name: Build the docs (broken links fail)
         run: |
           pip install -r docs/requirements.txt

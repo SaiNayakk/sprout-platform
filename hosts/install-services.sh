@@ -29,6 +29,8 @@ for host in "${hosts[@]}"; do
       echo "tag v$version of $service declares version $built; refusing to install it as $version" >&2
       exit 1
     fi
-    (cd "$WORK/$service-$version" && mvn -q -B install -DskipTests)
+    # a host uses a service's plain jar, never its runnable one: not repackaging saves about 70 MB each
+    (cd "$WORK/$service-$version" && mvn -q -B install -DskipTests -Dspring-boot.repackage.skip=true)
+    rm -rf "$WORK/$service-$version"   # one at a time, so the disk never holds all of them
   done
 done
