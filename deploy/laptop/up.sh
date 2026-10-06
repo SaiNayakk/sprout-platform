@@ -74,13 +74,23 @@ EOF
   fi
 fi
 
+echo "> The web app"
+# `docker build` takes a git address; docker compose can't on Windows, so the image is built here and compose just runs it
+if [ -n "${SPROUT_WEB_SRC:-}" ]; then
+  export SPROUT_WEB_IMAGE=sprout-web:dev          # a local checkout, while developing
+  docker build -q -t "$SPROUT_WEB_IMAGE" "$SPROUT_WEB_SRC" >/dev/null
+else
+  WEB_VERSION="$(tr -d '[:space:]' < web.version)"   # the release this platform release pins
+  export SPROUT_WEB_IMAGE="sprout-web:$WEB_VERSION"
+  docker build -q -t "$SPROUT_WEB_IMAGE" "https://github.com/SaiNayakk/sprout-web.git#$WEB_VERSION" >/dev/null
+fi
+
 echo "> Starting"
 SERVICES=(postgres nats edge trading money street web)
 [ "$LOCAL" = true ] || SERVICES+=(cloudflared)
 if [ "$BUILD" = true ]; then
   docker compose --env-file data/.env -f docker-compose.yml up -d --build --wait "${SERVICES[@]}"
 else
-  docker compose --env-file data/.env -f docker-compose.yml build web
   docker compose --env-file data/.env -f docker-compose.yml up -d --wait "${SERVICES[@]}"
 fi
 

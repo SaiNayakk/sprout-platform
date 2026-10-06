@@ -42,7 +42,7 @@ jobs:
       - name: The laptop deployment still renders from pre-prod's compose file
         run: |
           python deploy/laptop/render.py
-          docker compose --env-file deploy/laptop/data/.env -f deploy/laptop/docker-compose.yml config -q
+          SPROUT_WEB_IMAGE=sprout-web:ci docker compose --env-file deploy/laptop/data/.env -f deploy/laptop/docker-compose.yml config -q
           if grep -q "preprod-only" deploy/laptop/docker-compose.yml; then echo "a throwaway secret reached the laptop file"; exit 1; fi
       - name: Build the docs (broken links fail)
         run: |

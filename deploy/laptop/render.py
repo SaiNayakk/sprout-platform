@@ -81,10 +81,9 @@ def build() -> tuple[str, set[str]]:
     text = text.replace('    mem_limit:', '    restart: unless-stopped\n    logging: {driver: json-file, options: {max-size: 10m, max-file: "3"}}\n    mem_limit:')
 
     text += '''
-  # The web app, from the release tag it names (SPROUT_WEB_SRC points at a local checkout while developing).
+  # The web app: up.sh builds the release in web.version (or a local checkout, while developing) and names it here.
   web:
-    build:
-      context: ${SPROUT_WEB_SRC:-https://github.com/SaiNayakk/sprout-web.git#v0.1.0}
+    image: ${SPROUT_WEB_IMAGE}
     environment:
       SPROUT_API: http://edge:8100
     ports:
