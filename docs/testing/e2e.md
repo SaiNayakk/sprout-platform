@@ -167,8 +167,9 @@ cash up by exactly the amount, the bank balance down by exactly the amount.
 money is ever spent twice, however the requests interleave.
 
 ### E2E-57 { #e2e-57 }
-**A forged bank callback is refused.** Even through the gateway with a valid user token, a callback without
-the bank's signature changes nothing.
+**A forged bank callback can't even reach payments from outside.** The gateway never forwards the paths services call
+each other on, so a callback sent through it, even with a valid user token, is a `404` and changes nothing. (That
+payments refuses a wrong signature is tested in payments itself.)
 
 ### E2E-58 { #e2e-58 }
 **Nobody else can see my payments or approve my bank requests.**
@@ -217,7 +218,8 @@ refused as `UNKNOWN_INSTRUMENT`.
 **Nobody else can see or cancel my orders.**
 
 ### E2E-69 { #e2e-69 }
-**A forged execution report is refused**, even through the gateway with a valid user token.
+**A forged execution report can't even reach the order service from outside**: a `404` from the gateway, with a valid
+user token or not, and the order stays open.
 
 ## Records
 

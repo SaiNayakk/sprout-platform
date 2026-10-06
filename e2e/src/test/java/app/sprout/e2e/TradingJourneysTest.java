@@ -230,7 +230,7 @@ class TradingJourneysTest {
     }
 
     @Test
-    @DisplayName("E2E-69 a forged execution report is refused")
+    @DisplayName("E2E-69 a forged execution report can't even reach the order service from outside")
     void forgedExecution() {
         JsonNode o = order("HARBOR", "BUY", 1, "LIMIT", priceAt("HARBOR", "0.85"), "CNC");
         Client.Response forged = c.send("POST", OMS + "/internal/v1/exchange-events",
@@ -238,7 +238,8 @@ class TradingJourneysTest {
                         "exchangeOrderId", UUID.randomUUID().toString(), "symbol", "HARBOR", "side", "BUY", "quantity", 1,
                         "price", "1.00", "tradeId", UUID.randomUUID().toString(), "occurredAt", "2026-10-05T00:00:00Z"),
                 Map.of("Authorization", "Bearer " + token, "X-Exchange-Signature", "sha256=" + "0".repeat(64)));
-        assertThat(forged.code()).isEqualTo("INVALID_SIGNATURE");
+        assertThat(forged.status()).isEqualTo(404);
+        assertThat(forged.code()).isEqualTo("NOT_FOUND");
         assertThat(c.get(OMS + "/v1/orders/" + o.path("id").asText(), token).body().path("status").asText()).isEqualTo("OPEN");
     }
 }

@@ -23,8 +23,8 @@ regularly, holding, diversifying) rather than frequent trading.
 |---|---|---|
 | Contracts: every API and event, versioned | [sprout-contracts](https://github.com/SaiNayakk/sprout-contracts) | `v0.11.0` |
 | Identity: accounts, passwords, two-factor, sessions, tokens | [sprout-identity](https://github.com/SaiNayakk/sprout-identity) | `v0.3.0` |
-| Gateway: the only public door; auth, rate limits, routing, price streams | [sprout-gateway](https://github.com/SaiNayakk/sprout-gateway) | `v0.3.1` |
-| Market data: the simulated market, quotes, candles, live prices | [sprout-marketdata](https://github.com/SaiNayakk/sprout-marketdata) | `v0.1.2` |
+| Gateway: the only public door; auth, rate limits, routing, price streams | [sprout-gateway](https://github.com/SaiNayakk/sprout-gateway) | `v0.3.2` |
+| Market data: the simulated market, quotes, candles, live prices | [sprout-marketdata](https://github.com/SaiNayakk/sprout-marketdata) | `v0.2.0` |
 | Accounts: opening a Sprout account, simulated KYC | [sprout-accounts](https://github.com/SaiNayakk/sprout-accounts) | `v0.3.1` |
 | Ledger: the double-entry books, the source of truth for money | [sprout-ledger](https://github.com/SaiNayakk/sprout-ledger) | `v0.3.1` |
 | Payments: adding money by UPI, withdrawing | [sprout-payments](https://github.com/SaiNayakk/sprout-payments) | `v0.3.0` |
@@ -41,9 +41,10 @@ regularly, holding, diversifying) rather than frequent trading.
 | Sprout Stock Exchange: a simulated exchange (not part of Sprout) | [sprout-exchange](https://github.com/SaiNayakk/sprout-exchange) | `v0.4.1` |
 | Sprout Clearing Corporation: settles trades T+1 (not part of Sprout) | [sprout-clearing](https://github.com/SaiNayakk/sprout-clearing) | `v0.2.1` |
 | Sprout Depository: demat accounts (not part of Sprout) | [sprout-depository](https://github.com/SaiNayakk/sprout-depository) | `v0.2.1` |
+| Web app: explore as a fictional customer, invest, plans, goals, rewards | [sprout-web](https://github.com/SaiNayakk/sprout-web) | `v0.1.0` |
 | Platform: hosts, release manifests, pre-prod, these docs | [sprout-platform](https://github.com/SaiNayakk/sprout-platform) | this site |
 
-Next: the web app.
+Next: the phone again.
 
 ## How to read this site
 

@@ -53,6 +53,7 @@ flowchart LR
 | Habits | Streaks, levels, badges, points, monthly challenges, Year Wrapped, squads, readiness and Future You, worked out from trading history | Reward trading volume, or rank people by money |
 | Goals | Pots invested in a share, with targets; round-ups from UPI spends, swept under AutoPay | Hold money itself (the ledger does), or take money without a mandate |
 | Rewards | What vested habit points buy (the vault), and referral rewards | Store points (habits works them out), or reward a sign-up |
+| Web app | Sprout in a browser: one origin with its API, served by nginx, which forwards `/api` to the gateway | Hold any state, or do anything the API doesn't |
 | Sandbox | The public demo: fictional customers set up and living through the same APIs as anyone, for visitors to explore as | Run anywhere but the sandbox; store a password; act on a real customer |
 | Statements | A customer's records: contract notes, funds statements, tax P&amp;L, holdings statements, read from the books | Store anything (it has no database) |
 | Reconciliation | Comparing every book with every other it should agree with, every day | Fix anything (a break is for a person) |

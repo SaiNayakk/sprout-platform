@@ -319,3 +319,35 @@ sandbox, so the fictional customers live alongside every test and the books must
 **Lost.** Time in the sandbox isn't the calendar: a visitor sees October pass in an afternoon. A new
 sandbox needs a few hours before its people have months behind them. Fifteen people acting every session
 cost the phone some CPU.
+
+## ADR-024: The laptop's deployment is rendered from pre-prod's compose file { #adr-024-laptop-from-preprod }
+
+**Decision.** `deploy/laptop/render.py` generates the laptop's compose file from `preprod/docker-compose.yml`
+by text transformations that each assert what they expect to find, instead of keeping a second hand-written file.
+It replaces the throwaway secrets with generated ones, moves data to a volume, closes the published ports, and adds
+the web app and the tunnel.
+
+**Why.** Two compose files drift. Every release is tested against pre-prod's wiring (which service calls which,
+on what port, with what settings), so a deployment that copies it by machine runs what was tested, and a change to the
+wiring reaches both at once. If pre-prod's file changes in a way the transformations don't expect, the render fails
+rather than quietly deploying something different.
+
+**Lost.** The renderer is coupled to the shape of pre-prod's file, so some edits there need a matching edit in it
+(the failure says which). Text rewriting is blunter than a structured merge.
+
+## ADR-025: A fast demo market resumes where it would be, not where it began { #adr-025-resumable-market }
+
+**Decision.** In accelerated mode the market takes an optional `epoch`: the real instant its first session began.
+Sessions follow each other at a fixed period in real time (the pre-open and the session at the speed, then the closed
+pause), so which session it is in, and how far, follows from the epoch. A restarted engine loads that session and catches
+up silently. Prices are a pure function of the seed and the date, so they are the ones the running market would
+have shown.
+
+**Why.** Before this, a restart started the market again from its start date. For a pre-prod run that is harmless; for a
+market that stays up for days, a deploy, a crash or a reboot would put the market date *backwards* under existing orders,
+statements, settlements and habit history. Persisting the engine's position would need a database it otherwise doesn't
+have; deriving it from one fixed instant needs none.
+
+**Lost.** The speed, start date and epoch must not change once customers exist, or the market is placed somewhere else.
+A market that is down for a while resumes at the later session: the sessions in between happen without anyone trading
+in them.

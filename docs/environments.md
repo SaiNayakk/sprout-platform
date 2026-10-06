@@ -54,6 +54,25 @@ generated in-memory key once hid a bug in exactly that path; see [Incidents](inc
 
 The evidence from each run is committed under [Evidence from runs](reliability/runs/index.md).
 
+## The laptop (while the phone is away)
+
+`deploy/laptop/up.sh` runs the whole of Sprout, the web app and a Cloudflare tunnel on a laptop, so Sprout can be
+visited from anywhere for as long as the machine is left on. It is the phone's stand-in: the same host jars at
+the same pinned releases.
+
+Its compose file isn't written by hand: `deploy/laptop/render.py` makes it **from pre-prod's**, so what visitors
+use is wired exactly as every release was tested ([ADR-024](decisions.md#adr-024-laptop-from-preprod)). It changes only
+what has to differ: real generated secrets in place of the throwaway ones, data on a volume, nothing published except
+the web app (to the machine itself; the tunnel reaches it by name), a demo market that resumes after a restart
+([ADR-025](decisions.md#adr-025-resumable-market)), and bank requests that wait 5 minutes instead of 30 seconds.
+
+The gateway never forwards `/internal`, `/partner`, `/member`, `/participant` or `/actuator`, so the keys that guard
+those doors are not the only thing between the internet and them.
+
+What it can't do alone: a laptop that sleeps takes the site down, so it needs to be left awake and Docker Desktop
+set to start with it. Moving back to the phone is stopping this and starting the phone's hosts; data made here
+doesn't move (the sandbox's fictional customers are made again by the sandbox).
+
 ## Production
 
 The phone runs each host as a supervised process behind a Cloudflare tunnel, with structured JSON logs.
