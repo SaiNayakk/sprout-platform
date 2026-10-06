@@ -10,6 +10,8 @@ deploy/laptop/up.sh --local    # without the tunnel: http://localhost:18080, thi
 deploy/laptop/up.sh --down     # stop everything; the data is kept
 ```
 
+The web app is the release named in `web.version`, built from its git tag (`SPROUT_WEB_SRC=path up.sh` builds a local checkout instead, for development).
+
 ## What is the same as pre-prod, and what differs
 
 `render.py` writes `docker-compose.yml` **from pre-prod's compose file**, so every service's wiring is the one each

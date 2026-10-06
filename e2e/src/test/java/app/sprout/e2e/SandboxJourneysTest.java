@@ -53,6 +53,13 @@ class SandboxJourneysTest {
         JsonNode second = demo("NON_BINARY_AND_OTHER");
         assertThat(second.path("persona").path("id").asText()).isNotEqualTo(first.path("persona").path("id").asText());
         assertThat(second.path("persona").path("group").asText()).isEqualTo("NON_BINARY_AND_OTHER");
-        assertThat(c.post("/api/sandbox/v1/demo-sessions", Map.of("group", "SOMEONE")).status()).isEqualTo(400);
+        // while the sandbox was still setting people up its "not yet" answers (503) can open the gateway's circuit breaker
+        // for the route for a few seconds; a request for an unknown group must then be answered by the sandbox itself
+        Client.Response unknown = c.post("/api/sandbox/v1/demo-sessions", Map.of("group", "SOMEONE"));
+        for (int i = 0; i < 20 && unknown.status() == 503; i++) {
+            Thread.sleep(2000);
+            unknown = c.post("/api/sandbox/v1/demo-sessions", Map.of("group", "SOMEONE"));
+        }
+        assertThat(unknown.status()).isEqualTo(400);
     }
 }
