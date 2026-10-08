@@ -25,5 +25,6 @@ if [ "${SPROUT_SANDBOX:-false}" = true ]; then
 fi
 # accounts, ledger and the exchange default to 127.0.0.1 on their ports
 
-java -XX:+UseSerialGC -Xms32m -Xmx160m -Xss512k -XX:MaxMetaspaceSize=192m \
-  -XX:ReservedCodeCacheSize=48m -XX:TieredStopAtLevel=1 -jar trading-host.jar
+# JVM settings sized for the phone; SPROUT_TRADING_JAVA_OPTS in ~/.sprout.env overrides them (capacity experiments)
+java ${SPROUT_TRADING_JAVA_OPTS:--XX:+UseSerialGC -Xms32m -Xmx160m -Xss512k -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=48m -XX:TieredStopAtLevel=1} \
+  -jar trading-host.jar

@@ -21,5 +21,6 @@ fi
 export LOG_FORMAT=ecs
 # service URLs default to 127.0.0.1 on their ports; the bank calls back on 127.0.0.1:8105
 
-java -XX:+UseSerialGC -Xms32m -Xmx160m -Xss512k -XX:MaxMetaspaceSize=192m \
-  -XX:ReservedCodeCacheSize=48m -XX:TieredStopAtLevel=1 -jar money-host.jar
+# JVM settings sized for the phone; SPROUT_MONEY_JAVA_OPTS in ~/.sprout.env overrides them (capacity experiments)
+java ${SPROUT_MONEY_JAVA_OPTS:--XX:+UseSerialGC -Xms32m -Xmx160m -Xss512k -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=48m -XX:TieredStopAtLevel=1} \
+  -jar money-host.jar
