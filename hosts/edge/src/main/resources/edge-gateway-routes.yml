@@ -7,10 +7,10 @@ sprout:
         prefix: /api/sandbox
         target: ${GATEWAY_SANDBOX_URL:http://127.0.0.1:8119}
         public:
-          - GET /v1/personas
-          - POST /v1/demo-sessions
+          - GET /v3/demo
+          - POST /v3/demo-sessions
         auth-limited:
-          - POST /v1/demo-sessions        # each one signs someone in: limited like sign-in
+          - POST /v3/demo-sessions        # each one signs someone in: limited like sign-in
       - name: identity
         prefix: /api/identity
         target: ${GATEWAY_IDENTITY_URL:http://127.0.0.1:8101}

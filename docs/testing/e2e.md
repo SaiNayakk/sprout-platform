@@ -298,12 +298,12 @@ months**, and a code can't be used on yourself.
 ## The public sandbox
 
 ### E2E-100 { #e2e-100 }
-**A visitor chooses who to explore as and is signed in as them, a real customer**: the person's name,
-an account with money in it, a deposit on record; and two-factor can't be turned on for them.
+**A visitor names themselves and is signed in to a demo account of their own, a real customer**: called
+as they asked, an account with money in it, a deposit on record, the holiday pot; and two-factor can't be
+turned on for it.
 
 ### E2E-101 { #e2e-101 }
-**Visitors in the same group are given different people, least recently explored first**; an unknown
-group is refused.
+**Two visitors get two different accounts**; a name that isn't one is refused.
 
 ## Results
 

@@ -291,22 +291,23 @@ habit, not the sign-up: both get 500 points once the new customer has invested i
 
 ## The public sandbox
 
-Anyone can explore Sprout without signing up, as one of fifteen fictional customers: five women, five
-men, and five non-binary people or people of other genders, from across India, each with their own
-pronouns, city, story and way of investing. Every way of investing (steady plans, round-ups, a goal,
-just starting, exploring) appears once in every group, so no group is given a stereotype. Visitors
-choose a group (or no preference) and get whoever in it was explored least recently.
+Anyone can try Sprout without signing up, with a **demo account of their own**: they type what to call
+them, and get an account nobody else is using, already months into its history
+([ADR-026](decisions.md#adr-026-demo-accounts)). Nothing else about the visitor is asked or assumed.
+The sandbox keeps a few accounts warm; a visitor gets the one with the most history, it is theirs for two
+hours, and a new one starts warming in its place. Then it is retired: it stops living and can't be signed
+in to again.
 
 **Their history is real** ([ADR-023](decisions.md#adr-023-sandbox)). The sandbox's market runs fast, and
-every trading session each fictional person lives their way through the same APIs as a customer: paid
-monthly by a fictional payroll, money added when cash runs low, UPI spends at the demo merchants rounded
-up and swept, pots topped up, shares bought and now and then one sold, plans buying on their own. Their
-streaks, statements and reconciliation are as real as anyone's, because nothing about them is written
-around the services.
+every trading session each demo account lives through the same APIs as a customer: paid monthly by a
+fictional payroll, money added when cash runs low, UPI spends at the demo merchants rounded up into a
+holiday pot (in a cheap share, so round-ups become whole shares), the pot topped up, a share bought now
+and then and one sold now and then, a monthly plan buying on its own. Streaks, statements and
+reconciliation are as real as anyone's, because nothing about them is written around the services.
 
-They are set up the same way, step by step: a sign-in (an identity **demo user**), a bank account with a
+Each is set up the same way, step by step: a sign-in (an identity **demo user**), a bank account with a
 UPI PIN, a Sprout account through KYC, a first deposit approved in the bank, then AutoPay and round-ups,
-a plan or a pot, readiness, one of three mixed squads, and a friend's referral code. A demo user signs
+a plan and a pot, readiness, and the demo squad (a new one starts when it is full). A demo user signs
 in like anyone, with a new long random password set just before each sign-in (none is stored); it can't
 turn on two-factor and never locks after wrong passwords, so no visitor can spoil one for the next.
 

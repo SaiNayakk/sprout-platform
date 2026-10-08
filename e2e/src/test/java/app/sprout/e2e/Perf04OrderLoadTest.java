@@ -41,7 +41,7 @@ class Perf04OrderLoadTest {
     static final int SECONDS = Integer.getInteger("perf.seconds", 60);
     static final String OUT = System.getenv().getOrDefault("PERF04_OUT", "target/perf-04-summary.json");
     /** Cheap shares, so a customer's deposit covers every order they place. */
-    static final List<String> SYMBOLS = List.of("CHAIWALA", "SUNROOT", "KOSHA", "IRONLEAF", "NIGHTOWL", "TEALPWR", "GRIDLINE", "THREADS");
+    static final List<String> SYMBOLS = List.of("BREWBERRY", "SUNROOT", "KOSHA", "IRONLEAF", "NIGHTOWL", "TEALPWR", "GRIDLINE", "THREADS");
 
     record Customer(Client client, String token) {}
 
