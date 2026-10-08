@@ -24,6 +24,7 @@ if [ "${SPROUT_SANDBOX:-false}" = true ]; then
   export SANDBOX_DB_USER=sprout
   export SANDBOX_DB_PASSWORD="$SPROUT_DB_PASSWORD"
   export SANDBOX_BIND=127.0.0.1
+  export SANDBOX_EVERY=5s              # the personas act at the pace the 30x market needs
 fi
 
 java -XX:+UseSerialGC -Xms32m -Xmx160m -Xss512k -XX:MaxMetaspaceSize=192m \

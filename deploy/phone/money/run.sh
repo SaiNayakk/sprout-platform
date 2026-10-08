@@ -14,6 +14,10 @@ for svc in LEDGER ACCOUNTS PAYMENTS SETTLEMENT RECON GOALS; do
   export "${svc}_BIND=127.0.0.1"
 done
 export STATEMENTS_BIND=127.0.0.1   # statements has no database
+if [ "${SPROUT_SANDBOX:-false}" = true ]; then
+  # the 30x market settles a day every ~13 minutes: settle, reconcile and invest at that pace
+  export SETTLEMENT_EVERY=2s RECON_CHECK_EVERY=10s GOALS_EVERY=10s PAYMENTS_RECONCILE_EVERY=5s
+fi
 export LOG_FORMAT=ecs
 # service URLs default to 127.0.0.1 on their ports; the bank calls back on 127.0.0.1:8105
 

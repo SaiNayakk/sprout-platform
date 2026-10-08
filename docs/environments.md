@@ -78,3 +78,9 @@ doesn't move (the sandbox's fictional customers are made again by the sandbox).
 The phone runs each host as a supervised process behind a Cloudflare tunnel, with structured JSON logs.
 Secrets (the two-factor encryption key, the token signing key, database passwords) exist only on the
 phone; the repositories are public and contain none.
+
+The web app runs there too: Termux's nginx (`deploy/phone/web`) serves the built app on `127.0.0.1:8180` with
+the same security headers as the web image and forwards `/api` to the gateway, so the tunnel reaches one
+address. With `SPROUT_SANDBOX=true` in `~/.sprout.env` the hosts run the 30x demo market and pace their loops
+(settlement, reconciliation, plans, goals, the personas) as the laptop and pre-prod do; `MARKETDATA_START_DATE`
+and `MARKETDATA_EPOCH` there keep the market's place across restarts, and moving data from the laptop moves them too.

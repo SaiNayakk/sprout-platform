@@ -24,6 +24,7 @@ done
 export LOG_FORMAT=ecs
 if [ "${SPROUT_SANDBOX:-false}" = true ]; then
   export BANK_PAYROLL_FLOAT=100000000.00   # the sandbox's fictional payroll pays its fictional customers
+  export CLEARING_SETTLE_EVERY=2s          # a day settles every ~13 minutes at 30x
 fi
 # everything else (market data, the order service's and back office's callbacks) defaults to 127.0.0.1
 
