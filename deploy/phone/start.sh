@@ -25,7 +25,7 @@ PIECES="postgres nats trading street money edge web"
 dir_of() { echo "$HERE/$1"; }
 # A host is healthy only when every service in it answers: a host whose first service is up can still have
 # one that failed to start (2026-10-08: the street host's bank answered while its depository's migration failed).
-answers() { for p in "$@"; do curl -fs -m 2 -o /dev/null "http://127.0.0.1:$p/actuator/health" || return 1; done; }
+answers() { for p in "$@"; do curl -fs -m "${CHECK_SECONDS:-2}" -o /dev/null "http://127.0.0.1:$p/actuator/health" || return 1; done; }
 sandbox_on() { grep -q '^SPROUT_SANDBOX=true' "$HOME/.sprout.env" 2>/dev/null; }
 healthy() {
   case "$1" in
@@ -99,14 +99,34 @@ for name in $PIECES; do
 done
 log "Sprout is up"
 
-# 3. keep it up
+# 3. keep it up: more than five restarts within an hour means something is wrong; the odd one over days doesn't
 restarts=0
+last_restart=0
 while :; do
   sleep 15 &
   wait $!
   for name in $PIECES; do
-    running "$name" && continue
-    healthy "$name" && continue   # answering, though not started here (an old app): leave it
+    if running "$name"; then
+      # alive but not answering is as bad as dead (2026-10-08: the edge host hung with every thread stuck and its
+      # process still up): eight failed checks in a row, about two minutes, and it is killed and started again. The
+      # bar is deliberately low (5 s per check, two minutes): a host that is only busy must not be killed for it,
+      # which would make an overload worse
+      if CHECK_SECONDS=5 healthy "$name"; then
+        eval "silent_$name=0"
+        continue
+      fi
+      eval "n=\${silent_$name:-0}"; n=$((n + 1)); eval "silent_$name=$n"
+      [ $n -lt 8 ] && continue
+      log "$name stopped answering for two minutes; killing it"
+      p=$(cat "$(pid_file "$name")" 2>/dev/null)
+      pkill -KILL -P "$p" 2>/dev/null; kill -KILL "$p" 2>/dev/null
+      eval "silent_$name=0"
+    elif healthy "$name"; then
+      continue   # answering, though not started here (an old app): leave it
+    fi
+    now=$(date +%s)
+    [ $((now - last_restart)) -gt 3600 ] && restarts=0
+    last_restart=$now
     restarts=$((restarts + 1))
     [ $restarts -gt 5 ] && give_up "pieces keep dying"
     log "$name stopped; starting it again (restart $restarts)"

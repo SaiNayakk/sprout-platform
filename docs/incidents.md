@@ -176,3 +176,26 @@ healthy because its bank answered, though its depository had failed and the host
 - The starter calls a host healthy only when every service in it answers, not just the first.
 
 **Lesson.** A data migration is tested on data. An empty database proves only that the SQL parses.
+
+## 2026-10-08: a capacity experiment froze the edge host for ten minutes
+
+**Impact.** About 10 minutes with Sprout's API not answering (the site loaded; signing in, prices and everything
+behind them didn't), during a deliberate capacity test on the phone.
+
+**What happened.** To lift the gateway's 32-thread ceiling, every service was switched to Java 21's virtual threads.
+Up to 400 test customers it ran as before; at 600 the edge host stopped answering entirely, with its CPU *falling*:
+waiting, not working. The JVMs had been capped at two processors (`ActiveProcessorCount=2`, for gentle boots), which
+gives virtual threads only two carrier threads, and on Java 21 a virtual thread that blocks inside `synchronized`
+code (the HTTP client, the connection pool, logging) pins its carrier. With both pinned, nothing ran. The process
+stayed up, so the starter, which only checked that processes were alive, left it hung; it also ignored the polite
+stop signal and had to be killed outright.
+
+**What changed.**
+
+- Virtual threads are off; the gateway's ceiling is raised with a larger ordinary thread pool instead, measured
+  like every other change. (Java 24 removes this kind of pinning; Sprout runs 21.)
+- The starter now treats a piece that stops answering health checks for two minutes as dead, kills it and starts
+  it again. The bar is deliberately lenient so a host that is only busy is never killed for it.
+
+**Lesson.** A setting that removes a limit moves the limit somewhere else. Capacity experiments change one thing at a
+time, on a path that can be undone in seconds, and watch for the system getting quieter as well as busier.
