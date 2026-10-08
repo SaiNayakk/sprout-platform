@@ -13,7 +13,7 @@
 
   <groupId>app.sprout.hosts</groupId>
   <artifactId>trading-host</artifactId>
-  <version>0.8.2</version>
+  <version>0.8.3</version>
   <name>trading-host</name>
   <description>One JVM for the trading services: market data now; orders and risk as they arrive.</description>
 
@@ -23,7 +23,7 @@
   <properties>
     <java.version>21</java.version>
     <sprout-marketdata.version>0.2.0</sprout-marketdata.version>
-    <sprout-oms.version>0.5.2</sprout-oms.version>
+    <sprout-oms.version>0.5.3</sprout-oms.version>
     <sprout-plans.version>0.2.1</sprout-plans.version>
     <sprout-habits.version>0.3.0</sprout-habits.version>
     <sprout-rewards.version>0.1.0</sprout-rewards.version>
