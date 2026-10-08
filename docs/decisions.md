@@ -370,3 +370,57 @@ only a few accounts living costs the phone less than fifteen people acting every
 warming when the last one was taken). Retired accounts still hold their data; sweeping it out of every
 service, while keeping the books and reconciliation exact (Sprout's fee income from them must stay), is
 the next change, not this one.
+
+## ADR-027: Two cells that take over each other's customers, losing no acknowledged write { #adr-027-cells }
+
+**Decision.** Sprout runs as two cells, the phone (A) and the laptop (B). Each is a whole Sprout: its own database,
+exchange, bank, signing keys and demo pool, on the same deterministic market. A customer belongs to one cell. If a
+cell fails, the other takes its customers over within minutes, and **no write a customer was told succeeded is
+lost**. A write may be processed twice; it takes effect once.
+
+How, in order:
+
+1. **One front door, two connectors.** `sprout-saiworks.nncs.in` is a Cloudflare tunnel with a connector in each
+   cell, so a request reaches whichever cell is up. Each cell's web server answers its own customers and forwards
+   the other cell's to it (each cell also has its own hostname for that). The web app remembers its cell and sends
+   it on every request; a new customer's cell is chosen from their email, weighted by what each cell can carry.
+   Customers from before cells stay in A.
+2. **Every write has an idempotency key.** The gateway adds one to any write that arrives without one and returns
+   it. Services store the key in the same transaction as the write's effect, so a write seen again returns its
+   first result. The ledger refuses a second posting for the same key at the database.
+3. **Writes are journalled in the other cell before they are answered.** Before the gateway forwards a customer's
+   write, it appends it (who, what, the key) to a journal in the other cell. Reads, sign-ins and token refreshes
+   are not journalled: losing one of those means signing in again, and replaying a refresh would trip theft
+   detection. If the other cell can't be reached, the write goes ahead and is counted as unprotected.
+4. **Each cell's database is replicated into the other**, by Postgres logical replication over a Cloudflare TCP
+   tunnel. Logical, because the phone is ARM and the laptop x86: physical replicas need the same platform and the
+   same text collation. The copy lives as a second database in the other cell's own Postgres. It may lag by
+   seconds; the journal covers the gap.
+5. **Failover.** A cell that can no longer reach the other cell or its own public address for a minute fences
+   itself: it stops taking writes, so two copies of a customer can't both act. The other cell waits two minutes,
+   then promotes its copy (sequences are moved past every replicated id, since logical replication doesn't carry
+   them), starts the failed cell's services on it with the failed cell's own keys (sessions keep working), and
+   replays the journal. A replayed write that had already replicated is recognised by its key and ignored; one that
+   hadn't is applied. Then the router sends the failed cell's customers there.
+6. **Failback** rebuilds the returning cell's database from the promoted copy, re-establishes replication, and
+   moves its customers back. Its own database from before is archived, never merged: every write it acknowledged is
+   either in the copy or in the journal.
+
+The standby runs every service in one JVM (`hosts/cell`), which is what lets the laptop (7.8 GB RAM) and the phone
+each hold the other cell's services beside their own.
+
+**Why.** Cells contain a failure to a share of customers; failover makes that share whole again. Duplicates are
+cheap to make harmless (every write is keyed, and keys are checked where the effect is recorded) and a lost
+acknowledged write is not: a customer told their order went through, or their money moved, must find it so. That
+ordering is the brief: duplicates are fine, a missed write is not. Synchronous replication would remove the gap too,
+but make every write wait on the other device and stop all writes whenever it is away; the journal costs one round
+trip on writes only, and degrades to "unprotected", not "down".
+
+**Lost.**
+- Capacity: a cell must be able to carry the other's customers after a failover, so what can be *promised* is
+  what one cell carries alone, not the sum. Both numbers are reported.
+- A write made in the second between a cell's last journal entry and its fencing is still at risk if the other
+  cell was unreachable at the time (the "unprotected" count says how often that happens).
+- Background work (plans buying on the 5th, round-up sweeps) isn't journalled: it is re-derived by the promoted
+  cell's own schedulers from replicated state, and reconciliation checks the result.
+- Two copies of everything: storage, and memory for a standby that is idle until it is needed.
