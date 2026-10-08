@@ -18,6 +18,7 @@ for svc in IDENTITY SANDBOX OMS PLANS HABITS REWARDS LEDGER ACCOUNTS PAYMENTS SE
 done
 export GATEWAY_BIND=127.0.0.1 GATEWAY_TRUST_CF_IP=true
 export GATEWAY_CELL_ID=b GATEWAY_CELL_KEY="$CELL_KEY" GATEWAY_CELL_JOURNAL_DIR="$HERE/journal"
+export GATEWAY_CELL_FENCE_FILE="$HOME/sprout/journal/fenced-b"   # failback pauses cell B's writes here while moving them home
 export IDENTITY_SIGNING_KEY_PATH="$HOME/.sprout/keys/b-signing.pem" IDENTITY_DEMO_ENABLED=true
 export MARKETDATA_CLOCK=ACCELERATED MARKETDATA_SPEED=30
 # the sandbox's pace, as cell B runs it

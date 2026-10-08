@@ -208,6 +208,7 @@ def build() -> tuple[str, set[str]]:
       GATEWAY_CELL_ID: a
       GATEWAY_CELL_KEY: ${CELL_KEY}
       GATEWAY_CELL_JOURNAL_DIR: /tmp/journal
+      GATEWAY_CELL_FENCE_FILE: /journal/fenced-a     # failback pauses cell A's writes here while moving them home
       GATEWAY_TRUST_CF_IP: "true"
       GATEWAY_BIND: 0.0.0.0
       IDENTITY_SIGNING_KEY_PATH: /keys/signing.pem
@@ -266,6 +267,7 @@ def build() -> tuple[str, set[str]]:
       CLEARING_DB_PASSWORD: ${SPROUT_DB_PASSWORD}
     volumes:
       - ./data/cell-a/keys:/keys:ro
+      - ./data/journal:/journal
     mem_limit: 700m
     restart: "no"
     logging: {driver: json-file, options: {max-size: 10m, max-file: "3"}}
