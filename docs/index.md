@@ -26,7 +26,7 @@ regularly, holding, diversifying) rather than frequent trading.
 | Gateway: the only public door; auth, rate limits, routing, price streams | [sprout-gateway](https://github.com/SaiNayakk/sprout-gateway) | `v0.3.2` |
 | Market data: the simulated market, quotes, candles, live prices | [sprout-marketdata](https://github.com/SaiNayakk/sprout-marketdata) | `v0.2.1` |
 | Accounts: opening a Sprout account, simulated KYC | [sprout-accounts](https://github.com/SaiNayakk/sprout-accounts) | `v0.3.1` |
-| Ledger: the double-entry books, the source of truth for money | [sprout-ledger](https://github.com/SaiNayakk/sprout-ledger) | `v0.3.2` |
+| Ledger: the double-entry books, the source of truth for money | [sprout-ledger](https://github.com/SaiNayakk/sprout-ledger) | `v0.3.3` |
 | Payments: adding money by UPI, withdrawing | [sprout-payments](https://github.com/SaiNayakk/sprout-payments) | `v0.3.0` |
 | Orders: orders, risk checks, holdings, intraday positions, charges | [sprout-oms](https://github.com/SaiNayakk/sprout-oms) | `v0.5.4` |
 | Plans: systematic investment plans (SIPs) | [sprout-plans](https://github.com/SaiNayakk/sprout-plans) | `v0.2.2` |
@@ -40,7 +40,7 @@ regularly, holding, diversifying) rather than frequent trading.
 | Sprout Bank: a simulated customer bank with UPI PINs (not part of Sprout) | [sprout-bank](https://github.com/SaiNayakk/sprout-bank) | `v0.4.1` |
 | Sprout Stock Exchange: a simulated exchange (not part of Sprout) | [sprout-exchange](https://github.com/SaiNayakk/sprout-exchange) | `v0.4.2` |
 | Sprout Clearing Corporation: settles trades T+1 (not part of Sprout) | [sprout-clearing](https://github.com/SaiNayakk/sprout-clearing) | `v0.2.2` |
-| Sprout Depository: demat accounts (not part of Sprout) | [sprout-depository](https://github.com/SaiNayakk/sprout-depository) | `v0.2.2` |
+| Sprout Depository: demat accounts (not part of Sprout) | [sprout-depository](https://github.com/SaiNayakk/sprout-depository) | `v0.2.4` |
 | Web app: try a demo account of your own, invest, plans, goals, rewards | [sprout-web](https://github.com/SaiNayakk/sprout-web) | `v0.2.0` |
 | Platform: hosts, release manifests, pre-prod, these docs | [sprout-platform](https://github.com/SaiNayakk/sprout-platform) | this site |
 

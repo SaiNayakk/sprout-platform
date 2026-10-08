@@ -84,3 +84,14 @@ the same security headers as the web image and forwards `/api` to the gateway, s
 address. With `SPROUT_SANDBOX=true` in `~/.sprout.env` the hosts run the 30x demo market and pace their loops
 (settlement, reconciliation, plans, goals, the demo accounts) as the laptop and pre-prod do; `MARKETDATA_START_DATE`
 and `MARKETDATA_EPOCH` there keep the market's place across restarts, and moving data from the laptop moves them too.
+
+**Starting on the phone, one piece at a time.** Sprout is one Backseat app, `sprout`, running
+`deploy/phone/start.sh`. It waits until the phone has been up five minutes, then starts Postgres, NATS,
+the four hosts and the web app in turn, each only once the one before answers its health check and enough
+memory is free, at a lower priority than the phone's own work. It restarts a piece that dies and backs
+off for ten minutes if pieces keep dying. Before this, each piece was its own Backseat app; Backseat starts
+all apps together at boot, and the phone rebooted, and rebooted again, under the load (2026-10-08).
+
+**Before a deploy that changes a database,** `deploy/phone/rehearse.py` restores a copy of the phone's data into a
+throwaway Postgres and applies every migration the new host jars bring, the way Flyway will. Pre-prod's database
+starts empty, so a migration that only fails on real rows passes there ([incident](incidents.md)).

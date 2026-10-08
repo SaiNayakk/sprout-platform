@@ -4,12 +4,13 @@
 #   sh ~/sprout/setup.sh
 #
 # It never prints, logs or uploads a secret. What it does, skipping whatever is already done:
-#   1. starts Postgres (Termux's cluster) under Backseat if nothing is listening on 5432
+#   1. starts Postgres (Termux's cluster) for the steps below, if nothing is listening on 5432 (stopped again after)
 #   2. creates the `sprout` role and database
 #   3. writes the server keys to ~/.sprout.env and ~/.sprout/keys (owner-only)
 #   4. installs NATS from its official release, checksum-verified
-#   5. installs nginx and registers the Backseat apps: sprout-nats, the hosts and the web app (once each has
-#      had its first deploy)
+#   5. installs nginx and registers Sprout with Backseat as ONE app, `sprout` (start.sh), which starts Postgres,
+#      NATS, the hosts and the web app one at a time, never all at once (the per-piece apps of earlier releases
+#      are removed: Backseat starting them together at boot made the phone reboot)
 set -eu
 
 SPROUT="$HOME/sprout"
@@ -36,22 +37,25 @@ register() { # NAME DIR
   if has_app "$1"; then
     say "Backseat app $1 already registered"
   else
-    agent POST /apps "{\"name\":\"$1\",\"command\":\"sh run.sh\",\"cwd\":\"$2\"}" >/dev/null
+    cmd="sh run.sh"; [ "$1" = sprout ] && cmd="sh start.sh"
+    agent POST /apps "{\"name\":\"$1\",\"command\":\"$cmd\",\"cwd\":\"$2\"}" >/dev/null
     say "registered Backseat app $1"
   fi
 }
 
-# 1. Postgres
+# 1. Postgres, for the steps below only: start.sh runs it from now on
+mkdir -p "$SPROUT/postgres"
+# no exec: postgres changes into its data directory, and start.sh follows the piece by this shell
+printf '#!/data/data/com.termux/files/usr/bin/sh
+postgres -D "%s"
+' "$PGDATA" > "$SPROUT/postgres/run.sh"
+STARTED_PG=false
 if pg_isready -q -h 127.0.0.1 -p 5432; then
   say "Postgres already running"
 else
-  mkdir -p "$SPROUT/postgres"
-  # no exec: postgres changes into its data directory, and Backseat recognises the app by this
-  # shell staying in ~/sprout/postgres (an exec'd postgres wasn't re-adopted after an agent restart)
-  printf '#!/data/data/com.termux/files/usr/bin/sh\npostgres -D "%s"\n' "$PGDATA" > "$SPROUT/postgres/run.sh"
-  register sprout-postgres "$SPROUT/postgres"
-  i=0; until pg_isready -q -h 127.0.0.1 -p 5432; do i=$((i + 1)); [ $i -gt 30 ] && { echo "Postgres didn't start"; exit 1; }; sleep 1; done
-  say "Postgres started"
+  pg_ctl -D "$PGDATA" -l "$SPROUT/postgres/setup.log" -w start >/dev/null
+  STARTED_PG=true
+  say "Postgres started for set-up"
 fi
 
 # 3 (first, so step 2 can use the password). Server keys, owned by the operator, never shown.
@@ -134,16 +138,28 @@ else
 fi
 cp "$SPROUT/nats-run.sh" "$SPROUT/nats/run.sh"
 
-# 5. Backseat apps (the hosts' own files arrive with each deploy)
+# 5. Sprout as one Backseat app
 # the web app is served by Termux's nginx
 command -v nginx >/dev/null || { pkg install -y nginx >/dev/null && say "installed nginx"; }
 mkdir -p "$SPROUT/edge" "$SPROUT/trading" "$SPROUT/money" "$SPROUT/street" "$SPROUT/web"
-register sprout-nats "$SPROUT/nats"
-for host in trading street money edge web; do
-  if [ -f "$SPROUT/$host/run.sh" ]; then
-    register "sprout-$host" "$SPROUT/$host"
-  else
-    say "sprout-$host: waiting for its first deploy"
+for old in sprout-web sprout-edge sprout-money sprout-street sprout-trading sprout-nats sprout-postgres; do
+  if has_app "$old"; then
+    agent DELETE "/apps/$old" >/dev/null
+    say "removed the old Backseat app $old"
   fi
 done
+if [ "$STARTED_PG" = true ]; then
+  pg_ctl -D "$PGDATA" -m fast -w stop >/dev/null
+  say "Postgres stopped (start.sh runs it)"
+fi
+missing=""
+for host in trading street money edge web; do
+  [ -f "$SPROUT/$host/run.sh" ] || missing="$missing $host"
+done
+if [ -n "$missing" ]; then
+  say "not registering Sprout yet: waiting for the first deploy of:$missing"
+else
+  register sprout "$SPROUT"
+  say "Sprout starts piece by piece (after the phone has been up 5 minutes): tail -f ~/sprout/logs/*.log"
+fi
 say "done"
