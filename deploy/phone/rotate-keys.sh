@@ -40,7 +40,6 @@ PY
 chmod 600 "$ENV_FILE"
 
 token=$(python3 -c 'import json,os;print(json.load(open(os.path.expanduser("~/.backseat/agent/token.json")))["session_token"])')
-for app in sprout-street sprout-money sprout-trading sprout-edge; do
-  curl -s -m 30 -X POST -H "x-backseat-token: $token" "http://127.0.0.1:8080/apps/$app/restart" >/dev/null
-done
-echo "Rotated the signing key, database password and service keys; restarted the Sprout hosts. Everyone has to sign in again."
+# one app: start.sh brings everything back one piece at a time (a few minutes)
+curl -s -m 30 -X POST -H "x-backseat-token: $token" "http://127.0.0.1:8080/apps/sprout/restart" >/dev/null
+echo "Rotated the signing key, database password and service keys; Sprout is restarting piece by piece. Everyone has to sign in again."
