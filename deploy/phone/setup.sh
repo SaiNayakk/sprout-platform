@@ -160,6 +160,12 @@ if [ -n "$missing" ]; then
   say "not registering Sprout yet: waiting for the first deploy of:$missing"
 else
   register sprout "$SPROUT"
+  # cell B's standby (ADR-027): registered stopped, started only by cellwatch when the laptop is lost
+  if [ -f "$HOME/.sprout-b.env" ] && [ -f "$SPROUT/standby/cell-host.jar" ] && ! has_app sprout-standby; then
+    register sprout-standby "$SPROUT/standby"
+    agent POST /apps/sprout-standby/stop >/dev/null
+    say "registered the standby for cell B (stopped)"
+  fi
   say "Sprout starts piece by piece (after the phone has been up 5 minutes): tail -f ~/sprout/logs/*.log"
 fi
 say "done"
