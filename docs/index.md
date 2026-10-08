@@ -41,7 +41,7 @@ regularly, holding, diversifying) rather than frequent trading.
 | Sprout Stock Exchange: a simulated exchange (not part of Sprout) | [sprout-exchange](https://github.com/SaiNayakk/sprout-exchange) | `v0.4.1` |
 | Sprout Clearing Corporation: settles trades T+1 (not part of Sprout) | [sprout-clearing](https://github.com/SaiNayakk/sprout-clearing) | `v0.2.1` |
 | Sprout Depository: demat accounts (not part of Sprout) | [sprout-depository](https://github.com/SaiNayakk/sprout-depository) | `v0.2.1` |
-| Web app: explore as a fictional customer, invest, plans, goals, rewards | [sprout-web](https://github.com/SaiNayakk/sprout-web) | `v0.1.0` |
+| Web app: try a demo account of your own, invest, plans, goals, rewards | [sprout-web](https://github.com/SaiNayakk/sprout-web) | `v0.2.0` |
 | Platform: hosts, release manifests, pre-prod, these docs | [sprout-platform](https://github.com/SaiNayakk/sprout-platform) | this site |
 
 Next: the phone again.
