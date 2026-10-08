@@ -317,8 +317,8 @@ and the sandbox exercises the whole system continuously, which pre-prod now does
 sandbox, so the fictional customers live alongside every test and the books must still agree at the end.
 
 **Lost.** Time in the sandbox isn't the calendar: a visitor sees October pass in an afternoon. A new
-sandbox needs a few hours before its people have months behind them. Fifteen people acting every session
-cost the phone some CPU.
+sandbox needs a few hours before its accounts have months behind them. Every living account acting every
+session costs the phone some CPU, so only a few are kept warm (ADR-026).
 
 ## ADR-024: The laptop's deployment is rendered from pre-prod's compose file { #adr-024-laptop-from-preprod }
 
@@ -351,3 +351,22 @@ have; deriving it from one fixed instant needs none.
 **Lost.** The speed, start date and epoch must not change once customers exist, or the market is placed somewhere else.
 A market that is down for a while resumes at the later session: the sessions in between happen without anyone trading
 in them.
+
+## ADR-026: A demo account of the visitor's own, not a persona to choose { #adr-026-demo-accounts }
+
+**Decision.** The sandbox stops offering fifteen fictional people to choose between (by gender, each with
+pronouns, a city and a story). A visitor types what to call them and gets a demo account of their own,
+all of them the same kind of customer. A few accounts are kept warm, living the fast market; a visitor gets
+the one with the most history for two hours, after which it is retired: it stops living, its sign-in is
+closed, and a new one has already started warming. The API is a new major version (sandbox v3); v1 and v2
+are deprecated and no longer answered.
+
+**Why.** Asking a visitor to pick a gender to see a brokerage felt odd, however carefully it was offered,
+and gave people a reason to stop at the door. Shared personas also meant visitors saw each other's
+actions. An account of one's own, called what they like, is simpler to explain and private, and keeping
+only a few accounts living costs the phone less than fifteen people acting every session.
+
+**Lost.** A visitor who arrives just after several others may get an account with less history (it began
+warming when the last one was taken). Retired accounts still hold their data; sweeping it out of every
+service, while keeping the books and reconciliation exact (Sprout's fee income from them must stay), is
+the next change, not this one.

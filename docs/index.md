@@ -33,7 +33,7 @@ regularly, holding, diversifying) rather than frequent trading.
 | Habits: streaks, badges, points, challenges, Year Wrapped, squads, readiness, Future You | [sprout-habits](https://github.com/SaiNayakk/sprout-habits) | `v0.3.0` |
 | Goals: pots invested in a share, round-ups from UPI spends | [sprout-goals](https://github.com/SaiNayakk/sprout-goals) | `v0.1.0` |
 | Rewards: the vault and referrals | [sprout-rewards](https://github.com/SaiNayakk/sprout-rewards) | `v0.1.0` |
-| Sandbox: fictional customers with real history, for visitors to explore as | [sprout-sandbox](https://github.com/SaiNayakk/sprout-sandbox) | `v0.1.0` |
+| Sandbox: fictional customers with real history, for visitors to explore as | [sprout-sandbox](https://github.com/SaiNayakk/sprout-sandbox) | `v0.2.0` |
 | Statements: contract notes, funds statements, tax P&amp;L, holdings statements | [sprout-statements](https://github.com/SaiNayakk/sprout-statements) | `v0.2.1` |
 | Reconciliation: every book against every other, every day | [sprout-recon](https://github.com/SaiNayakk/sprout-recon) | `v0.2.1` |
 | Settlement: Sprout's back office for T+1 settlement | [sprout-settlement](https://github.com/SaiNayakk/sprout-settlement) | `v0.2.1` |

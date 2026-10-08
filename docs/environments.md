@@ -37,8 +37,8 @@ evidence and destroys it, volumes included.
 | `k6` | Load generator for request/response performance tests | n/a |
 | `loadgen` | Java load generator for price streams, on the same clock as the services | n/a |
 
-Pre-prod runs as the public sandbox (`SPROUT_SANDBOX=true`): its fifteen fictional customers are set up
-and live every session of the fast market while the tests run, so every release is also checked with
+Pre-prod runs as the public sandbox (`SPROUT_SANDBOX=true`): its demo accounts are set up and live
+every session of the fast market while the tests run, so every release is also checked with
 real background activity, and reconciliation must still find the books exact at the end.
 
 Limits mirror what the phone can give each host, so a memory regression fails in pre-prod first.
@@ -82,5 +82,5 @@ phone; the repositories are public and contain none.
 The web app runs there too: Termux's nginx (`deploy/phone/web`) serves the built app on `127.0.0.1:8180` with
 the same security headers as the web image and forwards `/api` to the gateway, so the tunnel reaches one
 address. With `SPROUT_SANDBOX=true` in `~/.sprout.env` the hosts run the 30x demo market and pace their loops
-(settlement, reconciliation, plans, goals, the personas) as the laptop and pre-prod do; `MARKETDATA_START_DATE`
+(settlement, reconciliation, plans, goals, the demo accounts) as the laptop and pre-prod do; `MARKETDATA_START_DATE`
 and `MARKETDATA_EPOCH` there keep the market's place across restarts, and moving data from the laptop moves them too.
