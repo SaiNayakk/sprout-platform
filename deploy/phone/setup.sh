@@ -8,7 +8,8 @@
 #   2. creates the `sprout` role and database
 #   3. writes the server keys to ~/.sprout.env and ~/.sprout/keys (owner-only)
 #   4. installs NATS from its official release, checksum-verified
-#   5. registers the Backseat apps: sprout-nats and the hosts (once each has had its first deploy)
+#   5. installs nginx and registers the Backseat apps: sprout-nats, the hosts and the web app (once each has
+#      had its first deploy)
 set -eu
 
 SPROUT="$HOME/sprout"
@@ -134,9 +135,11 @@ fi
 cp "$SPROUT/nats-run.sh" "$SPROUT/nats/run.sh"
 
 # 5. Backseat apps (the hosts' own files arrive with each deploy)
-mkdir -p "$SPROUT/edge" "$SPROUT/trading" "$SPROUT/money" "$SPROUT/street"
+# the web app is served by Termux's nginx
+command -v nginx >/dev/null || { pkg install -y nginx >/dev/null && say "installed nginx"; }
+mkdir -p "$SPROUT/edge" "$SPROUT/trading" "$SPROUT/money" "$SPROUT/street" "$SPROUT/web"
 register sprout-nats "$SPROUT/nats"
-for host in trading street money edge; do
+for host in trading street money edge web; do
   if [ -f "$SPROUT/$host/run.sh" ]; then
     register "sprout-$host" "$SPROUT/$host"
   else

@@ -19,6 +19,9 @@ export LOG_FORMAT=ecs
 if [ "${SPROUT_SANDBOX:-false}" = true ]; then
   export MARKETDATA_CLOCK=ACCELERATED   # the sandbox's market runs fast, so its fictional customers build months of history
   export MARKETDATA_SPEED=30
+  # a trading day passes in ~13 minutes, so the loops run at the pace the laptop and pre-prod proved
+  export PLANS_EVERY=10s OMS_RMS_EVERY=1s
+  # MARKETDATA_START_DATE and MARKETDATA_EPOCH come from ~/.sprout.env: the market resumes where it was
 fi
 # accounts, ledger and the exchange default to 127.0.0.1 on their ports
 
