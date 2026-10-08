@@ -24,7 +24,7 @@
     <java.version>21</java.version>
     <sprout-identity.version>0.3.0</sprout-identity.version>
     <sprout-gateway.version>0.3.2</sprout-gateway.version>
-    <sprout-sandbox.version>0.2.0</sprout-sandbox.version>
+    <sprout-sandbox.version>0.2.1</sprout-sandbox.version>
   </properties>
 
 
