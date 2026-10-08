@@ -133,3 +133,46 @@ run showed k6 couldn't save its summaries on CI (the output folder belonged to t
 **Cause.** A line break inside a Python string embedded in `setup.sh`. Pre-prod builds containers, not
 phones, so the phone scripts had no test at all. CI now checks every phone script's shell syntax and
 compiles the Python inside them (`deploy/phone/check-scripts.py`), and it fails on the old script.
+
+## 2026-10-08: the phone rebooted itself in a loop after Sprout moved onto it
+
+**Impact.** About an hour with every site on the phone down (Sprout and the other apps it hosts). The phone
+had to be booted into safe mode to stop it.
+
+**Timeline.**
+
+1. Sprout moved from the laptop to the phone and ran well: four host JVMs, about 820 MB, 1.3 GB still free.
+2. The phone rebooted. At boot, Termux:Boot started Backseat, and Backseat started **every** app at once: the
+   phone's own sites, Postgres, NATS and four JVMs warming up. Android rebooted the phone under the load, and the
+   next boot did the same.
+3. Safe mode (which doesn't run Termux:Boot) and a force stop broke the loop; Sprout's apps were marked stopped.
+
+**Root cause.** Each part of Sprout was its own Backseat app, and Backseat starts all apps together. Starting
+everything at once had been tested only on a machine that was already up and idle, never on a phone booting.
+
+**What changed.** Sprout is one Backseat app, `deploy/phone/start.sh`: it waits until the phone has been up five
+minutes, starts one piece at a time (each only once the one before is healthy and memory allows), at a lower
+priority with fewer JVM threads, restarts a piece that dies, and backs off ten minutes if pieces keep dying.
+
+**Lesson.** A deploy isn't proven until the machine has rebooted with it on.
+
+## 2026-10-08: a rename that passed pre-prod failed on the phone's real data
+
+**Impact.** About 10 minutes of Sprout partly down on the phone (orders and settlement), during the release that
+renamed the stock CHAIWALA to BREWBERRY.
+
+**What happened.** Each service that stores the symbol shipped a migration renaming it. Two failed on real rows:
+the ledger's journal is immutable and its trigger refused edits to old entry descriptions, and the depository's
+movements refer to transfers by instruction id, so renaming the ids broke the foreign key. Postgres rolled both
+back. Pre-prod passed both because it starts from an empty database. Worse, the starter reported the street host
+healthy because its bank answered, though its depository had failed and the host was exiting.
+
+**What changed.**
+
+- The ledger keeps its journal as posted (a no-op migration explains why); the depository renames only the symbol,
+  never instruction ids, which are idempotency keys.
+- `deploy/phone/rehearse.py` applies a deploy's pending migrations to a copy of the phone's data before the phone
+  does. Run against the failed release, it reports the same foreign-key error.
+- The starter calls a host healthy only when every service in it answers, not just the first.
+
+**Lesson.** A data migration is tested on data. An empty database proves only that the SQL parses.

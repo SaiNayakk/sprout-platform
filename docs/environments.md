@@ -91,3 +91,7 @@ the four hosts and the web app in turn, each only once the one before answers it
 memory is free, at a lower priority than the phone's own work. It restarts a piece that dies and backs
 off for ten minutes if pieces keep dying. Before this, each piece was its own Backseat app; Backseat starts
 all apps together at boot, and the phone rebooted, and rebooted again, under the load (2026-10-08).
+
+**Before a deploy that changes a database,** `deploy/phone/rehearse.py` restores a copy of the phone's data into a
+throwaway Postgres and applies every migration the new host jars bring, the way Flyway will. Pre-prod's database
+starts empty, so a migration that only fails on real rows passes there ([incident](incidents.md)).

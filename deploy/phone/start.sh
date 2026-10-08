@@ -23,14 +23,18 @@ mkdir -p "$LOGS"
 # name, folder, health check: started in this order, stopped in the reverse
 PIECES="postgres nats trading street money edge web"
 dir_of() { echo "$HERE/$1"; }
+# A host is healthy only when every service in it answers: a host whose first service is up can still have
+# one that failed to start (2026-10-08: the street host's bank answered while its depository's migration failed).
+answers() { for p in "$@"; do curl -fs -m 2 -o /dev/null "http://127.0.0.1:$p/actuator/health" || return 1; done; }
+sandbox_on() { grep -q '^SPROUT_SANDBOX=true' "$HOME/.sprout.env" 2>/dev/null; }
 healthy() {
   case "$1" in
     postgres) pg_isready -q -h 127.0.0.1 -p 5432 ;;
     nats)     curl -fs -m 2 -o /dev/null http://127.0.0.1:8222/healthz ;;
-    trading)  curl -fs -m 2 -o /dev/null http://127.0.0.1:8103/actuator/health ;;
-    street)   curl -fs -m 2 -o /dev/null http://127.0.0.1:8107/actuator/health ;;
-    money)    curl -fs -m 2 -o /dev/null http://127.0.0.1:8104/actuator/health ;;
-    edge)     curl -fs -m 2 -o /dev/null http://127.0.0.1:8101/actuator/health ;;
+    trading)  answers 8103 8109 8115 8116 8118 ;;                   # market data, orders, plans, habits, rewards
+    street)   answers 8107 8108 8111 8110 ;;                        # bank, exchange, depository, clearing
+    money)    answers 8106 8104 8105 8112 8113 8114 8117 ;;         # ledger, accounts, payments, settlement, statements, recon, goals
+    edge)     answers 8101 && curl -fs -m 2 -o /dev/null http://127.0.0.1:8100/api/marketdata/v1/market                 && { ! sandbox_on || answers 8119; } ;;               # identity, the gateway (through it), the sandbox
     web)      curl -fs -m 2 -o /dev/null http://127.0.0.1:8180/healthz ;;
   esac
 }
