@@ -28,7 +28,7 @@ regularly, holding, diversifying) rather than frequent trading.
 | Accounts: opening a Sprout account, simulated KYC | [sprout-accounts](https://github.com/SaiNayakk/sprout-accounts) | `v0.3.1` |
 | Ledger: the double-entry books, the source of truth for money | [sprout-ledger](https://github.com/SaiNayakk/sprout-ledger) | `v0.3.1` |
 | Payments: adding money by UPI, withdrawing | [sprout-payments](https://github.com/SaiNayakk/sprout-payments) | `v0.3.0` |
-| Orders: orders, risk checks, holdings, intraday positions, charges | [sprout-oms](https://github.com/SaiNayakk/sprout-oms) | `v0.5.1` |
+| Orders: orders, risk checks, holdings, intraday positions, charges | [sprout-oms](https://github.com/SaiNayakk/sprout-oms) | `v0.5.2` |
 | Plans: systematic investment plans (SIPs) | [sprout-plans](https://github.com/SaiNayakk/sprout-plans) | `v0.2.1` |
 | Habits: streaks, badges, points, challenges, Year Wrapped, squads, readiness, Future You | [sprout-habits](https://github.com/SaiNayakk/sprout-habits) | `v0.3.0` |
 | Goals: pots invested in a share, round-ups from UPI spends | [sprout-goals](https://github.com/SaiNayakk/sprout-goals) | `v0.1.0` |

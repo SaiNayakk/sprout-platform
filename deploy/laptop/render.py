@@ -81,9 +81,10 @@ def build() -> tuple[str, set[str]]:
     text = text.replace('    mem_limit:', '    restart: unless-stopped\n    logging: {driver: json-file, options: {max-size: 10m, max-file: "3"}}\n    mem_limit:')
 
     text += '''
-  # The web app: up.sh builds the release in web.version (or a local checkout, while developing) and names it here.
+  # The web app: up.sh builds the release in web.version (or a local checkout, while developing) and names it here;
+  # without that, compose falls back to the release's own name, so `docker compose down`/`logs` work on their own.
   web:
-    image: ${SPROUT_WEB_IMAGE}
+    image: ${SPROUT_WEB_IMAGE:-sprout-web:%s}
     environment:
       SPROUT_API: http://edge:8100
     ports:
@@ -109,7 +110,7 @@ def build() -> tuple[str, set[str]]:
 
 volumes:
   pgdata:
-'''
+''' % (HERE / 'web.version').read_text().strip()
     return text, needed
 
 
