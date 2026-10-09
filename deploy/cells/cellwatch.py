@@ -231,11 +231,14 @@ def replay(since):
 
 
 def replicating():
-    """Whether this cell holds a live copy of the other cell's database: its subscription exists and has received data."""
+    """Whether this cell holds a whole copy of the other cell's database: its subscription exists and every table has
+    finished its initial copy. (Not whether it is receiving right now: a cell that has just been lost isn't sending.)"""
     try:
-        out = sh(ENV['REPLICA_PSQL'] + ' -At',
-                 stdin=f"SELECT count(*) FROM pg_stat_subscription WHERE subname = 'from_{PEER}' AND received_lsn IS NOT NULL;\n")
-        return out.strip() not in ('', '0')
+        out = sh(ENV['REPLICA_PSQL'] + ' -At', stdin=(
+            "SELECT count(*) FILTER (WHERE r.srsubstate = 'r') || ' ' || count(*) FROM pg_subscription s "
+            f"JOIN pg_subscription_rel r ON r.srsubid = s.oid WHERE s.subname = 'from_{PEER}';\n"))
+        ready, total = (int(x) for x in out.split())
+        return total > 0 and ready == total
     except RuntimeError:
         return False
 
