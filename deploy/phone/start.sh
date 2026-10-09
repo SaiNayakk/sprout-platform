@@ -53,6 +53,16 @@ booted_for() { python3 -c 'import time; print(int(time.clock_gettime(time.CLOCK_
 free_mb() { free -m | awk 'NR==2 {print $7}'; }
 
 pid_file() { echo "$LOGS/$1.pid"; }
+TICKS=$(getconf CLK_TCK 2>/dev/null || echo 100)
+# CPU time (ticks) used so far by a piece's process and its children (run.sh starts the real process as a child)
+cpu_ticks() {
+  p=$(cat "$(pid_file "$1")" 2>/dev/null) || { echo 0; return; }
+  t=0
+  for c in $p $(pgrep -P "$p" 2>/dev/null); do
+    s=$(awk '{print $14 + $15}' "/proc/$c/stat" 2>/dev/null) && t=$((t + s))
+  done
+  echo $t
+}
 running() { p=$(cat "$(pid_file "$1")" 2>/dev/null) && [ -n "$p" ] && kill -0 "$p" 2>/dev/null; }
 
 stop_pieces() {
@@ -128,8 +138,18 @@ while :; do
         continue
       fi
       eval "n=\${silent_$name:-0}"; n=$((n + 1)); eval "silent_$name=$n"
+      [ $n -eq 1 ] && eval "cpu_$name=$(cpu_ticks "$name")"
       [ $n -lt 8 ] && continue
-      log "$name stopped answering for two minutes; killing it"
+      # busy is not hung (2026-10-09: an overloaded edge host answered too slowly, was killed, and the two minutes it
+      # took to start made the overload an outage). A hung process (2026-10-08's every thread stuck) uses no CPU; a
+      # busy one uses plenty. Killed only when it has used under 5 s of CPU in the two minutes it didn't answer
+      eval "was=\$cpu_$name"; used=$(( $(cpu_ticks "$name") - was ))
+      if [ "$used" -gt $((5 * TICKS)) ]; then
+        log "$name answered nothing for two minutes but used $((used / TICKS))s of CPU: busy, not hung; left alone"
+        eval "silent_$name=0"
+        continue
+      fi
+      log "$name stopped answering for two minutes and used $((used / TICKS))s of CPU: hung; killing it"
       p=$(cat "$(pid_file "$name")" 2>/dev/null)
       pkill -KILL -P "$p" 2>/dev/null; kill -KILL "$p" 2>/dev/null
       eval "silent_$name=0"
