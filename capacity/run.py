@@ -16,6 +16,9 @@ What it does:
   4. writes capacity/results/<time>-<test>/: what the client measured, the samples, and result.json (per step: the
      load asked for, latency percentiles, errors by status, and the phone's peak CPU, lowest free memory, temperature)
 
+--target laptop measures the laptop's cell instead: k6 joins the cell's Docker network (held to 2 CPUs, so the
+client's own cost is bounded and known) and docker stats is sampled in place of the phone's /proc.
+
 Settings come from the environment: PHONE (default u0_a1@192.168.0.6), PHONE_KEY (~/.ssh/backseat_phone).
 """
 import argparse
@@ -25,6 +28,7 @@ import os
 import socket
 import subprocess
 import sys
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
@@ -60,10 +64,43 @@ def lan(on):
                    capture_output=True)
 
 
+LAPTOP_NETWORK = 'sprout-laptop_default'
+LAPTOP_CONTAINERS = {'edge': 'edge', 'trading': 'trading', 'money': 'money', 'street': 'street', 'postgres': 'postgres',
+                     'nats': 'nats', 'nginx': 'web', 'cloudflared': 'cloudflared'}
+
+
+def mb(text):
+    n, unit = float(''.join(c for c in text if c.isdigit() or c == '.')), text.lstrip('0123456789. ')
+    return n * {'GiB': 1024, 'MiB': 1, 'KiB': 1 / 1024, 'B': 1 / 1048576}.get(unit, 1)
+
+
+def laptop_sampler(path, stop):
+    """docker stats every ~2 s, as the same CSV columns the phone's sampler writes."""
+    total = int(subprocess.run(['docker', 'info', '--format', '{{.MemTotal}}'], capture_output=True, text=True).stdout) / 1048576
+    with open(path, 'w', newline='') as f:
+        w = csv.writer(f)
+        w.writerow(['t', 'available_mb', 'battery_c'] + [f'{p}_cpu' for p in PROCESSES] + [f'{p}_mb' for p in PROCESSES])
+        while not stop.is_set():
+            r = subprocess.run(['docker', 'stats', '--no-stream', '--format', '{{.Name}};{{.CPUPerc}};{{.MemUsage}}'],
+                               capture_output=True, text=True)
+            seen = {}
+            for line in r.stdout.splitlines():
+                name, cpu, mem = line.split(';')
+                seen[name] = (float(cpu.rstrip('%') or 0), mb(mem.split('/')[0].strip()))
+            used = sum(m for _, m in seen.values())
+            row = {p: seen.get(f'sprout-laptop-{c}-1', (0, 0)) for p, c in LAPTOP_CONTAINERS.items()}
+            w.writerow([int(time.time()), int(total - used), '']
+                       + [round(row[p][0]) if p in row else 0 for p in PROCESSES]
+                       + [round(row[p][1]) if p in row else 0 for p in PROCESSES])
+            f.flush()
+
+
 def k6_steps(a, steps, out, base_url):
     """One k6 run with a scenario per step; returns per-step results and when each step ran."""
     started = time.time()
-    k6 = subprocess.run(['docker', 'run', '--rm', '--add-host=host.docker.internal:host-gateway',
+    where = (['--network', LAPTOP_NETWORK, '--cpus', '2'] if a.target == 'laptop'
+             else ['--add-host=host.docker.internal:host-gateway'])
+    k6 = subprocess.run(['docker', 'run', '--rm'] + where + [
                          '-v', f'{HERE / "k6"}:/scripts:ro', '-v', f'{out / "out"}:/out',
                          '-e', f'TEST={a.test}', '-e', f'STEPS={a.steps}', '-e', f'STEP_SECONDS={a.step_seconds}',
                          '-e', f'USERS={a.users}', '-e', f'BASE_URL={base_url}', '-e', 'OUT=/out/summary.json',
@@ -136,14 +173,22 @@ def main():
     ap.add_argument('--users', type=int, default=30, help='customers created for the test (k6 tests)')
     ap.add_argument('--via', choices=['lan', 'tunnel'], default='lan')
     ap.add_argument('--label', default='', help='a note kept with the result, e.g. what was changed')
+    ap.add_argument('--target', choices=['phone', 'laptop'], default='phone')
     a = ap.parse_args()
     steps = [int(s) for s in a.steps.split(',')]
 
-    out = HERE / 'results' / f'{datetime.now():%Y%m%d-%H%M}-{a.test}'
+    out = HERE / 'results' / f'{datetime.now():%Y%m%d-%H%M}-{a.test}{"-laptop" if a.target == "laptop" else ""}'
     (out / 'out').mkdir(parents=True, exist_ok=True)
     tunnel = sampler = None
+    stop = threading.Event()
     try:
-        if a.via == 'lan':
+        if a.target == 'laptop':
+            k6_url = java_url = 'http://web'
+            if a.test in ('streams', 'orders'):
+                java_url = 'http://localhost:18080'
+            sampler = threading.Thread(target=laptop_sampler, args=(out / 'samples.csv', stop), daemon=True)
+            sampler.start()
+        elif a.via == 'lan':
             lan(True)
             if not wait_port(PHONE_HOST, LAN_PORT):
                 sys.exit('the phone\'s test listener didn\'t come up')
@@ -153,8 +198,9 @@ def main():
             if not wait_port('127.0.0.1', TUNNEL_PORT):
                 sys.exit('the tunnel to the phone didn\'t open')
             k6_url, java_url = f'http://host.docker.internal:{TUNNEL_PORT}', f'http://localhost:{TUNNEL_PORT}'
-        samples = open(out / 'samples.csv', 'w', newline='')
-        sampler = subprocess.Popen(SSH + [PHONE, 'INTERVAL=2 python3 -'], stdin=open(HERE / 'sample.py', 'rb'), stdout=samples)
+        if a.target == 'phone':
+            samples = open(out / 'samples.csv', 'w', newline='')
+            sampler = subprocess.Popen(SSH + [PHONE, 'INTERVAL=2 python3 -'], stdin=open(HERE / 'sample.py', 'rb'), stdout=samples)
         time.sleep(6)   # a baseline before the load
         if a.test in ('streams', 'orders'):
             per_step, windows, code = java_steps(a, steps, out, java_url)
@@ -162,17 +208,20 @@ def main():
             per_step, windows, code = k6_steps(a, steps, out, k6_url)
         time.sleep(6)   # and the recovery after it
     finally:
-        if sampler:
+        stop.set()
+        if isinstance(sampler, subprocess.Popen):
             sampler.terminate()
+        elif sampler:
+            sampler.join(10)
         if tunnel:
             tunnel.terminate()
-        if a.via == 'lan':
+        if a.via == 'lan' and a.target == 'phone':
             lan(False)
 
     rows = list(csv.DictReader(open(out / 'samples.csv')))
     for s, (lo, hi) in zip(per_step, windows):
         s.update(phone_during(rows, lo, hi))
-    result = {'test': a.test, 'target': 'phone', 'via': a.via, 'label': a.label, 'step_seconds': a.step_seconds,
+    result = {'test': a.test, 'target': a.target, 'via': a.via, 'label': a.label, 'step_seconds': a.step_seconds,
               'client_exit': code, 'started': datetime.fromtimestamp(windows[0][0]).isoformat(timespec='seconds'), 'steps': per_step}
     (out / 'result.json').write_text(json.dumps(result, indent=1), encoding='utf-8')
     print(f'results in {out}')
