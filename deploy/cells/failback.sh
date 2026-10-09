@@ -78,6 +78,6 @@ else
   say "both cells back to normal"
   "${SSH[@]}" "rm -f ~/sprout/cells/state.json; pkill -f '[c]ellwatch[.]py' || true"   # the starter starts it again; the bracket keeps pkill off this very shell
   rm -f "$LAPTOP/data/cells/state.json" "$LAPTOP/data/journal/fenced"
-  "${COMPOSE[@]}" up -d edge trading money street web front cellwatch >/dev/null
+  "${COMPOSE[@]}" up -d cloudflared edge trading money street web front cellwatch >/dev/null
   say "cell B is starting on the laptop; then: deploy/cells/replicate.sh"
 fi
