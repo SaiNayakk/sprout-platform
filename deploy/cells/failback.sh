@@ -23,7 +23,8 @@ PHONE="${PHONE:-u0_a1@192.168.0.6}"
 SSH=(ssh -i "${PHONE_KEY:-$HOME/.ssh/backseat_phone}" -p 8022 -o BatchMode=yes -o IdentitiesOnly=yes "$PHONE")
 export MSYS_NO_PATHCONV=1
 LPG=(docker exec -i -e PGPASSWORD="$SPROUT_DB_PASSWORD" sprout-laptop-postgres-1)
-COMPOSE=(docker compose --env-file "$LAPTOP/data/.env" -f "$LAPTOP/docker-compose.yml")
+cd "$LAPTOP"   # docker compose is given relative paths: a /c/... path means nothing to it on Windows
+COMPOSE=(docker compose --env-file data/.env -f docker-compose.yml)
 export SPROUT_WEB_IMAGE="sprout-web:$(tr -d '[:space:]' < "$LAPTOP/web.version")"
 STAMP=$(date -u +%Y%m%d%H%M)
 DUMP="/f/Backups/sprout/failback-$X-$STAMP.dump"
