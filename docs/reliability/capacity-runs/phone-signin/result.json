@@ -1,0 +1,164 @@
+{
+ "test": "signin",
+ "target": "phone",
+ "step_seconds": 60,
+ "k6_exit": 0,
+ "started": "2026-10-08T23:27:27",
+ "steps": [
+  {
+   "step": 0,
+   "asked_per_s": 2,
+   "p50_ms": 274.691076,
+   "p95_ms": 444.192855,
+   "p99_ms": 481.2313062,
+   "max_ms": 613.495705,
+   "failed_rate": 0,
+   "checks_ok_rate": 1,
+   "dropped": 0,
+   "codes": {
+    "200": 121
+   },
+   "phone_cpu_peak_pct": 133,
+   "phone_cpu_avg_pct": 88,
+   "edge_cpu_peak_pct": 94,
+   "available_mb_min": 2232,
+   "battery_c_max": 38.0
+  },
+  {
+   "step": 1,
+   "asked_per_s": 4,
+   "p50_ms": 238.992108,
+   "p95_ms": 354.797457,
+   "p99_ms": 467.8921358,
+   "max_ms": 573.596972,
+   "failed_rate": 0,
+   "checks_ok_rate": 1,
+   "dropped": 0,
+   "codes": {
+    "200": 241
+   },
+   "phone_cpu_peak_pct": 158,
+   "phone_cpu_avg_pct": 124,
+   "edge_cpu_peak_pct": 121,
+   "available_mb_min": 2225,
+   "battery_c_max": 37.0
+  },
+  {
+   "step": 2,
+   "asked_per_s": 6,
+   "p50_ms": 227.093142,
+   "p95_ms": 345.588269,
+   "p99_ms": 385.1898247999999,
+   "max_ms": 490.256953,
+   "failed_rate": 0,
+   "checks_ok_rate": 1,
+   "dropped": 0,
+   "codes": {
+    "200": 361
+   },
+   "phone_cpu_peak_pct": 217,
+   "phone_cpu_avg_pct": 160,
+   "edge_cpu_peak_pct": 181,
+   "available_mb_min": 2307,
+   "battery_c_max": 37.0
+  },
+  {
+   "step": 3,
+   "asked_per_s": 8,
+   "p50_ms": 222.445017,
+   "p95_ms": 337.915751,
+   "p99_ms": 421.57256659999996,
+   "max_ms": 508.540872,
+   "failed_rate": 0,
+   "checks_ok_rate": 1,
+   "dropped": 0,
+   "codes": {
+    "200": 481
+   },
+   "phone_cpu_peak_pct": 234,
+   "phone_cpu_avg_pct": 202,
+   "edge_cpu_peak_pct": 206,
+   "available_mb_min": 2299,
+   "battery_c_max": 37.0
+  },
+  {
+   "step": 4,
+   "asked_per_s": 10,
+   "p50_ms": 213.535974,
+   "p95_ms": 317.00805,
+   "p99_ms": 370.857923,
+   "max_ms": 506.56033,
+   "failed_rate": 0,
+   "checks_ok_rate": 1,
+   "dropped": 0,
+   "codes": {
+    "200": 601
+   },
+   "phone_cpu_peak_pct": 346,
+   "phone_cpu_avg_pct": 249,
+   "edge_cpu_peak_pct": 321,
+   "available_mb_min": 2259,
+   "battery_c_max": 37.0
+  },
+  {
+   "step": 5,
+   "asked_per_s": 12,
+   "p50_ms": 280.7753365,
+   "p95_ms": 369.48256555,
+   "p99_ms": 466.9313285599998,
+   "max_ms": 567.267897,
+   "failed_rate": 0,
+   "checks_ok_rate": 1,
+   "dropped": 0,
+   "codes": {
+    "200": 720
+   },
+   "phone_cpu_peak_pct": 507,
+   "phone_cpu_avg_pct": 348,
+   "edge_cpu_peak_pct": 481,
+   "available_mb_min": 2233,
+   "battery_c_max": 37.0
+  },
+  {
+   "step": 6,
+   "asked_per_s": 15,
+   "p50_ms": 758.877652,
+   "p95_ms": 5091.946981199998,
+   "p99_ms": 7052.4069283,
+   "max_ms": 7303.077408,
+   "failed_rate": 0.2,
+   "checks_ok_rate": 0.8,
+   "dropped": 31,
+   "codes": {
+    "200": 696,
+    "503": 151,
+    "504": 23
+   },
+   "phone_cpu_peak_pct": 526,
+   "phone_cpu_avg_pct": 385,
+   "edge_cpu_peak_pct": 501,
+   "available_mb_min": 1850,
+   "battery_c_max": 37.0
+  },
+  {
+   "step": 7,
+   "asked_per_s": 20,
+   "p50_ms": 13462.095571,
+   "p95_ms": 18090.686274599997,
+   "p99_ms": 18212.65361592,
+   "max_ms": 18386.86736,
+   "failed_rate": 0.09896602658788774,
+   "checks_ok_rate": 0.9010339734121122,
+   "dropped": 381,
+   "codes": {
+    "200": 610,
+    "503": 67
+   },
+   "phone_cpu_peak_pct": 521,
+   "phone_cpu_avg_pct": 428,
+   "edge_cpu_peak_pct": 492,
+   "available_mb_min": 2111,
+   "battery_c_max": 38.0
+  }
+ ]
+}

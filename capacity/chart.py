@@ -34,7 +34,7 @@ def main():
     for run in runs:
         label, path = run.split('=', 1)
         steps = json.loads((Path(path) / 'result.json').read_text(encoding='utf-8'))['steps']
-        series.append((label, [(s['asked'], get(s)) for s in steps if s.get('requests_per_s')]))
+        series.append((label, [(s['asked'], get(s)) for s in steps if s.get('requests_per_s') and s.get('p95_ms')]))
     xmax = nice_max(max(x for _, pts in series for x, _ in pts))
     ymax = nice_max(max(y for _, pts in series for _, y in pts) * 1.05)
     if metric == 'p95':

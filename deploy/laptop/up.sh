@@ -40,7 +40,7 @@ for k in CELL_KEY CELL_A_REPLICATOR_PASSWORD CELL_B_REPLICATOR_PASSWORD; do
   grep -q "^$k=" data/.env || grep "^$k=" "$CELLS_SECRETS" >> data/.env
 done
 # new customers are split between the cells by what each carries (measured: see the capacity docs)
-grep -q '^CELL_WEIGHTS=' data/.env || echo 'CELL_WEIGHTS=a=30,b=70' >> data/.env
+grep -q '^CELL_WEIGHTS=' data/.env || echo 'CELL_WEIGHTS=a=35,b=65' >> data/.env
 python render.py
 mkdir -p data/keys data/cloudflared data/cloudflared-front data/cells data/journal data/cell-a/keys
 chmod 777 data/journal       # the gateway runs as its own user inside its container
@@ -48,7 +48,7 @@ chmod 777 data/journal       # the gateway runs as its own user inside its conta
 # forwarded as normal
 if [ ! -f data/cells/routes.conf ]; then
   printf 'map $http_x_sprout_cell $sprout_route {\n    default local;\n    b local;\n    a peer;\n}\n' > data/cells/routes.conf
-  echo '{"cells":[{"id":"a","weight":30},{"id":"b","weight":70}]}' > data/cells/cells.json
+  echo '{"cells":[{"id":"a","weight":35},{"id":"b","weight":65}]}' > data/cells/cells.json
 fi
 [ -f data/cell-a/cell-a.env ] || : > data/cell-a/cell-a.env
 if [ ! -f data/keys/signing.pem ]; then

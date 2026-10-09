@@ -14,7 +14,7 @@ render() {
   # the cells (ADR-027): cellwatch keeps routes.conf; until it has, every cell's customers are local or forwarded
   mkdir -p "$CELLS"
   [ -f "$CELLS/routes.conf" ] || printf 'map $http_x_sprout_cell $sprout_route {\n    default local;\n    a local;\n    b peer;\n}\n' > "$CELLS/routes.conf"
-  [ -f "$CELLS/cells.json" ] || echo '{"cells":[{"id":"a","weight":30},{"id":"b","weight":70}]}' > "$CELLS/cells.json"
+  [ -f "$CELLS/cells.json" ] || echo '{"cells":[{"id":"a","weight":35},{"id":"b","weight":65}]}' > "$CELLS/cells.json"
   KEY=$(sed -n 's/^CELL_KEY=//p' "$HOME/.sprout.env")
   # Only while a capacity test runs (capacity/run.py creates the flag): the test's load generator reaches the web
   # server over Wi-Fi directly, so the phone isn't also encrypting an SSH tunnel's worth of traffic. Off otherwise.

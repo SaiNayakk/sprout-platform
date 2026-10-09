@@ -31,7 +31,7 @@ Configuration is the environment; commands are run through the shell, so the sam
   SELF_URL, PEER_URL            the cells' own public addresses (https://sprout-a-..., https://sprout-b-...)
   LOCAL_CHECK                   a URL that answers 200 when this cell's own services are up
   STATUS_FILE, ROUTES_FILE, CELLS_FILE, FENCE_FILE, STATE_FILE, JOURNAL_DIR, LOG_FILE
-  WEIGHTS                       normal weights for new customers, e.g. "a=30,b=70"
+  WEIGHTS                       normal weights for new customers, e.g. "a=35,b=65" (from what each cell carries: docs, Capacity)
   REPLICA_PSQL                  a command that runs SQL (stdin) against this cell's copy of the other cell's database
   STANDBY_START, STANDBY_STOP   commands that start and stop the standby
   STANDBY_GATEWAY               the standby's gateway, e.g. http://127.0.0.1:8200

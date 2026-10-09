@@ -62,6 +62,7 @@ nav:
       - Chaos tests: testing/chaos.md
   - Reliability:
       - reliability/index.md
+      - Capacity: reliability/capacity.md
       - Evidence from runs: reliability/runs/index.md
       - Runbooks: runbooks.md
       - Incidents: incidents.md

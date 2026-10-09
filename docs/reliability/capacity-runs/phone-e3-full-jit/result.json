@@ -1,0 +1,268 @@
+{
+ "test": "users",
+ "target": "phone",
+ "via": "lan",
+ "label": "E3: full JIT (C2) on every host, code cache 96m",
+ "step_seconds": 60,
+ "client_exit": 0,
+ "started": "2026-10-09T01:01:22",
+ "steps": [
+  {
+   "step": 0,
+   "asked": 50,
+   "requests_per_s": 20.9,
+   "p50_ms": 39.480229,
+   "p95_ms": 275.89038240000014,
+   "p99_ms": 808.3729802400004,
+   "max_ms": 1020.082985,
+   "failed_rate": 0,
+   "checks_ok_rate": 1,
+   "dropped": 0,
+   "codes": {
+    "200": 1220,
+    "201": 37
+   },
+   "by_action_p95_ms": {
+    "home": 312,
+    "quotes": 223,
+    "orders": 137,
+    "pots": 220,
+    "plans": 204,
+    "buy": 1018,
+    "upi": 330,
+    "signin": 368
+   },
+   "phone_cpu_peak_pct": 269,
+   "phone_cpu_avg_pct": 172,
+   "edge_cpu_peak_pct": 92,
+   "trading_cpu_peak_pct": 87,
+   "money_cpu_peak_pct": 52,
+   "street_cpu_peak_pct": 34,
+   "postgres_cpu_peak_pct": 13,
+   "nats_cpu_peak_pct": 9,
+   "nginx_cpu_peak_pct": 9,
+   "sshd_cpu_peak_pct": 0,
+   "cloudflared_cpu_peak_pct": 4,
+   "available_mb_min": 1827,
+   "battery_c_max": 37.0
+  },
+  {
+   "step": 1,
+   "asked": 100,
+   "requests_per_s": 42.1,
+   "p50_ms": 37.247819500000006,
+   "p95_ms": 190.16350775,
+   "p99_ms": 464.97743125,
+   "max_ms": 637.732656,
+   "failed_rate": 0,
+   "checks_ok_rate": 1,
+   "dropped": 0,
+   "codes": {
+    "200": 2442,
+    "201": 84
+   },
+   "by_action_p95_ms": {
+    "home": 170,
+    "quotes": 178,
+    "orders": 199,
+    "pots": 167,
+    "plans": 174,
+    "buy": 165,
+    "upi": 199,
+    "signin": 316
+   },
+   "phone_cpu_peak_pct": 442,
+   "phone_cpu_avg_pct": 233,
+   "edge_cpu_peak_pct": 129,
+   "trading_cpu_peak_pct": 155,
+   "money_cpu_peak_pct": 101,
+   "street_cpu_peak_pct": 31,
+   "postgres_cpu_peak_pct": 16,
+   "nats_cpu_peak_pct": 10,
+   "nginx_cpu_peak_pct": 10,
+   "sshd_cpu_peak_pct": 0,
+   "cloudflared_cpu_peak_pct": 4,
+   "available_mb_min": 1799,
+   "battery_c_max": 37.0
+  },
+  {
+   "step": 2,
+   "asked": 200,
+   "requests_per_s": 83.4,
+   "p50_ms": 30.2862425,
+   "p95_ms": 371.4385181499969,
+   "p99_ms": 1292.9835686200001,
+   "max_ms": 1632.714312,
+   "failed_rate": 0,
+   "checks_ok_rate": 1,
+   "dropped": 0,
+   "codes": {
+    "200": 4859,
+    "201": 145
+   },
+   "by_action_p95_ms": {
+    "home": 604,
+    "quotes": 236,
+    "orders": 252,
+    "pots": 287,
+    "plans": 289,
+    "buy": 389,
+    "upi": 227,
+    "signin": 296
+   },
+   "phone_cpu_peak_pct": 453,
+   "phone_cpu_avg_pct": 308,
+   "edge_cpu_peak_pct": 148,
+   "trading_cpu_peak_pct": 139,
+   "money_cpu_peak_pct": 88,
+   "street_cpu_peak_pct": 84,
+   "postgres_cpu_peak_pct": 22,
+   "nats_cpu_peak_pct": 9,
+   "nginx_cpu_peak_pct": 19,
+   "sshd_cpu_peak_pct": 0,
+   "cloudflared_cpu_peak_pct": 2,
+   "available_mb_min": 1739,
+   "battery_c_max": 37.0
+  },
+  {
+   "step": 3,
+   "asked": 300,
+   "requests_per_s": 58.1,
+   "p50_ms": 34.966993,
+   "p95_ms": 40211.5267656,
+   "p99_ms": 40258.049998120005,
+   "max_ms": 40300.852911,
+   "failed_rate": 0.07246376811594203,
+   "checks_ok_rate": 0.9536031589338598,
+   "dropped": 0,
+   "codes": {
+    "0": 230,
+    "200": 3167,
+    "201": 91
+   },
+   "by_action_p95_ms": {
+    "home": 40229,
+    "quotes": 970,
+    "orders": 1003,
+    "pots": 887,
+    "plans": 832,
+    "buy": 653,
+    "upi": 19205,
+    "signin": 19194
+   },
+   "phone_cpu_peak_pct": 346,
+   "phone_cpu_avg_pct": 323,
+   "edge_cpu_peak_pct": 134,
+   "trading_cpu_peak_pct": 101,
+   "money_cpu_peak_pct": 54,
+   "street_cpu_peak_pct": 58,
+   "postgres_cpu_peak_pct": 23,
+   "nats_cpu_peak_pct": 9,
+   "nginx_cpu_peak_pct": 11,
+   "sshd_cpu_peak_pct": 0,
+   "cloudflared_cpu_peak_pct": 2,
+   "available_mb_min": 1760,
+   "battery_c_max": 37.0
+  },
+  {
+   "step": 4,
+   "asked": 400,
+   "requests_per_s": 24.1,
+   "p50_ms": 0,
+   "p95_ms": 0,
+   "p99_ms": 0,
+   "max_ms": 0,
+   "failed_rate": 1,
+   "checks_ok_rate": 0,
+   "dropped": 0,
+   "codes": {
+    "0": 1448
+   },
+   "by_action_p95_ms": {
+    "home": 0,
+    "quotes": 0,
+    "orders": 0,
+    "pots": 0,
+    "plans": 0,
+    "buy": 0,
+    "upi": 0,
+    "signin": 0
+   }
+  },
+  {
+   "step": 5,
+   "asked": 600,
+   "requests_per_s": 35.0,
+   "p50_ms": 0,
+   "p95_ms": 0,
+   "p99_ms": 0,
+   "max_ms": 0,
+   "failed_rate": 1,
+   "checks_ok_rate": 0,
+   "dropped": 0,
+   "codes": {
+    "0": 2103
+   },
+   "by_action_p95_ms": {
+    "home": 0,
+    "quotes": 0,
+    "orders": 0,
+    "pots": 0,
+    "plans": 0,
+    "buy": 0,
+    "upi": 0,
+    "signin": 0
+   }
+  },
+  {
+   "step": 6,
+   "asked": 800,
+   "requests_per_s": 45.4,
+   "p50_ms": 0,
+   "p95_ms": 0,
+   "p99_ms": 0,
+   "max_ms": 0,
+   "failed_rate": 1,
+   "checks_ok_rate": 0,
+   "dropped": 0,
+   "codes": {
+    "0": 2721
+   },
+   "by_action_p95_ms": {
+    "home": 0,
+    "quotes": 0,
+    "orders": 0,
+    "pots": 0,
+    "plans": 0,
+    "buy": 0,
+    "upi": 0,
+    "signin": 0
+   }
+  },
+  {
+   "step": 7,
+   "asked": 1000,
+   "requests_per_s": 55.1,
+   "p50_ms": 0,
+   "p95_ms": 0,
+   "p99_ms": 0,
+   "max_ms": 0,
+   "failed_rate": 1,
+   "checks_ok_rate": 0,
+   "dropped": 0,
+   "codes": {
+    "0": 3309
+   },
+   "by_action_p95_ms": {
+    "home": 0,
+    "quotes": 0,
+    "orders": 0,
+    "pots": 0,
+    "plans": 0,
+    "buy": 0,
+    "upi": 0,
+    "signin": 0
+   }
+  }
+ ]
+}
