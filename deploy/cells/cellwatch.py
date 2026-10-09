@@ -233,8 +233,8 @@ def replay(since):
 def replicating():
     """Whether this cell holds a live copy of the other cell's database: its subscription exists and has received data."""
     try:
-        out = sh(ENV['REPLICA_PSQL'] + ' -At', stdin=f"SELECT count(*) FROM pg_stat_subscription WHERE subname = 'from_{PEER}' AND received_lsn IS NOT NULL;
-")
+        out = sh(ENV['REPLICA_PSQL'] + ' -At',
+                 stdin=f"SELECT count(*) FROM pg_stat_subscription WHERE subname = 'from_{PEER}' AND received_lsn IS NOT NULL;\n")
         return out.strip() not in ('', '0')
     except RuntimeError:
         return False
