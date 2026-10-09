@@ -8,12 +8,16 @@ Runs in each cell (Termux on the phone, a container on the laptop), Python stand
 
 and acts on what it sees:
 
-  NORMAL      this cell can't reach its own public address for FENCE_AFTER (60 s)          -> FENCED
-              it can, but the other cell has been unreachable or unhealthy for TAKEOVER_AFTER
-              (120 s, deliberately longer than FENCE_AFTER, so the lost cell has stopped writing) -> HOLDING
+  NORMAL      this cell can't reach its own public address for FENCE_AFTER (60 s), or its own services have
+              been failing for SICK_FENCE_AFTER (300 s)                                     -> FENCED
+              it can, and the other cell is lost                                            -> HOLDING
+              Lost means its public address hasn't answered at all for TAKEOVER_AFTER (120 s, longer than
+              FENCE_AFTER, so it has fenced itself by then), or it answers but neither its services nor its
+              status have been healthy for SICK_TAKEOVER_AFTER (600 s, longer than SICK_FENCE_AFTER). An
+              overloaded cell is slow, not lost: taking it over at 120 s made two cells serve one (2026-10-09).
   FENCED      no customer writes here (the gateway refuses them while FENCE_FILE exists). When the
-              public address answers again: if the other cell is holding this cell's customers -> TAKEN_OVER,
-              else -> NORMAL
+              public address answers and the services are up again: if the other cell is holding this cell's
+              customers -> TAKEN_OVER, else -> NORMAL
   HOLDING     this cell runs the other cell's services on its copy of that cell's database. Stays until failback.
   TAKEN_OVER  this cell's customers are served by the other cell; this cell stays fenced. Stays until failback.
 
@@ -50,8 +54,11 @@ import urllib.request
 ENV = os.environ
 CELL, PEER = ENV['CELL'], ENV['PEER']
 CHECK_SECONDS = int(ENV.get('CHECK_SECONDS', '10'))
+PEER_SERVES = '/api/marketdata/v1/market'   # answers through the other cell's own web server and gateway, no sign-in
 FENCE_AFTER = int(ENV.get('FENCE_AFTER', '60'))
 TAKEOVER_AFTER = int(ENV.get('TAKEOVER_AFTER', '120'))
+SICK_FENCE_AFTER = int(ENV.get('SICK_FENCE_AFTER', '300'))
+SICK_TAKEOVER_AFTER = int(ENV.get('SICK_TAKEOVER_AFTER', '600'))
 STATE_FILE = ENV['STATE_FILE']
 
 
@@ -283,7 +290,8 @@ def main():
     publish_routes(s['state'])
     health = {'local': answers(ENV['LOCAL_CHECK'])}
     threading.Thread(target=heartbeat, args=(s, health), daemon=True).start()
-    self_bad_since = peer_bad_since = None
+    self_bad_since = self_sick_since = peer_bad_since = peer_gone_since = None
+    quiet_peer_logged = False
     log(f'watching (state {s["state"]})')
     while True:
         now = time.time()
@@ -301,16 +309,27 @@ def main():
         if peer_ok and not s.get('peer_seen'):
             s['peer_seen'] = True    # a cell that was never seen working (not set up yet) is never "lost"
             log(f'cell {PEER} seen healthy')
+        # A silent cellwatch is not a lost cell: on 2026-10-09 the phone's was restarted, its status went stale, and
+        # the laptop took cell A over while the phone's services were up and serving, so both ran cell A's goals.
+        # The other cell counts as lost only when its own customers' front door doesn't answer either.
+        peer_serving = not peer_ok and answers(ENV['PEER_URL'] + PEER_SERVES)
+        if peer_serving and not quiet_peer_logged:
+            log(f'cell {PEER} serves, but its status is stale or unhealthy: not counting it as lost')
+        quiet_peer_logged = peer_serving
         self_bad_since = None if self_ok else (self_bad_since or now)
-        peer_bad_since = None if peer_ok else (peer_bad_since or now)
+        self_sick_since = None if local_ok else (self_sick_since or now)
+        peer_bad_since = None if (peer_ok or peer_serving) else (peer_bad_since or now)
+        peer_gone_since = None if code == 200 else (peer_gone_since or now)   # its address didn't answer at all
+        peer_lost = ((peer_gone_since and now - peer_gone_since >= TAKEOVER_AFTER)
+                     or (peer_bad_since and now - peer_bad_since >= SICK_TAKEOVER_AFTER))
         state = s['state']
         try:
             if state == 'NORMAL':
-                if self_bad_since and now - self_bad_since >= FENCE_AFTER:
+                if ((self_bad_since and now - self_bad_since >= FENCE_AFTER)
+                        or (self_sick_since and now - self_sick_since >= SICK_FENCE_AFTER)):
                     fence(True)
                     s['state'] = 'FENCED'
-                elif (self_ok and local_ok and peer_bad_since and now - peer_bad_since >= TAKEOVER_AFTER
-                      and s.get('peer_seen') and now >= s.get('retry_after', 0)):
+                elif (self_ok and local_ok and peer_lost and s.get('peer_seen') and now >= s.get('retry_after', 0)):
                     if not replicating():
                         log(f'cell {PEER} looks lost, but this cell holds no live copy of it: not taking over')
                         s['retry_after'] = now + 600
@@ -321,7 +340,7 @@ def main():
                             log(f'taking cell {PEER} over failed: {e}; trying again in ten minutes')
                             s['retry_after'] = now + 600
             elif state == 'FENCED':
-                if self_ok:
+                if self_ok and local_ok:
                     if peer_fresh and peer.get('holding') == CELL:
                         s['state'] = 'TAKEN_OVER'
                         publish_routes('TAKEN_OVER')
