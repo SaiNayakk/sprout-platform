@@ -42,6 +42,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -265,15 +266,28 @@ def take_over(s):
 
 # ── the loop ────────────────────────────────────────────────────────────────
 
+def heartbeat(s, health):
+    # publishes the status file on its own clock: a takeover takes minutes, and a cell whose status goes stale
+    # looks dead to the other cell and to the phone's starter (which would kill it mid-takeover)
+    while True:
+        try:
+            health['local'] = answers(ENV['LOCAL_CHECK'])
+            publish_status(s['state'], health['local'])
+        except Exception as e:
+            log(f'publishing status failed: {e}')
+        time.sleep(CHECK_SECONDS)
+
+
 def main():
     s = load_state()
     publish_routes(s['state'])
+    health = {'local': answers(ENV['LOCAL_CHECK'])}
+    threading.Thread(target=heartbeat, args=(s, health), daemon=True).start()
     self_bad_since = peer_bad_since = None
     log(f'watching (state {s["state"]})')
     while True:
         now = time.time()
-        local_ok = answers(ENV['LOCAL_CHECK'])
-        publish_status(s['state'], local_ok)
+        local_ok = health['local']
         self_ok = answers(ENV['SELF_URL'] + '/healthz')
         code, peer = get_json(ENV['PEER_URL'] + '/cells/status.json')
         peer_fresh = False

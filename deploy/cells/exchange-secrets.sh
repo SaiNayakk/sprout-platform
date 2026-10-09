@@ -44,7 +44,7 @@ for name, src in names.items():
     print(f'{name}={env[src]}')
 print('SPROUT_SANDBOX=true')
 PY
-"${SSH[@]}" 'umask 077; cat > ~/.sprout-b.env' < /tmp/sprout-b.env
+tr -d '\r' < /tmp/sprout-b.env | "${SSH[@]}" 'umask 077; cat > ~/.sprout-b.env'   # Windows Python writes CRLF
 rm -f /tmp/sprout-b.env
 "${SSH[@]}" 'umask 077; mkdir -p ~/.sprout/keys; cat > ~/.sprout/keys/b-signing.pem' < "$DATA/keys/signing.pem"
 echo "cell B's keys sent to the phone"
