@@ -396,9 +396,12 @@ How, in order:
    tunnel. Logical, because the phone is ARM and the laptop x86: physical replicas need the same platform and the
    same text collation. The copy lives as a second database in the other cell's own Postgres. It may lag by
    seconds; the journal covers the gap.
-5. **Failover.** A cell that can no longer reach the other cell or its own public address for a minute fences
-   itself: it stops taking writes, so two copies of a customer can't both act. The other cell waits two minutes,
-   then promotes its copy (sequences are moved past every replicated id, since logical replication doesn't carry
+5. **Failover.** A cell that can no longer reach its own public address for a minute fences itself: it stops
+   taking writes, so two copies of a customer can't both act. It also fences itself after its own services have
+   been failing for five minutes. The other cell counts it as lost only when its public address hasn't answered at
+   all for two minutes (by then it has fenced itself), or when it has answered but been unable to serve for ten.
+   A slow cell is not a lost one: taking over an overloaded cell at two minutes once had two cells serving the same
+   customers ([incident](incidents.md)). Then the other cell promotes its copy (sequences are moved past every replicated id, since logical replication doesn't carry
    them), starts the failed cell's services on it with the failed cell's own keys (sessions keep working), and
    replays the journal. A replayed write that had already replicated is recognised by its key and ignored; one that
    hadn't is applied. Then the router sends the failed cell's customers there.
