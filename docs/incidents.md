@@ -235,6 +235,11 @@ a cell that has stopped writing is safe to take over.
   whose services answer is never taken over because its watcher is silent.
 - `failback.sh` stops cellwatch before clearing its state (a running one wrote it back), and its `pkill`
   pattern can't match itself.
+- The same mistake was found a third time an hour later, in the phone's starter. At 500 users the edge host
+  answered its health check too slowly for two minutes, so the starter killed it. It took 126 s to start
+  again, and the overload became an outage of 502s. Now a piece that doesn't answer is killed only if it
+  has also used under 5 s of CPU in those two minutes: a hung process (2026-10-08) uses none, and a busy
+  one uses a lot.
 
 **Lesson.** A failure detector has to tell "gone" from "slow". Taking over something that's slow causes a
 bigger outage than the slowness did. Taking over safely needs proof that the other side has stopped,
