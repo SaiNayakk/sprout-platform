@@ -92,6 +92,18 @@ def build() -> tuple[str, set[str]]:
     text = must(text, '      BANK_PAYROLL_FLOAT:', '      BANK_PAYROLL_PARTNER_KEY: ${S_PAYROLL_PARTNER_KEY}\n      BANK_PAYROLL_WEBHOOK_SECRET: ${S_PAYROLL_WEBHOOK_SECRET}\n      BANK_PAYROLL_FLOAT:')
     text = must(text, '      SANDBOX_EVERY:', '      BANK_PAYROLL_PARTNER_KEY: ${S_PAYROLL_PARTNER_KEY}\n      SANDBOX_EVERY:')
 
+    # The laptop's hosts get the laptop's JVM (capacity E4, 2026-10-09): full JIT (C2) and a parallel collector instead
+    # of the phone's C1-only, serial one. Same heaps; about 40 MB more each for the compiled code. It cut the CPU a
+    # request costs by a fifth to a third, and still leaves room for cell A's standby beside them
+    text = must(text, '        XMX: 160m\n    environment:\n',
+                '        XMX: 160m\n    environment:\n      JAVA_OPTS: "-XX:+UseParallelGC -XX:ParallelGCThreads=2 -Xms96m '
+                '-Xmx160m -Xss512k -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=96m"\n', count=4)
+    text = must(text, "    mem_limit: 384m                     # the phone's budget for this host",
+                '    mem_limit: 448m')
+    text = must(text, "    mem_limit: 320m                     # the phone's budget for this host",
+                '    mem_limit: 384m', count=2)
+    text = must(text, '    mem_limit: 320m\n', '    mem_limit: 384m\n')
+
     # come back by themselves, and never fill the disk with logs: each service keeps at most 30 MB of them
     text = text.replace('    mem_limit:', '    restart: unless-stopped\n    logging: {driver: json-file, options: {max-size: 10m, max-file: "3"}}\n    mem_limit:')
 
