@@ -49,6 +49,9 @@ DO $$ DECLARE s text; BEGIN
   END LOOP;
 END $$;
 CREATE PUBLICATION cell_a FOR ALL TABLES;
+-- the laptop's replication slot belonged to the archived database: it would keep that database's WAL forever, and its
+-- name would collide with the one replicate.sh creates
+SELECT pg_drop_replication_slot(slot_name) FROM pg_replication_slots WHERE slot_name = 'from_a';
 SQL
   "${SSH[@]}" "pg_ctl -D \$PREFIX/var/lib/postgresql -m fast -w stop >/dev/null"
   say "stopping the laptop's standby and dropping its copy of cell A"
@@ -69,7 +72,7 @@ else
   "${COMPOSE[@]}" stop edge trading money street web front cellwatch >/dev/null
   "${LPG[@]}" psql -U sprout -d postgres -q -v ON_ERROR_STOP=1 -c "ALTER DATABASE sprout RENAME TO sprout_before_failback_$STAMP" -c "CREATE DATABASE sprout OWNER sprout"
   "${LPG[@]}" pg_restore -U sprout -d sprout --no-owner < "$DUMP"
-  "${LPG[@]}" psql -U sprout -d sprout -q -c "CREATE PUBLICATION cell_b FOR ALL TABLES"
+  "${LPG[@]}" psql -U sprout -d sprout -q -c "CREATE PUBLICATION cell_b FOR ALL TABLES"     -c "SELECT pg_drop_replication_slot(slot_name) FROM pg_replication_slots WHERE slot_name = 'from_b'"   # the archived database's
   say "stopping the phone's standby and dropping its copy of cell B"
   "${SSH[@]}" "sh ~/sprout/ctl.sh stop sprout-standby >/dev/null; psql -d sprout_b -q -c 'ALTER SUBSCRIPTION from_b DISABLE' -c 'ALTER SUBSCRIPTION from_b SET (slot_name = NONE)' -c 'DROP SUBSCRIPTION from_b'; psql -d postgres -q -c 'DROP DATABASE sprout_b'; rm -f ~/sprout/journal/fenced-b"
   say "both cells back to normal"
