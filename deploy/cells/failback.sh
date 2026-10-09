@@ -60,7 +60,7 @@ SQL
   "${LPG[@]}" psql -U sprout -d sprout -q -c "DROP DATABASE sprout_a"
   rm -f "$LAPTOP/data/journal/fenced-a"
   say "both cells back to normal"
-  rm -f "$LAPTOP/data/cells/state.json"; docker restart sprout-laptop-cellwatch-1 >/dev/null
+  docker stop sprout-laptop-cellwatch-1 >/dev/null; rm -f "$LAPTOP/data/cells/state.json"; docker start sprout-laptop-cellwatch-1 >/dev/null
   "${SSH[@]}" "rm -f ~/sprout/cells/state.json ~/sprout/journal/fenced; sh ~/sprout/ctl.sh start sprout >/dev/null"
   say "cell A is starting on the phone (the starter brings it up piece by piece); then: deploy/cells/replicate.sh"
 else
@@ -76,7 +76,9 @@ else
   say "stopping the phone's standby and dropping its copy of cell B"
   "${SSH[@]}" "sh ~/sprout/ctl.sh stop sprout-standby >/dev/null; psql -d sprout_b -q -c 'ALTER SUBSCRIPTION from_b DISABLE' -c 'ALTER SUBSCRIPTION from_b SET (slot_name = NONE)' -c 'DROP SUBSCRIPTION from_b'; psql -d postgres -q -c 'DROP DATABASE sprout_b'; rm -f ~/sprout/journal/fenced-b"
   say "both cells back to normal"
-  "${SSH[@]}" "rm -f ~/sprout/cells/state.json; pkill -f '[c]ellwatch[.]py' || true"   # the starter starts it again; the bracket keeps pkill off this very shell
+  # stopped before its state is removed (a running one writes it back); the starter starts it again. The brackets
+  # keep pkill off this very shell, whose command line contains the pattern
+  "${SSH[@]}" "pkill -f '[c]ellwatch[.]py'; sleep 1; rm -f ~/sprout/cells/state.json"
   rm -f "$LAPTOP/data/cells/state.json" "$LAPTOP/data/journal/fenced"
   "${COMPOSE[@]}" up -d cloudflared edge trading money street web front cellwatch >/dev/null
   say "cell B is starting on the laptop; then: deploy/cells/replicate.sh"
