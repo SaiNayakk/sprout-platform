@@ -230,6 +230,16 @@ def replay(since):
     return failed
 
 
+def replicating():
+    """Whether this cell holds a live copy of the other cell's database: its subscription exists and has received data."""
+    try:
+        out = sh(ENV['REPLICA_PSQL'] + ' -At', stdin=f"SELECT count(*) FROM pg_stat_subscription WHERE subname = 'from_{PEER}' AND received_lsn IS NOT NULL;
+")
+        return out.strip() not in ('', '0')
+    except RuntimeError:
+        return False
+
+
 def take_over(s):
     log(f'cell {PEER} is lost: taking its customers over')
     fence(False)
@@ -271,6 +281,9 @@ def main():
             except (KeyError, ValueError):
                 pass
         peer_ok = peer_fresh and peer.get('healthy') and peer.get('state') in ('NORMAL', 'HOLDING')
+        if peer_ok and not s.get('peer_seen'):
+            s['peer_seen'] = True    # a cell that was never seen working (not set up yet) is never "lost"
+            log(f'cell {PEER} seen healthy')
         self_bad_since = None if self_ok else (self_bad_since or now)
         peer_bad_since = None if peer_ok else (peer_bad_since or now)
         state = s['state']
@@ -279,8 +292,17 @@ def main():
                 if self_bad_since and now - self_bad_since >= FENCE_AFTER:
                     fence(True)
                     s['state'] = 'FENCED'
-                elif self_ok and local_ok and peer_bad_since and now - peer_bad_since >= TAKEOVER_AFTER:
-                    take_over(s)
+                elif (self_ok and local_ok and peer_bad_since and now - peer_bad_since >= TAKEOVER_AFTER
+                      and s.get('peer_seen') and now >= s.get('retry_after', 0)):
+                    if not replicating():
+                        log(f'cell {PEER} looks lost, but this cell holds no live copy of it: not taking over')
+                        s['retry_after'] = now + 600
+                    else:
+                        try:
+                            take_over(s)
+                        except Exception as e:
+                            log(f'taking cell {PEER} over failed: {e}; trying again in ten minutes')
+                            s['retry_after'] = now + 600
             elif state == 'FENCED':
                 if self_ok:
                     if peer_fresh and peer.get('holding') == CELL:

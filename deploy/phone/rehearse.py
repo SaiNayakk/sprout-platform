@@ -66,7 +66,9 @@ def main():
                 break
             time.sleep(1)
         sh(['docker', 'cp', dump, f'{CONTAINER}:/tmp/phone.dump'])
-        sh(['docker', 'exec', CONTAINER, 'pg_restore', '-U', 'sprout', '-d', 'sprout', '--no-owner', '/tmp/phone.dump'])
+        # privileges and publications are the phone's (its replication role): not what a migration rehearsal is about
+        sh(['docker', 'exec', CONTAINER, 'pg_restore', '-U', 'sprout', '-d', 'sprout', '--no-owner', '--no-privileges',
+            '--no-publications', '--no-subscriptions', '/tmp/phone.dump'])
         failed = False
         for schema, items in sorted(migrations(jars).items()):
             r = psql(f'SELECT version FROM {schema}.flyway_schema_history WHERE success')
