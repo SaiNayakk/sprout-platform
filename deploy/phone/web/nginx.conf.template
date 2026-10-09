@@ -20,6 +20,9 @@ http {
     uwsgi_temp_path @HERE@/tmp/uwsgi;
     scgi_temp_path @HERE@/tmp/scgi;
 
+    # cellwatch writes this (ADR-027): which of local, peer or standby serves each cell's customers
+    include @CELLS@/routes.conf;
+
     # connections to the gateway are kept open and reused, instead of a new one for every request
     upstream gateway {
         server 127.0.0.1:8100;
@@ -49,7 +52,24 @@ http {
             return 200 'ok';
         }
 
+        # how the cells see each other, and how the web app picks a new customer's cell
+        location = /cells/status.json {
+            alias @CELLS@/status.json;
+            default_type application/json;
+            add_header Cache-Control "no-store" always;
+        }
+        location = /cells.json {
+            alias @CELLS@/cells.json;
+            default_type application/json;
+            add_header Cache-Control "no-store" always;
+        }
+
         location /api/ {
+            error_page 418 = @peer;
+            error_page 419 = @standby;
+            if ($sprout_route = peer) { return 418; }
+            if ($sprout_route = standby) { return 419; }
+            add_header X-Sprout-Cell a always;
             proxy_pass http://gateway;
             proxy_http_version 1.1;
             proxy_set_header Connection "";
@@ -64,6 +84,42 @@ http {
             client_max_body_size 64k;
             add_header Cache-Control "no-store" always;
             add_header X-Content-Type-Options "nosniff" always;
+        }
+
+        # cell B's customer: to cell B, which answers with its own X-Sprout-Cell. The cells' key lets cell B believe
+        # the client address this cell names (Cloudflare would name this cell)
+        location @peer {
+            resolver 1.1.1.1 1.0.0.1 valid=60s ipv6=off;
+            set $peer https://sprout-b-saiworks.nncs.in;
+            proxy_pass $peer;
+            proxy_ssl_server_name on;
+            proxy_ssl_name sprout-b-saiworks.nncs.in;
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            proxy_set_header Host sprout-b-saiworks.nncs.in;
+            proxy_set_header X-Sprout-Cell $http_x_sprout_cell;
+            proxy_set_header Authorization $http_authorization;
+            proxy_set_header X-Cell-Key @CELL_KEY@;
+            proxy_set_header X-Sprout-Client-IP $http_cf_connecting_ip;
+            proxy_buffering off;
+            proxy_read_timeout 3600s;
+            client_max_body_size 64k;
+        }
+
+        # cell B's customer after a takeover: its services, running here on the copy of its database
+        location @standby {
+            proxy_pass http://127.0.0.1:8200;
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            proxy_set_header Host $host;
+            proxy_set_header CF-Connecting-IP $http_cf_connecting_ip;
+            proxy_set_header CF-Visitor $http_cf_visitor;
+            proxy_set_header Authorization $http_authorization;
+            proxy_buffering off;
+            proxy_read_timeout 3600s;
+            client_max_body_size 64k;
+            add_header X-Sprout-Cell b always;
+            add_header Cache-Control "no-store" always;
         }
 
         # built files have hashed names: cache for a year

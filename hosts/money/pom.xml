@@ -13,7 +13,7 @@
 
   <groupId>app.sprout.hosts</groupId>
   <artifactId>money-host</artifactId>
-  <version>0.6.2</version>
+  <version>0.7.0</version>
   <name>money-host</name>
   <description>One JVM for the money services: accounts, payments and the ledger.</description>
 
@@ -28,7 +28,7 @@
     <sprout-settlement.version>0.2.2</sprout-settlement.version>
     <sprout-statements.version>0.2.1</sprout-statements.version>
     <sprout-recon.version>0.2.2</sprout-recon.version>
-    <sprout-goals.version>0.1.1</sprout-goals.version>
+    <sprout-goals.version>0.2.0</sprout-goals.version>
   </properties>
 
 

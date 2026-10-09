@@ -21,7 +21,13 @@ export JAVA_TOOL_OPTIONS="-XX:ActiveProcessorCount=2"   # fewer compiler and GC 
 mkdir -p "$LOGS"
 
 # name, folder, health check: started in this order, stopped in the reverse
-PIECES="postgres nats trading street money edge web"
+PIECES="postgres nats trading street money edge web front pgpeer cellwatch"
+# The cell's own pieces (ADR-027): the front-door connector (last, so visitors only come once everything answers), the
+# replication client and cellwatch. If one of them fails, Sprout keeps running without it and it is tried again later.
+OPTIONAL="front pgpeer cellwatch"
+optional() { case " $OPTIONAL " in *" $1 "*) return 0 ;; esac; return 1; }
+port_open() { python3 -c "import socket,sys; socket.create_connection(('127.0.0.1', int(sys.argv[1])), 2)" "$1" 2>/dev/null; }
+fresh() { python3 -c "import os,sys,time; sys.exit(0 if time.time() - os.path.getmtime(sys.argv[1]) < 60 else 1)" "$1" 2>/dev/null; }
 dir_of() { echo "$HERE/$1"; }
 # A host is healthy only when every service in it answers: a host whose first service is up can still have
 # one that failed to start (2026-10-08: the street host's bank answered while its depository's migration failed).
@@ -36,6 +42,9 @@ healthy() {
     money)    answers 8106 8104 8105 8112 8113 8114 8117 ;;         # ledger, accounts, payments, settlement, statements, recon, goals
     edge)     answers 8101 && curl -fs -m 2 -o /dev/null http://127.0.0.1:8100/api/marketdata/v1/market                 && { ! sandbox_on || answers 8119; } ;;               # identity, the gateway (through it), the sandbox
     web)      curl -fs -m 2 -o /dev/null http://127.0.0.1:8180/healthz ;;
+    front)    curl -fs -m 2 -o /dev/null http://127.0.0.1:8183/ready ;;   # connected to Cloudflare
+    pgpeer)   port_open 15433 ;;
+    cellwatch) fresh "$HOME/sprout/cells/status.json" ;;
   esac
 }
 
@@ -44,10 +53,20 @@ booted_for() { python3 -c 'import time; print(int(time.clock_gettime(time.CLOCK_
 free_mb() { free -m | awk 'NR==2 {print $7}'; }
 
 pid_file() { echo "$LOGS/$1.pid"; }
+TICKS=$(getconf CLK_TCK 2>/dev/null || echo 100)
+# CPU time (ticks) used so far by a piece's process and its children (run.sh starts the real process as a child)
+cpu_ticks() {
+  p=$(cat "$(pid_file "$1")" 2>/dev/null) || { echo 0; return; }
+  t=0
+  for c in $p $(pgrep -P "$p" 2>/dev/null); do
+    s=$(awk '{print $14 + $15}' "/proc/$c/stat" 2>/dev/null) && t=$((t + s))
+  done
+  echo $t
+}
 running() { p=$(cat "$(pid_file "$1")" 2>/dev/null) && [ -n "$p" ] && kill -0 "$p" 2>/dev/null; }
 
 stop_pieces() {
-  for name in web edge money street trading nats postgres; do
+  for name in cellwatch pgpeer front web edge money street trading nats postgres; do
     p=$(cat "$(pid_file "$name")" 2>/dev/null) || continue
     # the piece's own children too (run.sh starts the real process without exec)
     pkill -TERM -P "$p" 2>/dev/null; kill -TERM "$p" 2>/dev/null
@@ -95,7 +114,10 @@ fi
 # 2. one piece at a time
 for name in $PIECES; do
   if healthy "$name"; then log "$name already answering; not starting another"; continue; fi
-  start_piece "$name" || give_up "Sprout didn't start"
+  if ! start_piece "$name"; then
+    optional "$name" && { log "$name didn't start; Sprout runs without it and it is tried again"; continue; }
+    give_up "Sprout didn't start"
+  fi
 done
 log "Sprout is up"
 
@@ -116,13 +138,32 @@ while :; do
         continue
       fi
       eval "n=\${silent_$name:-0}"; n=$((n + 1)); eval "silent_$name=$n"
+      [ $n -eq 1 ] && eval "cpu_$name=$(cpu_ticks "$name")"
       [ $n -lt 8 ] && continue
-      log "$name stopped answering for two minutes; killing it"
+      # busy is not hung (2026-10-09: an overloaded edge host answered too slowly, was killed, and the two minutes it
+      # took to start made the overload an outage). A hung process (2026-10-08's every thread stuck) uses no CPU; a
+      # busy one uses plenty. Killed only when it has used under 5 s of CPU in the two minutes it didn't answer
+      eval "was=\$cpu_$name"; used=$(( $(cpu_ticks "$name") - was ))
+      if [ "$used" -gt $((5 * TICKS)) ]; then
+        log "$name answered nothing for two minutes but used $((used / TICKS))s of CPU: busy, not hung; left alone"
+        eval "silent_$name=0"
+        continue
+      fi
+      log "$name stopped answering for two minutes and used $((used / TICKS))s of CPU: hung; killing it"
       p=$(cat "$(pid_file "$name")" 2>/dev/null)
       pkill -KILL -P "$p" 2>/dev/null; kill -KILL "$p" 2>/dev/null
       eval "silent_$name=0"
     elif healthy "$name"; then
       continue   # answering, though not started here (an old app): leave it
+    fi
+    if optional "$name"; then
+      # not one of Sprout's own services: started again at most every ten minutes, never counted, never fatal
+      eval "next=\${retry_$name:-0}"
+      [ "$(date +%s)" -lt "$next" ] && continue
+      eval "retry_$name=$(( $(date +%s) + 600 ))"
+      log "$name isn't running; starting it again"
+      start_piece "$name" || log "$name didn't start; tried again in ten minutes"
+      continue
     fi
     now=$(date +%s)
     [ $((now - last_restart)) -gt 3600 ] && restarts=0

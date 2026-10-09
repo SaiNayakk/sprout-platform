@@ -162,6 +162,77 @@ its 30 s from a timestamp that asking the exchange kept moving; see
 Unlike CHAOS-06 (exchange down, so an order's fate is unknown and it is left `PENDING`), here nothing has
 happened yet when the order service finds the books unreachable, so refusing is safe and honest.
 
+## CHAOS-12: a whole cell is lost mid-load { #chaos-12 }
+
+| | |
+|---|---|
+| **Steady state** | Both cells healthy, each replicating its database into the other; customers in the cell to be lost are funded and trading. |
+| **Fault** | Replication from that cell is paused for its last 60 s (so its newest writes exist only in the journal), then its whole Sprout is stopped while its customers keep placing orders. |
+| **Hypothesis** | The other cell takes its customers over ([ADR-027](../decisions.md#adr-027-cells)): every order the lost cell acknowledged is in the promoted copy exactly once, orders succeed again within minutes, and reconciliation in the takeover finds the books agree. |
+| **Method** | [`deploy/cells/chaos12.py`](https://github.com/SaiNayakk/sprout-platform/blob/main/deploy/cells/chaos12.py), run against the live cells; each acknowledged order (its key and id) is written down as it happens, then looked for in the copy. |
+
+**Cell A (the phone) lost, the laptop takes over:**
+
+| | |
+|---|---|
+| Orders acknowledged | 1,226 |
+| …of them only in the journal (replication paused) | 118 |
+| **Missing after the takeover** | **0** |
+| **Applied twice** | **0** |
+| Orders succeed again after the kill | 167 s (the 120 s the other cell waits on purpose, then ~45 s: promote, start the standby, replay) |
+| Journal replay | 808 writes: 120 applied, 616 already there (their keys), 72 refused (e.g. an account that exists), 0 failed |
+| Reconciliation in the takeover | Everything agrees |
+
+**What the first runs found.** The first run's standby couldn't start: Postgres allowed 100 connections and cell B's
+own services used most of them (now 300 on both). The second took over correctly but its check crashed (the list of
+order keys was too long for a Windows command line; it is now sent on stdin and written down as orders happen).
+Before any run, the laptop tried to take over a phone that wasn't set up yet: a cell now takes over only one it has
+seen healthy and holds a whole copy of, and a failed takeover waits ten minutes before trying again.
+
+**Failback** ([`failback.sh`](https://github.com/SaiNayakk/sprout-platform/blob/main/deploy/cells/failback.sh)) then
+moved cell A's customers home: the promoted copy became the phone's database (its own archived, never merged),
+replication was set up again, and both cells went back to normal.
+
+**Cell B (the laptop) lost, the phone takes over:**
+
+| | |
+|---|---|
+| Orders acknowledged | 629 |
+| …of them only in the journal (replication paused) | 151 |
+| **Missing after the takeover** | **0** |
+| **Applied twice** | **0** |
+| Orders succeed again after the kill | 473 s (the first takeover was cut short; see below) |
+
+**What this run found.** Two bugs, both on the phone's side, made the takeover take two tries:
+
+- *cellwatch fell silent while taking over.* It wrote its status file only between checks, and a takeover (promote,
+  start the standby, replay) takes minutes. The phone's starter saw a stale status for two minutes and killed it
+  half-way. It now publishes its status from its own thread every 10 s, whatever else it is doing.
+- *The standby couldn't read cell B's settings.* They were written on Windows with CRLF line endings, and Spring read
+  a date as `2026-10-06\r`. `exchange-secrets.sh` now strips the CRs.
+
+The second attempt took over in under a minute. Nothing was lost in between: the journal held every write, and the
+copy didn't move until the replay. Failback then found a third bug: its `pkill -f cellwatch.py` over ssh matched its
+own remote shell, which killed the script before it restarted the laptop's services and tunnel. Both are fixed.
+
+**Cell A lost again, after the takeover rule changed** ([incident](../incidents.md): a cell is now lost only when
+its address goes silent, not when it is slow):
+
+| | |
+|---|---|
+| Orders acknowledged | 610 |
+| …of them only in the journal (replication paused) | 137 |
+| **Missing after the takeover** | **0** |
+| **Applied twice** | **0** |
+| Orders succeed again after the kill | 296 s (the journal held two hours of capacity-test writes: 3,184 replayed) |
+
+**What this run found.** 17 replayed account openings failed with `503`. The second takeover of cell A had
+moved the depository's `client_numbers` sequence to 1,000,000 again, onto demat numbers the first takeover
+had already handed out. That sequence numbers `bo_id`, not a column of its own, so the takeover's "move past
+the highest id" found nothing to look at. It and the sandbox's `demo_account_numbers` now have their highest
+used values looked up. After a repair and another replay: 16 applied, 0 failed. None of the 17 had been
+acknowledged: their first attempts had failed too, so no customer had been told they succeeded.
+
 ## SETTLE-01: a trading day settles T+1 { #settle-01 }
 
 Not a fault but the whole of settlement, run near the end, after the experiments above have stopped
@@ -198,7 +269,7 @@ SQL checks above read from their databases.
 | CHAOS-09 | Edge host killed mid-traffic | Supervisor restarts it; clients see errors for under 30 s; no half-written sessions |
 | CHAOS-10 | Signing key rotated while tokens are live | Old tokens keep working until they expire; new tokens use the new key |
 | CHAOS-11 | Disk fills on the database volume | Writes fail with `503`, reads keep working, nothing corrupts |
-| CHAOS-12 | The phone loses its network (region down) | The laptop region takes traffic; see [Reliability](../reliability/index.md) |
+| CHAOS-12 | A whole cell is lost mid-load | Done: see [CHAOS-12](#chaos-12) |
 | CHAOS-13 | The market clock stalls (engine thread stuck) | Health turns `DOWN` within 30 s; the host is restarted; clients resync |
 | CHAOS-14 | The order service is down when the exchange executes a resting order | The exchange keeps the execution and retries; once orders is back, it is booked exactly once |
 | CHAOS-15 | Identity's context crashes inside the edge host | Gateway answers `503` fast; circuit opens after repeated failures and closes after recovery |

@@ -30,6 +30,7 @@ jobs:
         run: |
           mvn -B -f hosts/edge/pom.xml package
           mvn -B -f hosts/trading/pom.xml package
+          mvn -B -f hosts/cell/pom.xml package   # every service in one JVM: the cells' standby (ADR-027)
       - name: Compile the end-to-end suite
         run: mvn -B -f e2e/pom.xml test-compile
       - name: Check scripts
@@ -39,6 +40,9 @@ jobs:
           python -m py_compile preprod/report.py preprod/chaos.py
           python deploy/phone/check-scripts.py
           bash -n deploy/laptop/up.sh
+          for f in deploy/cells/*.sh; do bash -n "$f"; done
+          python -m py_compile deploy/cells/cellwatch.py deploy/cells/dockerctl.py deploy/cells/standby_env.py
+          python hosts/check-cell-manifest.py
       - name: The laptop deployment still renders from pre-prod's compose file
         run: |
           python deploy/laptop/render.py

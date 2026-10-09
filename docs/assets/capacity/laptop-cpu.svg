@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 340" font-family="system-ui, sans-serif" font-size="12">
+<rect width="640" height="340" fill="#fff"/>
+<line x1="56" x2="490" y1="296.0" y2="296.0" stroke="#e5e7eb"/>
+<text x="50" y="300.0" text-anchor="end" fill="#555">0</text>
+<line x1="56" x2="490" y1="240.8" y2="240.8" stroke="#e5e7eb"/>
+<text x="50" y="244.8" text-anchor="end" fill="#555">1.6</text>
+<line x1="56" x2="490" y1="185.6" y2="185.6" stroke="#e5e7eb"/>
+<text x="50" y="189.6" text-anchor="end" fill="#555">3.2</text>
+<line x1="56" x2="490" y1="130.4" y2="130.4" stroke="#e5e7eb"/>
+<text x="50" y="134.4" text-anchor="end" fill="#555">4.8</text>
+<line x1="56" x2="490" y1="75.2" y2="75.2" stroke="#e5e7eb"/>
+<text x="50" y="79.2" text-anchor="end" fill="#555">6.4</text>
+<line x1="56" x2="490" y1="20.0" y2="20.0" stroke="#e5e7eb"/>
+<text x="50" y="24.0" text-anchor="end" fill="#555">8</text>
+<text x="56.0" y="312" text-anchor="middle" fill="#555">0</text>
+<text x="142.8" y="312" text-anchor="middle" fill="#555">160</text>
+<text x="229.6" y="312" text-anchor="middle" fill="#555">320</text>
+<text x="316.4" y="312" text-anchor="middle" fill="#555">480</text>
+<text x="403.2" y="312" text-anchor="middle" fill="#555">640</text>
+<text x="490.0" y="312" text-anchor="middle" fill="#555">800</text>
+<text x="273.0" y="332" text-anchor="middle" fill="#333">concurrent users</text>
+<text x="14" y="158.0" text-anchor="middle" fill="#333" transform="rotate(-90 14 158.0)">CPU, cores busy (average)</text>
+<polyline fill="none" stroke="#2f7d4f" stroke-width="2.5" points="110.2,270.5 164.5,254.6 218.8,230.4 273.0,204.6 327.2,150.1 381.5,120.7 435.8,92.1 490.0,86.2"/>
+<circle cx="110.2" cy="270.5" r="3" fill="#2f7d4f"/>
+<circle cx="164.5" cy="254.6" r="3" fill="#2f7d4f"/>
+<circle cx="218.8" cy="230.4" r="3" fill="#2f7d4f"/>
+<circle cx="273.0" cy="204.6" r="3" fill="#2f7d4f"/>
+<circle cx="327.2" cy="150.1" r="3" fill="#2f7d4f"/>
+<circle cx="381.5" cy="120.7" r="3" fill="#2f7d4f"/>
+<circle cx="435.8" cy="92.1" r="3" fill="#2f7d4f"/>
+<circle cx="490.0" cy="86.2" r="3" fill="#2f7d4f"/>
+<rect x="502" y="19" width="12" height="12" fill="#2f7d4f"/>
+<text x="520" y="29" fill="#333">laptop</text>
+<polyline fill="none" stroke="#c2410c" stroke-width="2.5" points="110.2,241.8 164.5,216.7 218.8,234.9 273.0,207.7 327.2,190.8 381.5,171.5 435.8,127.3 490.0,120.7"/>
+<circle cx="110.2" cy="241.8" r="3" fill="#c2410c"/>
+<circle cx="164.5" cy="216.7" r="3" fill="#c2410c"/>
+<circle cx="218.8" cy="234.9" r="3" fill="#c2410c"/>
+<circle cx="273.0" cy="207.7" r="3" fill="#c2410c"/>
+<circle cx="327.2" cy="190.8" r="3" fill="#c2410c"/>
+<circle cx="381.5" cy="171.5" r="3" fill="#c2410c"/>
+<circle cx="435.8" cy="127.3" r="3" fill="#c2410c"/>
+<circle cx="490.0" cy="120.7" r="3" fill="#c2410c"/>
+<rect x="502" y="39" width="12" height="12" fill="#c2410c"/>
+<text x="520" y="49" fill="#333">laptop, full JIT</text>
+</svg>

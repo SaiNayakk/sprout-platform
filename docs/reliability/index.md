@@ -35,6 +35,16 @@ second region.
 
 ## Regions
 
-Today there is one region: the phone. The plan is a second region on the laptop, with Cloudflare
-sending traffic to whichever is healthy, and each region owning a slice of users (cells) so that losing
-one region affects only its own users until failover. That is CHAOS-09.
+There are two cells, the phone (A) and the laptop (B), each a whole Sprout with its own database, behind one address
+([ADR-027](../decisions.md#adr-027-cells)). A customer belongs to one cell; a new customer's cell is picked from their
+email, weighted by what each cell carries. If a cell is lost, the other takes its customers over within minutes:
+
+| What | How | Guarantee |
+|---|---|---|
+| A cell's database | Copied into the other cell continuously (Postgres logical replication over Cloudflare) | Lags by seconds |
+| A customer's write | Journalled in the other cell before it is answered | Never lost once answered; replayed at least once, applied once (idempotency keys) |
+| A write refused at the time | Noted in the journal | Stays refused when replayed |
+| Two copies acting at once | A cell that can't reach its own address for 60 s fences itself (no writes); the other takes over only after 120 s | One writer per customer |
+| Taking over | Promote the copy, start the lost cell's services (with its keys) on it, replay the journal, route its customers there | Customers sign in as before; reconciliation checks the books |
+
+CHAOS-12 kills a cell mid-load and checks that no answered write is missing, none happened twice, and the books agree.

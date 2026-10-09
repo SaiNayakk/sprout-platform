@@ -17,6 +17,11 @@ export GATEWAY_IDENTITY_URL=http://127.0.0.1:8101
 export GATEWAY_JWKS_URL=http://127.0.0.1:8101/.well-known/jwks.json
 export GATEWAY_MARKETDATA_URL=http://127.0.0.1:8103
 export LOG_FORMAT=ecs
+if [ -n "${CELL_KEY:-}" ]; then
+  # cell A (ADR-027): customers' writes are journalled in cell B before they are forwarded; cell B's journal is kept here
+  export GATEWAY_CELL_ID=a GATEWAY_CELL_PEER_URL=https://sprout-b-saiworks.nncs.in GATEWAY_CELL_KEY="$CELL_KEY"
+  export GATEWAY_CELL_JOURNAL_DIR="$HOME/sprout/journal" GATEWAY_CELL_FENCE_FILE="$HOME/sprout/journal/fenced"
+fi
 if [ "${SPROUT_SANDBOX:-false}" = true ]; then
   # the public sandbox: fictional customers visitors explore as (the market runs fast: see trading/run.sh)
   export IDENTITY_DEMO_ENABLED=true

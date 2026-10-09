@@ -1,0 +1,12 @@
+{
+ "scenario": "cell b lost mid-load; replication 60s behind when it died",
+ "run": "10091606",
+ "customers": 8,
+ "orders_tried": 1023,
+ "orders_acknowledged": 629,
+ "acknowledged_while_replication_paused": 151,
+ "missing_after_takeover": 0,
+ "applied_twice": 0,
+ "seconds_until_orders_succeed_again": 473,
+ "missing_keys": []
+}
