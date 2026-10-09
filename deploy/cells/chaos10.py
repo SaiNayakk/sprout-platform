@@ -110,6 +110,7 @@ def main():
     def trade(p):
         while not stop.is_set():
             key = str(uuid.uuid4())
+            sent = time.time()
             body = {'symbol': random.choice(CHEAP), 'side': 'BUY', 'quantity': 1, 'orderType': 'MARKET', 'product': 'CNC'}
             for _ in range(3):   # a customer retries an unanswered order with the same key, as the app does
                 status, res = call('POST', '/oms/v1/orders', body, token=p['token'], cell=cell, key=key, timeout=20)
@@ -119,7 +120,7 @@ def main():
             with lock:
                 attempts['total'] += 1
                 if status in (200, 201) and res and res.get('id'):
-                    acked.append({'key': key, 'id': res['id'], 'at': time.time(), 'email': p['email']})
+                    acked.append({'key': key, 'id': res['id'], 'at': time.time(), 'sent': sent, 'email': p['email']})
                 else:
                     attempts['failed'] += 1
             time.sleep(random.uniform(2, 4))
@@ -144,7 +145,7 @@ def main():
     while time.time() < deadline:
         time.sleep(5)
         with lock:
-            recent = [x for x in acked if x['at'] > killed_at]
+            recent = [x for x in acked if x['sent'] > killed_at + 5]   # sent after the cell was gone
         if recent and first_ok_after is None:
             first_ok_after = recent[0]['at'] - killed_at
             print(f'orders succeed again {first_ok_after:.0f}s after the kill')

@@ -62,11 +62,12 @@ def build() -> tuple[str, set[str]]:
         sys.exit('a throwaway secret is left in the laptop compose file')
 
     # data survives restarts
-    text = must(text, '    mem_limit: 256m\n', '    mem_limit: 256m\n    volumes:\n      - pgdata:/var/lib/postgresql\n')
+    # 512 MB, not pre-prod's 256: as a cell this Postgres also holds the copy of cell A's database (ADR-027)
+    text = must(text, '    mem_limit: 256m\n', '    mem_limit: 512m\n    volumes:\n      - pgdata:/var/lib/postgresql\n')
     # cell B (ADR-027): its database is replicated into cell A's Postgres, and cell A's into a second database here
     text = must(text, '      - pgdata:/var/lib/postgresql\n',
                 '      - pgdata:/var/lib/postgresql\n'
-                '    command: ["postgres", "-c", "wal_level=logical", "-c", "max_replication_slots=10", "-c", "max_wal_senders=10"]\n')
+                '    command: ["postgres", "-c", "wal_level=logical", "-c", "max_replication_slots=10", "-c", "max_wal_senders=10", "-c", "max_connections=300"]\n')
     # the gateway journals customers' writes into cell A before forwarding them, and keeps cell A's journal here
     text = must(text, '      GATEWAY_TRUST_CF_IP: "true"\n',
                 '      GATEWAY_TRUST_CF_IP: "true"\n      GATEWAY_CELL_ID: b\n'
@@ -151,7 +152,7 @@ def build() -> tuple[str, set[str]]:
     command: ["access", "tcp", "--hostname", "pg-a-saiworks.nncs.in", "--url", "0.0.0.0:5432"]
     restart: unless-stopped
     logging: {driver: json-file, options: {max-size: 10m, max-file: "3"}}
-    mem_limit: 64m
+    mem_limit: 128m
 
   # Watches both cells; fences this one, or takes cell A over (deploy/cells/cellwatch.py)
   cellwatch:

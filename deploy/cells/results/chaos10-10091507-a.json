@@ -1,0 +1,33 @@
+{
+ "scenario": "cell a lost mid-load; replication 60s behind when it died",
+ "run": "10091507",
+ "customers": 8,
+ "orders_tried": 571,
+ "orders_acknowledged": 234,
+ "acknowledged_while_replication_paused": 113,
+ "missing_after_takeover": 114,
+ "applied_twice": 0,
+ "seconds_until_orders_succeed_again": 0,
+ "missing_keys": [
+  "b556dd43-4378-4f01-8420-90b10779bb61",
+  "e0f69212-2b10-4b98-8ab1-b491c134a77e",
+  "8ae1146c-77d4-4469-80ee-f21df10da3f9",
+  "438b718f-0b55-45d5-b8d2-ba04dbeb0bbc",
+  "01043f86-9fb2-42e0-af7f-e0b02ee7c197",
+  "ca5156da-c8ef-478f-9d2c-25f342ab6d8b",
+  "eb4df716-c7e5-4d83-8204-7b89c7af58ad",
+  "a58e9be3-8b9b-433e-a979-66fda220122d",
+  "a9095017-31f8-42ff-bc0f-958eef6f28cf",
+  "0d30f283-1da0-41fb-9b9b-71fdc9ccc553",
+  "68ce061a-add5-4257-b17e-32e2a1020879",
+  "a2253ca6-e3a0-4b0f-9999-e76c4bb0ee7b",
+  "14fa3a33-f9bd-4b86-aa22-66eeef797be2",
+  "f6340a17-c371-42d7-b1f5-6d806b91f5e5",
+  "d6475fd9-afaa-4837-874d-23242387221b",
+  "ca941d2d-cda7-431f-a9d1-de2b0679976d",
+  "d68bb8f4-b797-40f2-a79d-1d21f6764bfb",
+  "f58df95a-7bca-44b9-9bfb-c009d45fd932",
+  "e9a1068d-be1d-4d48-bf10-50e6967160c3",
+  "7562bf13-0f98-486d-b326-c57fc9142072"
+ ]
+}
