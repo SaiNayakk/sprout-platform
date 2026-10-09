@@ -193,6 +193,28 @@ seen healthy and holds a whole copy of, and a failed takeover waits ten minutes 
 moved cell A's customers home: the promoted copy became the phone's database (its own archived, never merged),
 replication was set up again, and both cells went back to normal.
 
+**Cell B (the laptop) lost, the phone takes over:**
+
+| | |
+|---|---|
+| Orders acknowledged | 629 |
+| …of them only in the journal (replication paused) | 151 |
+| **Missing after the takeover** | **0** |
+| **Applied twice** | **0** |
+| Orders succeed again after the kill | 473 s (the first takeover was cut short; see below) |
+
+**What this run found.** Two bugs, both on the phone's side, made the takeover take two tries:
+
+- *cellwatch fell silent while taking over.* It wrote its status file only between checks, and a takeover (promote,
+  start the standby, replay) takes minutes. The phone's starter saw a stale status for two minutes and killed it
+  half-way. It now publishes its status from its own thread every 10 s, whatever else it is doing.
+- *The standby couldn't read cell B's settings.* They were written on Windows with CRLF line endings, and Spring read
+  a date as `2026-10-06\r`. `exchange-secrets.sh` now strips the CRs.
+
+The second attempt took over in under a minute. Nothing was lost in between: the journal held every write, and the
+copy didn't move until the replay. Failback then found a third bug: its `pkill -f cellwatch.py` over ssh matched its
+own remote shell, which killed the script before it restarted the laptop's services and tunnel. Both are fixed.
+
 ## SETTLE-01: a trading day settles T+1 { #settle-01 }
 
 Not a fault but the whole of settlement, run near the end, after the experiments above have stopped
