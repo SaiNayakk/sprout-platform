@@ -96,15 +96,23 @@ def main():
     laptop_env = dict(l.rstrip('\n').split('=', 1) for l in open(HERE / '../laptop/data/.env', encoding='utf-8') if '=' in l and not l.startswith('#'))
 
     def copy_sql(sql):
-        """SQL against the other cell's copy of the doomed cell's database."""
+        """SQL (sent on stdin: it can be long) against the other cell's copy of the doomed cell's database."""
         if cell == 'a':
-            return sh(['docker', 'exec', '-i', '-e', f'PGPASSWORD={laptop_env["SPROUT_DB_PASSWORD"]}', 'sprout-laptop-postgres-1',
-                       'psql', '-U', 'sprout', '-d', 'sprout_a', '-Atc', sql])
-        return sh(SSH + [f'psql -d sprout_b -Atc "{sql}"'])
+            cmd = ['docker', 'exec', '-i', '-e', f'PGPASSWORD={laptop_env["SPROUT_DB_PASSWORD"]}', 'sprout-laptop-postgres-1',
+                   'psql', '-U', 'sprout', '-d', 'sprout_a', '-At']
+        else:
+            cmd = SSH + ['psql -d sprout_b -At']
+        r = subprocess.run(cmd, input=sql + ';\n', capture_output=True, text=True)
+        if r.returncode:
+            raise RuntimeError(r.stderr[-400:])
+        return r.stdout
 
     print(f'creating {a.customers} customers in cell {cell}')
     people = [customer(cell, i, run) for i in range(a.customers)]
     acked, attempts, lock = [], {'total': 0, 'failed': 0}, threading.Lock()
+    out = HERE / 'results'
+    out.mkdir(exist_ok=True)
+    ledger = open(out / f'chaos10-{run}-{cell}-acknowledged.jsonl', 'a', encoding='utf-8')   # kept as they happen
     stop = threading.Event()
 
     def trade(p):
@@ -121,6 +129,8 @@ def main():
                 attempts['total'] += 1
                 if status in (200, 201) and res and res.get('id'):
                     acked.append({'key': key, 'id': res['id'], 'at': time.time(), 'sent': sent, 'email': p['email']})
+                    ledger.write(json.dumps(acked[-1]) + '\n')
+                    ledger.flush()
                 else:
                     attempts['failed'] += 1
             time.sleep(random.uniform(2, 4))
@@ -169,8 +179,6 @@ def main():
         'seconds_until_orders_succeed_again': None if first_ok_after is None else round(first_ok_after),
         'missing_keys': missing[:20],
     }
-    out = HERE / 'results'
-    out.mkdir(exist_ok=True)
     (out / f'chaos10-{run}-{cell}.json').write_text(json.dumps(result, indent=1), encoding='utf-8')
     print(json.dumps(result, indent=1))
 
