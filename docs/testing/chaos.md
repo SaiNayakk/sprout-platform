@@ -215,6 +215,24 @@ The second attempt took over in under a minute. Nothing was lost in between: the
 copy didn't move until the replay. Failback then found a third bug: its `pkill -f cellwatch.py` over ssh matched its
 own remote shell, which killed the script before it restarted the laptop's services and tunnel. Both are fixed.
 
+**Cell A lost again, after the takeover rule changed** ([incident](../incidents.md): a cell is now lost only when
+its address goes silent, not when it is slow):
+
+| | |
+|---|---|
+| Orders acknowledged | 610 |
+| …of them only in the journal (replication paused) | 137 |
+| **Missing after the takeover** | **0** |
+| **Applied twice** | **0** |
+| Orders succeed again after the kill | 296 s (the journal held two hours of capacity-test writes: 3,184 replayed) |
+
+**What this run found.** 17 replayed account openings failed with `503`. The second takeover of cell A had
+moved the depository's `client_numbers` sequence to 1,000,000 again, onto demat numbers the first takeover
+had already handed out. That sequence numbers `bo_id`, not a column of its own, so the takeover's "move past
+the highest id" found nothing to look at. It and the sandbox's `demo_account_numbers` now have their highest
+used values looked up. After a repair and another replay: 16 applied, 0 failed. None of the 17 had been
+acknowledged: their first attempts had failed too, so no customer had been told they succeeded.
+
 ## SETTLE-01: a trading day settles T+1 { #settle-01 }
 
 Not a fault but the whole of settlement, run near the end, after the experiments above have stopped
