@@ -76,7 +76,7 @@ else
   say "stopping the phone's standby and dropping its copy of cell B"
   "${SSH[@]}" "sh ~/sprout/ctl.sh stop sprout-standby >/dev/null; psql -d sprout_b -q -c 'ALTER SUBSCRIPTION from_b DISABLE' -c 'ALTER SUBSCRIPTION from_b SET (slot_name = NONE)' -c 'DROP SUBSCRIPTION from_b'; psql -d postgres -q -c 'DROP DATABASE sprout_b'; rm -f ~/sprout/journal/fenced-b"
   say "both cells back to normal"
-  "${SSH[@]}" "rm -f ~/sprout/cells/state.json; pkill -f cellwatch.py || true"   # the starter starts it again
+  "${SSH[@]}" "rm -f ~/sprout/cells/state.json; pkill -f '[c]ellwatch[.]py' || true"   # the starter starts it again; the bracket keeps pkill off this very shell
   rm -f "$LAPTOP/data/cells/state.json" "$LAPTOP/data/journal/fenced"
   "${COMPOSE[@]}" up -d edge trading money street web front cellwatch >/dev/null
   say "cell B is starting on the laptop; then: deploy/cells/replicate.sh"
