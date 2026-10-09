@@ -199,3 +199,44 @@ stop signal and had to be killed outright.
 
 **Lesson.** A setting that removes a limit moves the limit somewhere else. Capacity experiments change one thing at a
 time, on a path that can be undone in seconds, and watch for the system getting quieter as well as busier.
+
+## 2026-10-09: both cells served the same customers, twice in one hour
+
+**Impact.** Two short split-brains in the cells, both during testing: for 15 minutes cell A's
+customers were served by both the phone and a standby on the laptop, and for 5 minutes cell B's by both
+the laptop and a standby on the phone. No customer wrote anything in either window. Each cell's
+scheduler still ran, though, so 5 goal auto-invest orders and 3 mandate debits were made twice: once in
+the real database and once in the standby's copy. The copies were thrown away. Nothing was lost and
+nothing reached a customer's books twice.
+
+**Timeline.**
+
+1. **10:51.** `failback.sh b` killed the phone's cellwatch with `pkill -f cellwatch.py` over ssh. The
+   pattern matched the ssh shell's own command line, so the script died before it restarted the laptop's
+   services.
+2. **10:54.** The phone's status file went stale, and the laptop counted cell A as lost after 120 s. It
+   took cell A over **while the phone's services were up and serving**: only its watcher was gone.
+3. **11:03.** A capacity run pushed the laptop to 800 users. It answered so slowly that its status said
+   "unhealthy", and the phone took cell B over 120 s later, with the laptop **still running**.
+4. **11:07.** Both cells said HOLDING. Each standby's writes since its takeover were compared with the
+   real cell's: only scheduled goals, made in both. Both standbys were stopped, their copies dropped,
+   and replication set up again.
+
+**Root cause.** cellwatch treated "the other cell's status is stale or unhealthy" as "the other cell is
+gone". Neither a dead watcher nor an overloaded cell means that the cell has stopped writing, and only
+a cell that has stopped writing is safe to take over.
+
+**What changed.**
+
+- **A cell is lost only when its public address doesn't answer at all for 120 s.** By then it can't
+  reach its own address either, so it has fenced itself (after 60 s). A cell that answers but is sick
+  counts as lost only after 10 minutes, and it fences itself after 5.
+- The other cell's front door (`/api/marketdata/v1/market`) is checked as well as its status: a cell
+  whose services answer is never taken over because its watcher is silent.
+- `failback.sh` stops cellwatch before clearing its state (a running one wrote it back), and its `pkill`
+  pattern can't match itself.
+
+**Lesson.** A failure detector has to tell "gone" from "slow". Taking over something that's slow causes a
+bigger outage than the slowness did. Taking over safely needs proof that the other side has stopped,
+not just that it has gone quiet. This is the singleton lesson from 2026-09 again: two copies of a
+scheduler are worse than none.
