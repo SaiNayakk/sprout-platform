@@ -179,6 +179,14 @@ BEGIN
     top := 0;
     IF r.tbl IS NOT NULL THEN
       EXECUTE format('SELECT coalesce(max(%I), 0) FROM %s', r.col, r.tbl) INTO top;
+    -- two sequences number something that isn't their own column. Without these, a second takeover set them to
+    -- 1,000,000 again, onto numbers the first one had handed out (2026-10-09: demat accounts couldn't be opened)
+    ELSIF r.seq::text = 'depository.client_numbers' THEN
+      SELECT coalesce(max(right(bo_id, 8)::bigint), 0) INTO top FROM depository.accounts;
+    ELSIF r.seq::text = 'sandbox.demo_account_numbers' THEN
+      SELECT coalesce(max(number), 0) INTO top FROM sandbox.demo_accounts;
+    ELSE
+      RAISE WARNING 'sequence % numbers no column cellwatch knows: moved to 1000000, which may already be used', r.seq;
     END IF;
     PERFORM setval(r.seq, greatest(top, 0) + 1000000, false);
   END LOOP;
