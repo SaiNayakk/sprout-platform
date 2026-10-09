@@ -47,4 +47,4 @@ email, weighted by what each cell carries. If a cell is lost, the other takes it
 | Two copies acting at once | A cell that can't reach its own address for 60 s fences itself (no writes); the other takes over only after 120 s | One writer per customer |
 | Taking over | Promote the copy, start the lost cell's services (with its keys) on it, replay the journal, route its customers there | Customers sign in as before; reconciliation checks the books |
 
-CHAOS-10 kills a cell mid-load and checks that no answered write is missing, none happened twice, and the books agree.
+CHAOS-12 kills a cell mid-load and checks that no answered write is missing, none happened twice, and the books agree.

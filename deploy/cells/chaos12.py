@@ -1,6 +1,6 @@
-"""CHAOS-10: a cell is lost mid-load; the other takes its customers over, and no acknowledged write is lost or doubled.
+"""CHAOS-12: a cell is lost mid-load; the other takes its customers over, and no acknowledged write is lost or doubled.
 
-Run on the laptop, both cells healthy and replicating:   python deploy/cells/chaos10.py --kill a
+Run on the laptop, both cells healthy and replicating:   python deploy/cells/chaos12.py --kill a
   (--kill a: the phone's cell is lost and the laptop takes over; --kill b: the other way round)
 
   1. creates CUSTOMERS customers in the cell to be killed, each funded through the bank like anyone
@@ -12,7 +12,7 @@ Run on the laptop, both cells healthy and replicating:   python deploy/cells/cha
   5. the other cell takes over (cellwatch: fence, promote, replay, route); orders succeed again
   6. every acknowledged order must exist exactly once in the promoted copy, with the same key, and none be missing
 
-The result is written to deploy/cells/results/chaos10-<time>.json and printed.
+The result is written to deploy/cells/results/chaos12-<time>.json and printed.
 """
 import argparse
 import datetime
@@ -37,7 +37,17 @@ CHEAP = ['SUNROOT', 'THREADS', 'IRONLEAF', 'NIGHTOWL']
 
 
 def call(method, path, body=None, token=None, cell=None, key=None, timeout=15):
-    headers = {'Content-Type': 'application/json', 'User-Agent': 'sprout-chaos10'}
+    """One request; a 429 (sign-in is limited per client address, and every customer here comes from one) is waited out."""
+    for _ in range(8):
+        status, res = _call(method, path, body, token, cell, key, timeout)
+        if status != 429:
+            return status, res
+        time.sleep(min(60, int((res or {}).get('retryAfterSeconds') or 10)))
+    return status, res
+
+
+def _call(method, path, body=None, token=None, cell=None, key=None, timeout=15):
+    headers = {'Content-Type': 'application/json', 'User-Agent': 'sprout-chaos12'}
     if token:
         headers['Authorization'] = f'Bearer {token}'
     if cell:
@@ -60,7 +70,7 @@ def call(method, path, body=None, token=None, cell=None, key=None, timeout=15):
 
 
 def customer(cell, i, run):
-    email = f'chaos10-{run}-{i}@example.invalid'
+    email = f'chaos12-{run}-{i}@example.invalid'
     call('POST', '/identity/v1/users', {'email': email, 'password': PASSWORD, 'displayName': f'Chaos {i}'}, cell=cell)
     _, s = call('POST', '/identity/v1/sessions', {'email': email, 'password': PASSWORD}, cell=cell)
     t = s['tokens']['accessToken']
@@ -112,7 +122,7 @@ def main():
     acked, attempts, lock = [], {'total': 0, 'failed': 0}, threading.Lock()
     out = HERE / 'results'
     out.mkdir(exist_ok=True)
-    ledger = open(out / f'chaos10-{run}-{cell}-acknowledged.jsonl', 'a', encoding='utf-8')   # kept as they happen
+    ledger = open(out / f'chaos12-{run}-{cell}-acknowledged.jsonl', 'a', encoding='utf-8')   # kept as they happen
     stop = threading.Event()
 
     def trade(p):
@@ -179,7 +189,7 @@ def main():
         'seconds_until_orders_succeed_again': None if first_ok_after is None else round(first_ok_after),
         'missing_keys': missing[:20],
     }
-    (out / f'chaos10-{run}-{cell}.json').write_text(json.dumps(result, indent=1), encoding='utf-8')
+    (out / f'chaos12-{run}-{cell}.json').write_text(json.dumps(result, indent=1), encoding='utf-8')
     print(json.dumps(result, indent=1))
 
 
