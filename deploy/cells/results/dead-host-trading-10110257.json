@@ -1,0 +1,63 @@
+{
+ "fenced_after_s": 82,
+ "orders_back_after_s": null,
+ "both_normal_after_host_back_s": 339,
+ "longest_pause_during_failback_s": 2.9,
+ "laptop_cellwatch": [
+  "2026-10-10T21:04:46Z [b] ALERT cell A holds this cell: fenced; it will be given back automatically",
+  "2026-10-10T21:05:59Z [b] watching (state TAKEN_OVER)",
+  "2026-10-10T21:06:24Z [b] RESUME: the customers were given back, and the other cell no longer holds them",
+  "2026-10-10T21:06:24Z [b] unfenced",
+  "2026-10-10T21:06:24Z [b] state TAKEN_OVER -> NORMAL",
+  "2026-10-10T21:06:25Z [b] ALERT cell B is serving again: the customers were given back, and the other cell no longer holds them",
+  "2026-10-10T21:10:14Z [b] FENCE: host down: trading",
+  "2026-10-10T21:10:14Z [b] fenced: this cell takes no customer writes",
+  "2026-10-10T21:10:14Z [b] state NORMAL -> FENCED",
+  "2026-10-10T21:10:14Z [b] ALERT fenced: host down: trading: this cell takes no customer writes",
+  "2026-10-10T21:24:56Z [b] UNFENCE: healthy for 210 s",
+  "2026-10-10T21:24:56Z [b] unfenced",
+  "2026-10-10T21:24:56Z [b] state FENCED -> NORMAL",
+  "2026-10-10T21:24:56Z [b] ALERT unfenced: healthy for 210 s"
+ ],
+ "phone_cellwatch": [
+  "2026-10-10T21:23:12Z [a] state NORMAL -> TAKING_OVER",
+  "2026-10-10T21:23:12Z [a] state NORMAL -> TAKING_OVER",
+  "2026-10-10T21:23:12Z [a] ALERT taking cell B over: it has said it is out",
+  "2026-10-10T21:23:12Z [a] ALERT taking cell B over: it has said it is out",
+  "2026-10-10T21:23:12Z [a] stopped replicating from b and moved its sequences on",
+  "2026-10-10T21:23:12Z [a] stopped replicating from b and moved its sequences on",
+  "2026-10-10T21:26:09Z [a] the other cell has been healthy for a minute: stopping the takeover",
+  "2026-10-10T21:26:09Z [a] the other cell has been healthy for a minute: stopping the takeover",
+  "2026-10-10T21:26:10Z [a] taking cell b over failed: asked to stop",
+  "2026-10-10T21:26:10Z [a] taking cell b over failed: asked to stop",
+  "2026-10-10T21:26:10Z [a] state TAKING_OVER -> NORMAL",
+  "2026-10-10T21:26:10Z [a] state TAKING_OVER -> NORMAL",
+  "2026-10-10T21:26:10Z [a] ALERT taking cell B over failed: asked to stop",
+  "2026-10-10T21:26:10Z [a] ALERT taking cell B over failed: asked to stop"
+ ],
+ "scenario": "dead-host-trading",
+ "orders": {
+  "acknowledged": 348,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+90s A=NORMAL B=NORMAL/sick",
+  "+159s A=NORMAL B=FENCED/sick",
+  "+206s A=TAKING_OVER B=FENCED/sick",
+  "+810s A=NORMAL B=FENCED/sick",
+  "+819s A=NORMAL B=FENCED",
+  "+935s A=TAKING_OVER B=FENCED",
+  "+1042s A=TAKING_OVER B=NORMAL",
+  "+1119s A=NORMAL B=NORMAL"
+ ],
+ "pass": false,
+ "checks": {
+  "orders worked again within the target": false,
+  "the customers were given back without hands": true,
+  "the longest pause in orders during the failback is under 60 s": true
+ }
+}

@@ -13,7 +13,7 @@
 
   <groupId>app.sprout.hosts</groupId>
   <artifactId>cell-host</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <name>cell-host</name>
   <description>Every Sprout service in one JVM: what a cell runs for the other cell's customers when that cell is lost (ADR-027). Its manifest is the union of the four hosts' manifests, and CI checks they agree.</description>
 
@@ -23,7 +23,7 @@
   <properties>
     <java.version>21</java.version>
     <sprout-identity.version>0.3.0</sprout-identity.version>
-    <sprout-gateway.version>0.4.2</sprout-gateway.version>
+    <sprout-gateway.version>0.5.0</sprout-gateway.version>
     <sprout-sandbox.version>0.2.1</sprout-sandbox.version>
     <sprout-marketdata.version>0.2.1</sprout-marketdata.version>
     <sprout-oms.version>0.5.4</sprout-oms.version>

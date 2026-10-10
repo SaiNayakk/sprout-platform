@@ -396,19 +396,42 @@ How, in order:
    tunnel. Logical, because the phone is ARM and the laptop x86: physical replicas need the same platform and the
    same text collation. The copy lives as a second database in the other cell's own Postgres. It may lag by
    seconds; the journal covers the gap.
-5. **Failover.** A cell that can no longer reach its own public address for a minute fences itself: it stops
-   taking writes, so two copies of a customer can't both act. It also fences itself after its own services have
-   been failing for five minutes. The other cell counts it as lost only when its public address hasn't answered at
-   all for two minutes (by then it has fenced itself), or when it has answered but been unable to serve for ten.
-   A slow cell is not a lost one: taking over an overloaded cell at two minutes once had two cells serving the same
-   customers ([incident](incidents.md)). A fenced cell that comes back stays fenced for another 210 s and never
-   unfences while the other cell holds it, and a cell in any state that finds itself held fences at once. Then the other cell promotes its copy (sequences are moved past every replicated id, since logical replication doesn't carry
-   them), starts the failed cell's services on it with the failed cell's own keys (sessions keep working), and
-   replays the journal. A replayed write that had already replicated is recognised by its key and ignored; one that
-   hadn't is applied. Then the router sends the failed cell's customers there.
-6. **Failback** rebuilds the returning cell's database from the promoted copy, re-establishes replication, and
-   moves its customers back. Its own database from before is archived, never merged: every write it acknowledged is
-   either in the copy or in the journal.
+5. **Failover** is decided by each cell's `cellwatch` ([`cw_logic.py`](https://github.com/SaiNayakk/sprout-platform/blob/main/deploy/cells/cw_logic.py):
+   pure rules, with a test for every incident that taught one). A cell looks at itself (its public address, a health
+   check, every host's services) and at the other cell two ways: its published status through Cloudflare, and the same
+   status over the home network.
+   - **A cell fences itself** (takes no customer writes) when its own address has been unreachable for a minute, or its
+     services have been failing for five, or **a host of its own has refused connections for a minute** (a crash restarts
+     in about 30 s and is not a failure; a host that keeps crashing counts as down). A host-down fence says why in the
+     cell's status.
+   - **The other cell takes it over** when it has *said* it is out (30 s after that announcement), or its address has
+     been silent for two minutes, or it answers but cannot serve for ten. The home network can veto the last two: if the
+     LAN shows the other cell up and well, a silent Cloudflare address means Cloudflare, not the cell, and nobody takes
+     anybody over. Slow is not dead: an overloaded cell was once taken over while it served, and two cells ran the same
+     customers ([incident](incidents.md)).
+   - **Taking over runs in a worker, so the watcher keeps watching, and rolls itself back if anything fails:** promote the
+     copy (sequences are moved past every replicated id, since logical replication doesn't carry them), start the standby
+     (the lost cell's services on the copy, with its own keys), replay the journal, then route the customers there. The
+     replay starts a little before the copy last heard from the other cell, not a fixed two hours back, from a journal
+     archive that keeps three days; different customers replay in parallel, one customer's writes in order; a write that
+     fails is retried every few seconds until it succeeds; and the replay goes on for as long as the cell holds the
+     other's customers, so a write the other cell accepted in the seconds before it learned it was taken over is not
+     lost. A write that had already replicated is recognised by its key.
+   - **A cell that comes back finds out it was replaced.** In any state, a status of the other cell published after this
+     cell last became NORMAL that says it holds this cell's customers makes this cell fence itself and become
+     TAKEN_OVER. A fenced cell unfences after 30 s of health when the other cell reports it sees it healthy and is not
+     taking it over, otherwise after 210 s (the other cell's 120 s plus the time to promote).
+   - **If both cells took each other over** (neither could see the other at all), the preferred survivor (the laptop)
+     keeps what it took and the other gives way and rebuilds its copy.
+6. **Failback is automatic.** A TAKEN_OVER cell that has been healthy for three minutes, while the holder is healthy and
+   has a handback prepared, asks for its customers back ([`cw_failback.py`](https://github.com/SaiNayakk/sprout-platform/blob/main/deploy/cells/cw_failback.py)).
+   It builds a new database from the holder's copy by logical replication **while the holder keeps serving**. Then the two
+   do a short cutover through their published statuses: the holder stops its standby taking writes and reports its
+   position in the log; the returning cell waits until it has everything up to that position, swaps the new database in
+   for the old (which is archived, never merged: its writes since the takeover were background jobs on a database that
+   served nobody), and serves again; the holder stops its standby and rebuilds its copy. Customers see refused writes
+   only between the holder's fence and the swap. Anything wrong before the swap rolls back and tries again in ten
+   minutes; a restart anywhere is recovered.
 
 The standby runs every service in one JVM (`hosts/cell`), which is what lets the laptop (7.8 GB RAM) and the phone
 each hold the other cell's services beside their own.
