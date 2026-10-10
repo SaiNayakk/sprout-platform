@@ -9,12 +9,12 @@ import csv
 import sys
 from pathlib import Path
 
-W, L, R, T, LANE, GAP = 760, 96, 20, 44, 22, 6
-COLORS = {'200': '#2f7d4f', '503': '#c2410c', '401': '#9ca3af', 'NORMAL': '#2f7d4f', 'NORMAL/sick': '#d4a017',
+W, L, R, T, LANE, GAP = 760, 96, 20, 52, 22, 6
+COLORS = {'200': '#2f7d4f', '503': '#c2410c', '401': '#9ca3af', '0': '#4b5563', '502': '#4b5563', 'NORMAL': '#2f7d4f', 'NORMAL/sick': '#d4a017',
           'FENCED': '#b4432f', 'FENCED/sick': '#b4432f', 'HOLDING': '#1d4ed8', 'TAKEN_OVER': '#7c3aed',
-          'TAKEN_OVER/sick': '#7c3aed', 'silent': '#9ca3af'}
+          'TAKEN_OVER/sick': '#7c3aed', 'silent': '#4b5563'}
 LEGEND = [('200 / NORMAL', '#2f7d4f'), ('503 (host down)', '#c2410c'), ('sick', '#d4a017'), ('fenced', '#b4432f'),
-          ('holding', '#1d4ed8'), ('taken over', '#7c3aed'), ('401: test token lapsed', '#9ca3af')]
+          ('holding', '#1d4ed8'), ('taken over', '#7c3aed'), ('no answer', '#4b5563'), ('401: test token lapsed', '#9ca3af')]
 
 
 def main():
@@ -28,6 +28,7 @@ def main():
     t0, t1 = rows[0]['t'], rows[-1]['t'] + 6
     px = lambda t: L + (W - L - R) * (t - t0) / (t1 - t0)
     H = T + len(lanes) * (LANE + GAP) + 92
+    T_ = T
     s = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" font-family="system-ui, sans-serif" font-size="12">',
          f'<rect width="{W}" height="{H}" fill="#fff"/>']
     for i, (key, label) in enumerate(lanes):
@@ -50,9 +51,9 @@ def main():
         name, sec = m.rsplit('=', 1)
         x = px(float(sec))
         s.append(f'<line x1="{x:.1f}" x2="{x:.1f}" y1="{T - 4}" y2="{bottom}" stroke="#141833" stroke-width="1.5"/>')
-        anchor = 'end' if (x > W - 130 or k % 2) else 'start'
+        anchor = 'end' if x > W - 130 else 'start'
         dx = -4 if anchor == 'end' else 4
-        s.append(f'<text x="{x + dx:.1f}" y="{T - 10}" text-anchor="{anchor}" fill="#141833" font-weight="600">{name}</text>')
+        s.append(f'<text x="{x + dx:.1f}" y="{T - 10 - (k % 2) * 14}" text-anchor="{anchor}" fill="#141833" font-weight="600">{name}</text>')
     lx, ly = L, H - 46
     for label, color in LEGEND:
         width = 17 + 6.6 * len(label) + 16

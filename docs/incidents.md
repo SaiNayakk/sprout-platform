@@ -277,7 +277,25 @@ of the length of a takeover (a minute) in which the returning cell concludes tha
 - A cell in **any** state that sees the other cell holding its customers fences itself and becomes TAKEN_OVER.
 - A fenced cell unfences only after staying healthy for **210 s** (the 120 s the other cell waits to decide, plus 90 s to
   promote), and never while the other cell holds it.
-- CHAOS-17 (a tunnel that drops for 3 minutes and returns) is on the plan, to reproduce it on purpose.
+- [CHAOS-17](testing/chaos.md#chaos-17) reproduces it on purpose: the returning cell now stays out.
 
 **Lesson.** A cell that was replaced must find out that it was replaced. After losing contact, the only safe default is to
 stay out of service until the other side says it is fine, not until the lost side thinks it is.
+
+## 2026-10-10: one failed restart stopped all of Sprout on the phone for ten minutes
+
+**Impact.** Found by a test (CHAOS-17), not by a customer. With the phone's web server frozen, the starter killed it, could
+not start it again, and stopped every piece of Sprout on the phone, waiting ten minutes before starting them one by one. The cell
+was down for about twelve minutes. The laptop was already holding its customers by then.
+
+**Cause.** The starter's liveness check killed the hung nginx's master and its direct children. nginx's workers are children
+of the master, so they were orphaned and kept running, holding port 8180. The new nginx could not bind it, `run.sh` exited,
+and the starter's rule for a Sprout piece that will not restart is to give up on everything and try again later, so that a
+crash loop cannot reboot the phone in a loop (2026-10-08).
+
+**What changed.** The starter kills a hung piece's whole process tree, deepest first, and waits two seconds for the kernel
+to free its ports. A failed restart gets one more try after 15 s before it gives up. With that, the same freeze ended in a
+restart of the web server in two seconds.
+
+**Lesson.** A rule that is safe for a crash loop (give up, wait) is wrong for the first failure; the second attempt costs nothing.
+Killing a process is not the same as freeing what it held.

@@ -1,0 +1,22 @@
+{
+ "scenario": "the phone's address was silent for 170s, then came back",
+ "run": "10102217",
+ "customers": 8,
+ "orders_tried": 566,
+ "orders_acknowledged": 517,
+ "orders_by_status": {
+  "201": 517,
+  "0": 16,
+  "503": 33
+ },
+ "phone_fenced_after_s": 153,
+ "laptop_holding_after_s": 190,
+ "phone_state_at_end": "TAKEN_OVER",
+ "laptop_state_at_end": "HOLDING",
+ "phone_fence_file": "present",
+ "phone_went_back_to_normal_after_fencing": false,
+ "phone_database_orders_after_the_laptop_held": 0,
+ "missing_from_laptop_copy": 0,
+ "applied_twice": 0,
+ "missing_keys": []
+}

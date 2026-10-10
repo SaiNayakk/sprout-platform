@@ -284,6 +284,39 @@ During those 13.5 minutes the customers of cell B could browse the bank but coul
 - A returning cell has to wait before it unfences: after the host was started again, cell B stayed fenced for the 210 s the rule asks for (longer than the other cell needs to decide and promote) and then went NORMAL by itself.
 - The test's own customers' tokens lapse after 15 minutes. They now sign in again on a `401`, as the app does.
 
+## CHAOS-17: a cell's address goes silent, the other cell takes over, and the first comes back { #chaos-17 }
+
+| | |
+|---|---|
+| **Steady state** | Both cells healthy and replicating; eight customers in cell A (the phone) place market orders through the public address, each with its own idempotency key. |
+| **Fault** | The phone's web server is frozen (SIGSTOP) for 170 s: its public address stops answering while its process stays up. This is what a dropped tunnel looks like to the rest of the system, and what happened for real on 2026-10-09 ([incident](../incidents.md)). |
+| **Hypothesis** | The phone fences itself, the laptop takes cell A over, and the phone, back before the laptop has finished, **stays out of service** and ends TAKEN_OVER, never going back to NORMAL. Only one database takes cell A's writes after the takeover, and no acknowledged order is lost or doubled. |
+| **Method** | [`deploy/cells/chaos17.py`](https://github.com/SaiNayakk/sprout-platform/blob/main/deploy/cells/chaos17.py): both cells' published state every 5 s, every acknowledged order written down, then looked for in the laptop's copy; the phone's own database is asked whether it took any of those orders after the laptop began holding. `--verify RUN` repeats the checks on a finished run's files. |
+
+![The phone goes silent, comes back, and is held by the laptop](../assets/capacity/chaos17-returns.svg)
+
+| Seconds after the freeze (from the cells' logs) | |
+|---|---|
+| 60 | The phone **fences itself**. |
+| 127 | The laptop counts the phone as lost (silent for 2 minutes) and starts taking cell A over. |
+| 143 | The phone's starter, seeing the web server hung, kills it and starts it again; **the phone answers again**. It is fenced, and the laptop has not finished. |
+| 163 | The laptop's standby is up. |
+| 177 | The journal is replayed: 2,168 writes, 2,096 already there, 72 refused, **0 failed**. |
+| 178 | The laptop is HOLDING cell A, and the phone, still fenced, becomes TAKEN_OVER. |
+
+The phone was back for 35 s before the laptop was done. In that window the earlier rule unfenced the phone, which is how the split of 2026-10-09 began. Now it stayed fenced and went straight to TAKEN_OVER.
+
+| | |
+|---|---|
+| Orders acknowledged | 517 of 566 attempts (33 `503`, 16 unanswered while the phone was silent) |
+| **Missing from the laptop's copy** | **0** |
+| **Applied twice** | **0** |
+| **Phone's own database: orders taken after the laptop held** | **0** |
+| Phone went back to NORMAL after fencing | **No** |
+| Final state | Phone TAKEN_OVER with its fence in place; laptop HOLDING |
+
+**The first run found a second bug.** With the starter as it was, the phone's starter killed the frozen nginx master as hung and tried to start it again, and **could not**: the master's two workers were orphaned, not killed with it, and still held the port. One failed restart made the starter give up on all of Sprout and stop it for ten minutes. The phone did not come back until twelve minutes later, long after the laptop had taken over (that run still passed its checks: 2,069 orders, 0 missing, 0 doubled, 0 taken by the phone). The starter now kills a hung piece's whole process tree and tries a failed restart once more before giving up ([incident](../incidents.md)).
+
 ## SETTLE-01: a trading day settles T+1 { #settle-01 }
 
 Not a fault but the whole of settlement, run near the end, after the experiments above have stopped
@@ -325,7 +358,7 @@ SQL checks above read from their databases.
 | CHAOS-14 | The order service is down when the exchange executes a resting order | The exchange keeps the execution and retries; once orders is back, it is booked exactly once |
 | CHAOS-15 | Identity's context crashes inside the edge host | Gateway answers `503` fast; circuit opens after repeated failures and closes after recovery |
 | CHAOS-16 | One host of a cell stops while its front door stays up | Done: see [CHAOS-16](#chaos-16) |
-| CHAOS-17 | A cell's tunnel drops for 3 minutes, then returns (what really happened on 2026-10-09) | The returning cell fences itself and ends TAKEN_OVER; only one database takes writes after the other cell has taken over |
+| CHAOS-17 | A cell's address goes silent for nearly 3 minutes, then returns | Done: see [CHAOS-17](#chaos-17) |
 | CHAOS-18 | Both cells lose the internet at once, then get it back | Both fence; neither takes the other over; both unfence after staying healthy for 3.5 minutes; nothing is lost or doubled |
 | CHAOS-19 | A tunnel flaps: 30 s down every 2 minutes for 20 minutes | No fence, no takeover, no routing flip-flop; customers see short errors only |
 | CHAOS-20 | Replication stops for 30 minutes, then the cell is lost | The journal covers the gap; the lost cell's WAL on the surviving side stays bounded (no full disk) |
