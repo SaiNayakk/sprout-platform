@@ -1,0 +1,16 @@
+{
+ "run": "10102140",
+ "orders_acknowledged": 2069,
+ "phone_fenced_after_s": 164,
+ "laptop_holding_after_s": 227,
+ "phone_taken_over_after_s": 1152,
+ "phone_went_back_to_normal_after_fencing": false,
+ "phone_state_at_end": "TAKEN_OVER",
+ "laptop_state_at_end": "HOLDING",
+ "laptop_began_holding_at": "2026-10-10T16:16:15Z",
+ "of_them_in_the_phones_database": 185,
+ "phone_database_orders_after_the_laptop_held": 0,
+ "missing_from_laptop_copy": 0,
+ "applied_twice": 0,
+ "missing_keys": []
+}

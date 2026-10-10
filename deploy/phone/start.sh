@@ -53,6 +53,12 @@ booted_for() { python3 -c 'import time; print(int(time.clock_gettime(time.CLOCK_
 free_mb() { free -m | awk 'NR==2 {print $7}'; }
 
 pid_file() { echo "$LOGS/$1.pid"; }
+# a process and everything below it, deepest first. nginx's master has workers under it: killing only the master left
+# them running (2026-10-10), still holding the port, so the new nginx couldn't start and the starter stopped all of Sprout
+kill_tree() {
+  for c in $(pgrep -P "$1" 2>/dev/null); do kill_tree "$c"; done
+  kill -KILL "$1" 2>/dev/null
+}
 TICKS=$(getconf CLK_TCK 2>/dev/null || echo 100)
 # CPU time (ticks) used so far by a piece's process and its children (run.sh starts the real process as a child)
 cpu_ticks() {
@@ -151,7 +157,8 @@ while :; do
       fi
       log "$name stopped answering for two minutes and used $((used / TICKS))s of CPU: hung; killing it"
       p=$(cat "$(pid_file "$name")" 2>/dev/null)
-      pkill -KILL -P "$p" 2>/dev/null; kill -KILL "$p" 2>/dev/null
+      [ -n "$p" ] && kill_tree "$p"
+      sleep 2   # the kernel frees its ports
       eval "silent_$name=0"
     elif healthy "$name"; then
       continue   # answering, though not started here (an old app): leave it
@@ -171,6 +178,7 @@ while :; do
     restarts=$((restarts + 1))
     [ $restarts -gt 5 ] && give_up "pieces keep dying"
     log "$name stopped; starting it again (restart $restarts)"
-    start_piece "$name" || give_up "couldn't restart $name"
+    # a second try before giving up: a port the dead process held can take a few seconds to come free
+    start_piece "$name" || { log "$name didn't start; trying once more in 15 s"; sleep 15; start_piece "$name"; } || give_up "couldn't restart $name"
   done
 done
