@@ -1,0 +1,18 @@
+{
+ "scenario": "the trading host of cell b stopped; its front door stayed up",
+ "run": "10102035",
+ "customers": 8,
+ "orders_tried": 1105,
+ "orders_acknowledged": 294,
+ "orders_by_status": {
+  "201": 294,
+  "503": 581,
+  "401": 230
+ },
+ "acknowledged_while_replication_paused": 132,
+ "acknowledged_after_the_fault": 14,
+ "missing_after_takeover": 0,
+ "applied_twice": 0,
+ "seconds_until_orders_succeed_again": 813,
+ "missing_keys": []
+}

@@ -245,3 +245,39 @@ a cell that has stopped writing is safe to take over.
 bigger outage than the slowness did. Taking over safely needs proof that the other side has stopped,
 not just that it has gone quiet. This is the singleton lesson from 2026-09 again: two copies of a
 scheduler are worse than none.
+
+## 2026-10-09: a cell that was taken over came back and went on serving, for ten hours
+
+**Impact.** For about ten hours, cell A (the phone) ran on its own database while the laptop also ran it, on the promoted
+copy. No customer was affected: nobody signed in or signed up in that time. Both copies went on running their own
+schedulers and demo bots, so each booked its own system-generated orders (the 299 on the phone's copy were 137 goal
+round-up sweeps, 132 demo-bot orders and 30 plan purchases; the laptop's copy had 302 and 147 mandate debits, the
+phone's 147) and the two databases drifted apart.
+
+**Timeline (UTC).**
+
+1. **2026-10-09 16:55.** The phone's public address stops answering (the tunnel's connection dropped). The phone fences
+   itself at 16:56:54, after 60 s, as designed.
+2. **16:57:50.** The laptop counts the phone as lost (silent for 2 minutes) and starts taking cell A over.
+3. **16:57:59.** The phone's address answers again. The phone sees that the laptop is *not yet* holding it (the laptop needs
+   about 40 more seconds to promote its copy), so it **unfences itself** and goes back to NORMAL.
+4. **16:58:27.** The laptop is HOLDING cell A. The phone never looks at that again: a cell in NORMAL only ever checks
+   itself. Both cells now take writes for cell A's customers, whichever one a request reaches.
+5. **2026-10-10 03:20.** The tunnel drops again; the phone fences, and this time sees that the laptop holds it. That
+   ended the split. It was found at 14:52, when a new test found the phone in TAKEN_OVER.
+6. **Repair.** Failback: the laptop's copy became the phone's database, and the phone's own was archived (not merged).
+   The 299 orders on it are scheduled and demo-bot work.
+
+**Root cause.** Two rules about a returning cell were each reasonable alone. It unfenced as soon as its address answered and
+the other cell was not yet holding it, and it only looked for being held while it was fenced. Together they leave a gap
+of the length of a takeover (a minute) in which the returning cell concludes that nothing happened.
+
+**What changed.**
+
+- A cell in **any** state that sees the other cell holding its customers fences itself and becomes TAKEN_OVER.
+- A fenced cell unfences only after staying healthy for **210 s** (the 120 s the other cell waits to decide, plus 90 s to
+  promote), and never while the other cell holds it.
+- CHAOS-17 (a tunnel that drops for 3 minutes and returns) is on the plan, to reproduce it on purpose.
+
+**Lesson.** A cell that was replaced must find out that it was replaced. After losing contact, the only safe default is to
+stay out of service until the other side says it is fine, not until the lost side thinks it is.
