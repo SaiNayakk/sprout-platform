@@ -15,9 +15,12 @@ and acts on what it sees:
               FENCE_AFTER, so it has fenced itself by then), or it answers but neither its services nor its
               status have been healthy for SICK_TAKEOVER_AFTER (600 s, longer than SICK_FENCE_AFTER). An
               overloaded cell is slow, not lost: taking it over at 120 s made two cells serve one (2026-10-09).
-  FENCED      no customer writes here (the gateway refuses them while FENCE_FILE exists). When the
-              public address answers and the services are up again: if the other cell is holding this cell's
-              customers -> TAKEN_OVER, else -> NORMAL
+  FENCED      no customer writes here (the gateway refuses them while FENCE_FILE exists). If the other cell is
+              holding this cell's customers -> TAKEN_OVER. Else, once the public address has answered and the
+              services been up for UNFENCE_AFTER (210 s: longer than the other cell needs to decide and promote)
+              -> NORMAL
+  Any state with the other cell holding this one's customers -> TAKEN_OVER, fenced: a cell that was lost and came back
+  is not the cell any more
   HOLDING     this cell runs the other cell's services on its copy of that cell's database. Stays until failback.
   TAKEN_OVER  this cell's customers are served by the other cell; this cell stays fenced. Stays until failback.
 
@@ -58,6 +61,9 @@ PEER_SERVES = '/api/marketdata/v1/market'   # answers through the other cell's o
 FENCE_AFTER = int(ENV.get('FENCE_AFTER', '60'))
 TAKEOVER_AFTER = int(ENV.get('TAKEOVER_AFTER', '120'))
 SICK_FENCE_AFTER = int(ENV.get('SICK_FENCE_AFTER', '300'))
+# a fenced cell whose address answers again waits this long before it believes nobody took it over: the other cell
+# decides after TAKEOVER_AFTER of silence and then needs about a minute to promote its copy and say so
+UNFENCE_AFTER = int(ENV.get('UNFENCE_AFTER', str(TAKEOVER_AFTER + 90)))
 SICK_TAKEOVER_AFTER = int(ENV.get('SICK_TAKEOVER_AFTER', '600'))
 STATE_FILE = ENV['STATE_FILE']
 
@@ -298,7 +304,7 @@ def main():
     publish_routes(s['state'])
     health = {'local': answers(ENV['LOCAL_CHECK'])}
     threading.Thread(target=heartbeat, args=(s, health), daemon=True).start()
-    self_bad_since = self_sick_since = peer_bad_since = peer_gone_since = None
+    self_bad_since = self_sick_since = peer_bad_since = peer_gone_since = self_good_since = None
     quiet_peer_logged = False
     log(f'watching (state {s["state"]})')
     while True:
@@ -326,13 +332,23 @@ def main():
         quiet_peer_logged = peer_serving
         self_bad_since = None if self_ok else (self_bad_since or now)
         self_sick_since = None if local_ok else (self_sick_since or now)
+        self_good_since = (self_good_since or now) if (self_ok and local_ok) else None
+        peer_holds_me = bool(peer_fresh and isinstance(peer, dict) and peer.get('holding') == CELL)
         peer_bad_since = None if (peer_ok or peer_serving) else (peer_bad_since or now)
         peer_gone_since = None if code == 200 else (peer_gone_since or now)   # its address didn't answer at all
         peer_lost = ((peer_gone_since and now - peer_gone_since >= TAKEOVER_AFTER)
                      or (peer_bad_since and now - peer_bad_since >= SICK_TAKEOVER_AFTER))
         state = s['state']
         try:
-            if state == 'NORMAL':
+            if state == 'NORMAL' and peer_holds_me:
+                # The other cell took this one over while it looked lost, and this one has since come back (2026-10-09:
+                # it unfenced itself 65 s after fencing, before the takeover finished, and went on taking writes for ten
+                # hours beside the copy that had become the cell). Whatever its own state, it is no longer the cell.
+                fence(True)
+                s['state'] = 'TAKEN_OVER'
+                publish_routes('TAKEN_OVER')
+                log(f'cell {PEER} holds this cell\'s customers: fenced, staying fenced until failback')
+            elif state == 'NORMAL':
                 if ((self_bad_since and now - self_bad_since >= FENCE_AFTER)
                         or (self_sick_since and now - self_sick_since >= SICK_FENCE_AFTER)):
                     fence(True)
@@ -348,14 +364,13 @@ def main():
                             log(f'taking cell {PEER} over failed: {e}; trying again in ten minutes')
                             s['retry_after'] = now + 600
             elif state == 'FENCED':
-                if self_ok and local_ok:
-                    if peer_fresh and peer.get('holding') == CELL:
-                        s['state'] = 'TAKEN_OVER'
-                        publish_routes('TAKEN_OVER')
-                        log(f'cell {PEER} holds this cell\'s customers: staying fenced until failback')
-                    else:
-                        fence(False)
-                        s['state'] = 'NORMAL'
+                if peer_holds_me:
+                    s['state'] = 'TAKEN_OVER'
+                    publish_routes('TAKEN_OVER')
+                    log(f'cell {PEER} holds this cell\'s customers: staying fenced until failback')
+                elif self_good_since and now - self_good_since >= UNFENCE_AFTER:
+                    fence(False)
+                    s['state'] = 'NORMAL'
             save_state(s)
         except Exception as e:
             log(f'error in state {state}: {e}')
