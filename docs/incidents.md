@@ -245,3 +245,57 @@ a cell that has stopped writing is safe to take over.
 bigger outage than the slowness did. Taking over safely needs proof that the other side has stopped,
 not just that it has gone quiet. This is the singleton lesson from 2026-09 again: two copies of a
 scheduler are worse than none.
+
+## 2026-10-09: a cell that was taken over came back and went on serving, for ten hours
+
+**Impact.** For about ten hours, cell A (the phone) ran on its own database while the laptop also ran it, on the promoted
+copy. No customer was affected: nobody signed in or signed up in that time. Both copies went on running their own
+schedulers and demo bots, so each booked its own system-generated orders (the 299 on the phone's copy were 137 goal
+round-up sweeps, 132 demo-bot orders and 30 plan purchases; the laptop's copy had 302 and 147 mandate debits, the
+phone's 147) and the two databases drifted apart.
+
+**Timeline (UTC).**
+
+1. **2026-10-09 16:55.** The phone's public address stops answering (the tunnel's connection dropped). The phone fences
+   itself at 16:56:54, after 60 s, as designed.
+2. **16:57:50.** The laptop counts the phone as lost (silent for 2 minutes) and starts taking cell A over.
+3. **16:57:59.** The phone's address answers again. The phone sees that the laptop is *not yet* holding it (the laptop needs
+   about 40 more seconds to promote its copy), so it **unfences itself** and goes back to NORMAL.
+4. **16:58:27.** The laptop is HOLDING cell A. The phone never looks at that again: a cell in NORMAL only ever checks
+   itself. Both cells now take writes for cell A's customers, whichever one a request reaches.
+5. **2026-10-10 03:20.** The tunnel drops again; the phone fences, and this time sees that the laptop holds it. That
+   ended the split. It was found at 14:52, when a new test found the phone in TAKEN_OVER.
+6. **Repair.** Failback: the laptop's copy became the phone's database, and the phone's own was archived (not merged).
+   The 299 orders on it are scheduled and demo-bot work.
+
+**Root cause.** Two rules about a returning cell were each reasonable alone. It unfenced as soon as its address answered and
+the other cell was not yet holding it, and it only looked for being held while it was fenced. Together they leave a gap
+of the length of a takeover (a minute) in which the returning cell concludes that nothing happened.
+
+**What changed.**
+
+- A cell in **any** state that sees the other cell holding its customers fences itself and becomes TAKEN_OVER.
+- A fenced cell unfences only after staying healthy for **210 s** (the 120 s the other cell waits to decide, plus 90 s to
+  promote), and never while the other cell holds it.
+- [CHAOS-17](testing/chaos.md#chaos-17) reproduces it on purpose: the returning cell now stays out.
+
+**Lesson.** A cell that was replaced must find out that it was replaced. After losing contact, the only safe default is to
+stay out of service until the other side says it is fine, not until the lost side thinks it is.
+
+## 2026-10-10: one failed restart stopped all of Sprout on the phone for ten minutes
+
+**Impact.** Found by a test (CHAOS-17), not by a customer. With the phone's web server frozen, the starter killed it, could
+not start it again, and stopped every piece of Sprout on the phone, waiting ten minutes before starting them one by one. The cell
+was down for about twelve minutes. The laptop was already holding its customers by then.
+
+**Cause.** The starter's liveness check killed the hung nginx's master and its direct children. nginx's workers are children
+of the master, so they were orphaned and kept running, holding port 8180. The new nginx could not bind it, `run.sh` exited,
+and the starter's rule for a Sprout piece that will not restart is to give up on everything and try again later, so that a
+crash loop cannot reboot the phone in a loop (2026-10-08).
+
+**What changed.** The starter kills a hung piece's whole process tree, deepest first, and waits two seconds for the kernel
+to free its ports. A failed restart gets one more try after 15 s before it gives up. With that, the same freeze ended in a
+restart of the web server in two seconds.
+
+**Lesson.** A rule that is safe for a crash loop (give up, wait) is wrong for the first failure; the second attempt costs nothing.
+Killing a process is not the same as freeing what it held.

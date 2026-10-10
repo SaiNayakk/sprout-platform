@@ -401,7 +401,8 @@ How, in order:
    been failing for five minutes. The other cell counts it as lost only when its public address hasn't answered at
    all for two minutes (by then it has fenced itself), or when it has answered but been unable to serve for ten.
    A slow cell is not a lost one: taking over an overloaded cell at two minutes once had two cells serving the same
-   customers ([incident](incidents.md)). Then the other cell promotes its copy (sequences are moved past every replicated id, since logical replication doesn't carry
+   customers ([incident](incidents.md)). A fenced cell that comes back stays fenced for another 210 s and never
+   unfences while the other cell holds it, and a cell in any state that finds itself held fences at once. Then the other cell promotes its copy (sequences are moved past every replicated id, since logical replication doesn't carry
    them), starts the failed cell's services on it with the failed cell's own keys (sessions keep working), and
    replays the journal. A replayed write that had already replicated is recognised by its key and ignored; one that
    hadn't is applied. Then the router sends the failed cell's customers there.

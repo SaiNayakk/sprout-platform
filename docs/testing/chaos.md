@@ -233,6 +233,90 @@ the highest id" found nothing to look at. It and the sandbox's `demo_account_num
 used values looked up. After a repair and another replay: 16 applied, 0 failed. None of the 17 had been
 acknowledged: their first attempts had failed too, so no customer had been told they succeeded.
 
+## CHAOS-16: one service in a cell fails, and the other cell takes over { #chaos-16 }
+
+| | |
+|---|---|
+| **Steady state** | Both cells healthy and replicating; eight customers in cell B (the laptop) place market orders through the public address, each with its own idempotency key. |
+| **Fault** | The laptop's *trading* host (orders, funds, market data) stops. Its web server, gateway and the bank stay up, so the cell's front door still answers. |
+| **Hypothesis** | The cell is not "lost", only part-broken, so the rules are slower than for a whole cell ([ADR-027](../decisions.md#adr-027-cells)): it fences itself after 5 minutes of failing, and the phone takes it over after 10. Every order the laptop acknowledged is in the phone's copy exactly once. A host that comes back by itself is never taken over. |
+| **Method** | [`deploy/cells/chaos16.py`](https://github.com/SaiNayakk/sprout-platform/blob/main/deploy/cells/chaos16.py). Every 5 s a probe, as a customer of cell B, calls one route behind each host and reads both cells' published state. Every acknowledged order is written down as it happens, then looked for in the database that serves cell B afterwards. `--mode stop` leaves the host down; `--mode kill` makes the JVM exit and lets Docker's restart policy bring it back. |
+
+**The host stays down** (replication from cell B paused for the last 60 s, so its newest orders exist only in the journal):
+
+![What a customer of cell B saw, second by second, while its trading host stayed down](../assets/capacity/chaos16-stays-down.svg)
+
+| After the fault | What happened |
+|---|---|
+| 2 s | The three routes behind the trading host answer `503` at once; the bank route keeps answering. Cell B publishes itself as sick. |
+| 321 s | Cell B **fences itself**: it takes no more writes. |
+| 609 s | The phone counts cell B as lost (10 minutes unable to serve) and starts the takeover. |
+| 725 s | The phone's copy of cell B's customers is promoted and its standby is up (116 s; slower than the usual 30 to 60 s). |
+| 810 s | The journal is replayed: 968 writes, 315 applied, 605 already there (their keys), 48 refused, **0 failed**. |
+| 813 s | **Orders succeed again.** The phone is HOLDING, and the laptop turns TAKEN_OVER. |
+
+| | |
+|---|---|
+| Orders acknowledged | 294 |
+| ...of them only in the journal (replication paused) | 132 |
+| **Missing after the takeover** | **0** |
+| **Applied twice** | **0** |
+| Orders succeed again after the fault | 813 s |
+
+During those 13.5 minutes the customers of cell B could browse the bank but could not trade: 581 of the test's order attempts got a `503`. The gateway answered fast each time (its circuit opens), so nothing hung. The wait is the price of the rule that slow is not lost; see the incidents of 2026-10-09 in [Incidents](../incidents.md).
+
+**The host crashes and comes back** (the usual real failure):
+
+![The same cell, when the host restarts by itself](../assets/capacity/chaos16-self-heals.svg)
+
+| | |
+|---|---|
+| Orders acknowledged | 425 of 439 attempts |
+| Errors | 13 `503` (customers retry with the same key, so each order was acknowledged once) |
+| Orders succeed again after the fault | **27 s** |
+| States seen | Cell B: NORMAL, briefly NORMAL/sick. **Cell A: NORMAL throughout.** No fence, no takeover. |
+| Missing / applied twice | **0 / 0** |
+
+**What the runs taught**
+
+- A whole cell takes 2 to 5 minutes to replace ([CHAOS-12](#chaos-12)); one dead host takes 13.5, because it is slow rather than silent. Either way the customers lose trading for most of that time. What shortens it is the host coming back by itself (27 s here); failover is for a host that does not.
+- Docker's restart policy ignores a container stopped by `docker kill` (a manual stop). The first attempt at the crash test left the host down for 5 minutes; a real crash, or the JVM exiting, is restarted.
+- A returning cell has to wait before it unfences: after the host was started again, cell B stayed fenced for the 210 s the rule asks for (longer than the other cell needs to decide and promote) and then went NORMAL by itself.
+- The test's own customers' tokens lapse after 15 minutes. They now sign in again on a `401`, as the app does.
+
+## CHAOS-17: a cell's address goes silent, the other cell takes over, and the first comes back { #chaos-17 }
+
+| | |
+|---|---|
+| **Steady state** | Both cells healthy and replicating; eight customers in cell A (the phone) place market orders through the public address, each with its own idempotency key. |
+| **Fault** | The phone's web server is frozen (SIGSTOP) for 170 s: its public address stops answering while its process stays up. This is what a dropped tunnel looks like to the rest of the system, and what happened for real on 2026-10-09 ([incident](../incidents.md)). |
+| **Hypothesis** | The phone fences itself, the laptop takes cell A over, and the phone, back before the laptop has finished, **stays out of service** and ends TAKEN_OVER, never going back to NORMAL. Only one database takes cell A's writes after the takeover, and no acknowledged order is lost or doubled. |
+| **Method** | [`deploy/cells/chaos17.py`](https://github.com/SaiNayakk/sprout-platform/blob/main/deploy/cells/chaos17.py): both cells' published state every 5 s, every acknowledged order written down, then looked for in the laptop's copy; the phone's own database is asked whether it took any of those orders after the laptop began holding. `--verify RUN` repeats the checks on a finished run's files. |
+
+![The phone goes silent, comes back, and is held by the laptop](../assets/capacity/chaos17-returns.svg)
+
+| Seconds after the freeze (from the cells' logs) | |
+|---|---|
+| 60 | The phone **fences itself**. |
+| 127 | The laptop counts the phone as lost (silent for 2 minutes) and starts taking cell A over. |
+| 143 | The phone's starter, seeing the web server hung, kills it and starts it again; **the phone answers again**. It is fenced, and the laptop has not finished. |
+| 163 | The laptop's standby is up. |
+| 177 | The journal is replayed: 2,168 writes, 2,096 already there, 72 refused, **0 failed**. |
+| 178 | The laptop is HOLDING cell A, and the phone, still fenced, becomes TAKEN_OVER. |
+
+The phone was back for 35 s before the laptop was done. In that window the earlier rule unfenced the phone, which is how the split of 2026-10-09 began. Now it stayed fenced and went straight to TAKEN_OVER.
+
+| | |
+|---|---|
+| Orders acknowledged | 517 of 566 attempts (33 `503`, 16 unanswered while the phone was silent) |
+| **Missing from the laptop's copy** | **0** |
+| **Applied twice** | **0** |
+| **Phone's own database: orders taken after the laptop held** | **0** |
+| Phone went back to NORMAL after fencing | **No** |
+| Final state | Phone TAKEN_OVER with its fence in place; laptop HOLDING |
+
+**The first run found a second bug.** With the starter as it was, the phone's starter killed the frozen nginx master as hung and tried to start it again, and **could not**: the master's two workers were orphaned, not killed with it, and still held the port. One failed restart made the starter give up on all of Sprout and stop it for ten minutes. The phone did not come back until twelve minutes later, long after the laptop had taken over (that run still passed its checks: 2,069 orders, 0 missing, 0 doubled, 0 taken by the phone). The starter now kills a hung piece's whole process tree and tries a failed restart once more before giving up ([incident](../incidents.md)).
+
 ## SETTLE-01: a trading day settles T+1 { #settle-01 }
 
 Not a fault but the whole of settlement, run near the end, after the experiments above have stopped
@@ -273,3 +357,14 @@ SQL checks above read from their databases.
 | CHAOS-13 | The market clock stalls (engine thread stuck) | Health turns `DOWN` within 30 s; the host is restarted; clients resync |
 | CHAOS-14 | The order service is down when the exchange executes a resting order | The exchange keeps the execution and retries; once orders is back, it is booked exactly once |
 | CHAOS-15 | Identity's context crashes inside the edge host | Gateway answers `503` fast; circuit opens after repeated failures and closes after recovery |
+| CHAOS-16 | One host of a cell stops while its front door stays up | Done: see [CHAOS-16](#chaos-16) |
+| CHAOS-17 | A cell's address goes silent for nearly 3 minutes, then returns | Done: see [CHAOS-17](#chaos-17) |
+| CHAOS-18 | Both cells lose the internet at once, then get it back | Both fence; neither takes the other over; both unfence after staying healthy for 3.5 minutes; nothing is lost or doubled |
+| CHAOS-19 | A tunnel flaps: 30 s down every 2 minutes for 20 minutes | No fence, no takeover, no routing flip-flop; customers see short errors only |
+| CHAOS-20 | Replication stops for 30 minutes, then the cell is lost | The journal covers the gap; the lost cell's WAL on the surviving side stays bounded (no full disk) |
+| CHAOS-21 | The other cell is unreachable for the journal, then this cell is lost | The writes made meanwhile are counted as "unprotected", and the number lost never exceeds that count |
+| CHAOS-22 | One cell lost while both are loaded to their promised capacity | The survivor serves both cells' customers within the target; if it can't, the measured number replaces the estimate in [Capacity](../reliability/capacity.md) |
+| CHAOS-23 | The phone reboots (power, Android) while the laptop holds its customers | The phone starts piece by piece, comes back fenced, and takes nothing until failback |
+| CHAOS-24 | A takeover lands on a day a plan is due (the 5th) and across a settlement | Each plan buys once and each settlement runs once across the takeover |
+| CHAOS-25 | One host answers every request after 8 s (injected delay) | Customers get a fast `503`, not a hang; the cell is neither fenced nor taken over inside its limits |
+| CHAOS-26 | A forged cell key, replay or client address reaches the journal and replay endpoints | Refused; nothing is written |

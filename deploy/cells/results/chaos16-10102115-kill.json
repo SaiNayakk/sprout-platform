@@ -1,0 +1,28 @@
+{
+ "scenario": "the trading host of cell b was killed and restarted by itself; its front door stayed up",
+ "run": "10102115",
+ "mode": "kill",
+ "cell_states_seen": {
+  "a": [
+   "NORMAL"
+  ],
+  "b": [
+   "NORMAL",
+   "NORMAL/sick"
+  ]
+ },
+ "customers": 8,
+ "orders_tried": 439,
+ "orders_acknowledged": 425,
+ "orders_by_status": {
+  "201": 425,
+  "503": 13,
+  "429": 1
+ },
+ "acknowledged_while_replication_paused": 0,
+ "acknowledged_after_the_fault": 167,
+ "missing_after_takeover": 0,
+ "applied_twice": 0,
+ "seconds_until_orders_succeed_again": 27,
+ "missing_keys": []
+}

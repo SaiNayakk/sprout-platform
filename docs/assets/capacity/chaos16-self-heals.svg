@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 312" font-family="system-ui, sans-serif" font-size="12">
+<rect width="760" height="312" fill="#fff"/>
+<text x="88" y="67" text-anchor="end" fill="#333">market (trading)</text>
+<rect x="96.0" y="52" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="111.9" y="52" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="127.8" y="52" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="146.4" y="52" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="162.3" y="52" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="178.2" y="52" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="194.1" y="52" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="212.6" y="52" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="228.5" y="52" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="244.4" y="52" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="260.3" y="52" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="276.2" y="52" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="294.8" y="52" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="310.7" y="52" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="326.6" y="52" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="345.1" y="52" width="31.8" height="22" fill="#2f7d4f"/>
+<rect x="376.9" y="52" width="29.2" height="22" fill="#2f7d4f"/>
+<rect x="406.1" y="52" width="50.4" height="22" fill="#2f7d4f"/>
+<rect x="456.4" y="52" width="34.5" height="22" fill="#2f7d4f"/>
+<rect x="490.9" y="52" width="31.8" height="22" fill="#2f7d4f"/>
+<rect x="522.7" y="52" width="45.1" height="22" fill="#2f7d4f"/>
+<rect x="567.7" y="52" width="37.1" height="22" fill="#2f7d4f"/>
+<rect x="604.8" y="52" width="37.1" height="22" fill="#2f7d4f"/>
+<rect x="641.9" y="52" width="29.2" height="22" fill="#2f7d4f"/>
+<rect x="671.1" y="52" width="53.0" height="22" fill="#2f7d4f"/>
+<rect x="724.1" y="52" width="15.9" height="22" fill="#2f7d4f"/>
+<text x="88" y="95" text-anchor="end" fill="#333">orders (trading)</text>
+<rect x="96.0" y="80" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="111.9" y="80" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="127.8" y="80" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="146.4" y="80" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="162.3" y="80" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="178.2" y="80" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="194.1" y="80" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="212.6" y="80" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="228.5" y="80" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="244.4" y="80" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="260.3" y="80" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="276.2" y="80" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="294.8" y="80" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="310.7" y="80" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="326.6" y="80" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="345.1" y="80" width="31.8" height="22" fill="#2f7d4f"/>
+<rect x="376.9" y="80" width="29.2" height="22" fill="#2f7d4f"/>
+<rect x="406.1" y="80" width="50.4" height="22" fill="#2f7d4f"/>
+<rect x="456.4" y="80" width="34.5" height="22" fill="#c2410c"/>
+<rect x="490.9" y="80" width="31.8" height="22" fill="#2f7d4f"/>
+<rect x="522.7" y="80" width="45.1" height="22" fill="#2f7d4f"/>
+<rect x="567.7" y="80" width="37.1" height="22" fill="#2f7d4f"/>
+<rect x="604.8" y="80" width="37.1" height="22" fill="#2f7d4f"/>
+<rect x="641.9" y="80" width="29.2" height="22" fill="#2f7d4f"/>
+<rect x="671.1" y="80" width="53.0" height="22" fill="#2f7d4f"/>
+<rect x="724.1" y="80" width="15.9" height="22" fill="#2f7d4f"/>
+<text x="88" y="123" text-anchor="end" fill="#333">funds (trading)</text>
+<rect x="96.0" y="108" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="111.9" y="108" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="127.8" y="108" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="146.4" y="108" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="162.3" y="108" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="178.2" y="108" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="194.1" y="108" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="212.6" y="108" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="228.5" y="108" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="244.4" y="108" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="260.3" y="108" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="276.2" y="108" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="294.8" y="108" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="310.7" y="108" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="326.6" y="108" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="345.1" y="108" width="31.8" height="22" fill="#2f7d4f"/>
+<rect x="376.9" y="108" width="29.2" height="22" fill="#2f7d4f"/>
+<rect x="406.1" y="108" width="50.4" height="22" fill="#c2410c"/>
+<rect x="456.4" y="108" width="34.5" height="22" fill="#c2410c"/>
+<rect x="490.9" y="108" width="31.8" height="22" fill="#2f7d4f"/>
+<rect x="522.7" y="108" width="45.1" height="22" fill="#2f7d4f"/>
+<rect x="567.7" y="108" width="37.1" height="22" fill="#2f7d4f"/>
+<rect x="604.8" y="108" width="37.1" height="22" fill="#2f7d4f"/>
+<rect x="641.9" y="108" width="29.2" height="22" fill="#2f7d4f"/>
+<rect x="671.1" y="108" width="53.0" height="22" fill="#2f7d4f"/>
+<rect x="724.1" y="108" width="15.9" height="22" fill="#2f7d4f"/>
+<text x="88" y="151" text-anchor="end" fill="#333">bank (street)</text>
+<rect x="96.0" y="136" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="111.9" y="136" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="127.8" y="136" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="146.4" y="136" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="162.3" y="136" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="178.2" y="136" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="194.1" y="136" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="212.6" y="136" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="228.5" y="136" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="244.4" y="136" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="260.3" y="136" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="276.2" y="136" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="294.8" y="136" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="310.7" y="136" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="326.6" y="136" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="345.1" y="136" width="31.8" height="22" fill="#2f7d4f"/>
+<rect x="376.9" y="136" width="29.2" height="22" fill="#2f7d4f"/>
+<rect x="406.1" y="136" width="50.4" height="22" fill="#2f7d4f"/>
+<rect x="456.4" y="136" width="34.5" height="22" fill="#2f7d4f"/>
+<rect x="490.9" y="136" width="31.8" height="22" fill="#2f7d4f"/>
+<rect x="522.7" y="136" width="45.1" height="22" fill="#2f7d4f"/>
+<rect x="567.7" y="136" width="37.1" height="22" fill="#2f7d4f"/>
+<rect x="604.8" y="136" width="37.1" height="22" fill="#2f7d4f"/>
+<rect x="641.9" y="136" width="29.2" height="22" fill="#2f7d4f"/>
+<rect x="671.1" y="136" width="53.0" height="22" fill="#2f7d4f"/>
+<rect x="724.1" y="136" width="15.9" height="22" fill="#2f7d4f"/>
+<text x="88" y="179" text-anchor="end" fill="#333">cell B (laptop)</text>
+<rect x="96.0" y="164" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="111.9" y="164" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="127.8" y="164" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="146.4" y="164" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="162.3" y="164" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="178.2" y="164" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="194.1" y="164" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="212.6" y="164" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="228.5" y="164" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="244.4" y="164" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="260.3" y="164" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="276.2" y="164" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="294.8" y="164" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="310.7" y="164" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="326.6" y="164" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="345.1" y="164" width="31.8" height="22" fill="#2f7d4f"/>
+<rect x="376.9" y="164" width="29.2" height="22" fill="#2f7d4f"/>
+<rect x="406.1" y="164" width="50.4" height="22" fill="#d4a017"/>
+<rect x="456.4" y="164" width="34.5" height="22" fill="#d4a017"/>
+<rect x="490.9" y="164" width="31.8" height="22" fill="#2f7d4f"/>
+<rect x="522.7" y="164" width="45.1" height="22" fill="#2f7d4f"/>
+<rect x="567.7" y="164" width="37.1" height="22" fill="#2f7d4f"/>
+<rect x="604.8" y="164" width="37.1" height="22" fill="#2f7d4f"/>
+<rect x="641.9" y="164" width="29.2" height="22" fill="#2f7d4f"/>
+<rect x="671.1" y="164" width="53.0" height="22" fill="#2f7d4f"/>
+<rect x="724.1" y="164" width="15.9" height="22" fill="#2f7d4f"/>
+<text x="88" y="207" text-anchor="end" fill="#333">cell A (phone)</text>
+<rect x="96.0" y="192" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="111.9" y="192" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="127.8" y="192" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="146.4" y="192" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="162.3" y="192" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="178.2" y="192" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="194.1" y="192" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="212.6" y="192" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="228.5" y="192" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="244.4" y="192" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="260.3" y="192" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="276.2" y="192" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="294.8" y="192" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="310.7" y="192" width="15.9" height="22" fill="#2f7d4f"/>
+<rect x="326.6" y="192" width="18.6" height="22" fill="#2f7d4f"/>
+<rect x="345.1" y="192" width="31.8" height="22" fill="#2f7d4f"/>
+<rect x="376.9" y="192" width="29.2" height="22" fill="#2f7d4f"/>
+<rect x="406.1" y="192" width="50.4" height="22" fill="#2f7d4f"/>
+<rect x="456.4" y="192" width="34.5" height="22" fill="#2f7d4f"/>
+<rect x="490.9" y="192" width="31.8" height="22" fill="#2f7d4f"/>
+<rect x="522.7" y="192" width="45.1" height="22" fill="#2f7d4f"/>
+<rect x="567.7" y="192" width="37.1" height="22" fill="#2f7d4f"/>
+<rect x="604.8" y="192" width="37.1" height="22" fill="#2f7d4f"/>
+<rect x="641.9" y="192" width="29.2" height="22" fill="#2f7d4f"/>
+<rect x="671.1" y="192" width="53.0" height="22" fill="#2f7d4f"/>
+<rect x="724.1" y="192" width="15.9" height="22" fill="#2f7d4f"/>
+<line x1="96.0" x2="96.0" y1="48" y2="220" stroke="#d1d5db" stroke-dasharray="2 3"/>
+<text x="96.0" y="234" text-anchor="middle" fill="#555">-2 min</text>
+<line x1="255.0" x2="255.0" y1="48" y2="220" stroke="#d1d5db" stroke-dasharray="2 3"/>
+<text x="255.0" y="234" text-anchor="middle" fill="#555">-1 min</text>
+<line x1="414.0" x2="414.0" y1="48" y2="220" stroke="#d1d5db" stroke-dasharray="2 3"/>
+<text x="414.0" y="234" text-anchor="middle" fill="#555">fault</text>
+<line x1="573.0" x2="573.0" y1="48" y2="220" stroke="#d1d5db" stroke-dasharray="2 3"/>
+<text x="573.0" y="234" text-anchor="middle" fill="#555">1 min</text>
+<line x1="732.0" x2="732.0" y1="48" y2="220" stroke="#d1d5db" stroke-dasharray="2 3"/>
+<text x="732.0" y="234" text-anchor="middle" fill="#555">2 min</text>
+<line x1="485.6" x2="485.6" y1="48" y2="220" stroke="#141833" stroke-width="1.5"/>
+<text x="489.6" y="42" text-anchor="start" fill="#141833" font-weight="600">orders work again</text>
+<rect x="96" y="266" width="12" height="12" fill="#2f7d4f"/><text x="113" y="276" fill="#333">200 / NORMAL</text>
+<rect x="208.2" y="266" width="12" height="12" fill="#c2410c"/><text x="225.2" y="276" fill="#333">503 (host down)</text>
+<rect x="340.2" y="266" width="12" height="12" fill="#d4a017"/><text x="357.2" y="276" fill="#333">sick</text>
+<rect x="399.59999999999997" y="266" width="12" height="12" fill="#b4432f"/><text x="416.59999999999997" y="276" fill="#333">fenced</text>
+<rect x="472.19999999999993" y="266" width="12" height="12" fill="#1d4ed8"/><text x="489.19999999999993" y="276" fill="#333">holding</text>
+<rect x="551.3999999999999" y="266" width="12" height="12" fill="#7c3aed"/><text x="568.3999999999999" y="276" fill="#333">taken over</text>
+<rect x="96" y="286" width="12" height="12" fill="#4b5563"/><text x="113" y="296" fill="#333">no answer</text>
+<rect x="188.4" y="286" width="12" height="12" fill="#9ca3af"/><text x="205.4" y="296" fill="#333">401: test token lapsed</text>
+</svg>
