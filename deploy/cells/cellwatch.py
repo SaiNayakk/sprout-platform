@@ -66,6 +66,13 @@ SICK_FENCE_AFTER = int(ENV.get('SICK_FENCE_AFTER', '300'))
 UNFENCE_AFTER = int(ENV.get('UNFENCE_AFTER', str(TAKEOVER_AFTER + 90)))
 SICK_TAKEOVER_AFTER = int(ENV.get('SICK_TAKEOVER_AFTER', '600'))
 STATE_FILE = ENV['STATE_FILE']
+# Fault injection for chaos tests: while this file exists, this cell cannot see the other one (every request to its
+# address fails), though nothing on the network is touched. `touch` it to partition, remove it to heal.
+PARTITION_FILE = ENV.get('PARTITION_FILE', os.path.join(os.path.dirname(STATE_FILE) or '.', 'partition'))
+
+
+def partitioned(url):
+    return url.startswith(ENV['PEER_URL']) and os.path.exists(PARTITION_FILE)
 
 
 def log(msg):
@@ -77,6 +84,8 @@ def log(msg):
 
 
 def get_json(url, timeout=5):
+    if partitioned(url):
+        return 0, None
     try:
         req = urllib.request.Request(url, headers={'Cache-Control': 'no-cache', 'User-Agent': 'sprout-cellwatch'})
         with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -88,6 +97,8 @@ def get_json(url, timeout=5):
 
 
 def answers(url, timeout=5):
+    if partitioned(url):
+        return False
     try:
         with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'sprout-cellwatch'}), timeout=timeout) as r:
             return r.status == 200
