@@ -46,3 +46,33 @@ The changes, in the order they should land. Each is tested by the experiment abo
 9. **Housekeeping:** a WAL cap with automatic resync, retention for archives and dumps, a monitored clock, a LAN path between the cells as a second route for health and forwarding.
 10. **Boot resilience:** the laptop signs in and starts Docker by itself and does not restart for updates unannounced; the phone stays plugged in and restarts Sprout after a reboot.
 11. **A standing resilience suite:** every experiment above, plus CHAOS-12, 16 and 17, run as one command with pass or fail, so none of it can regress.
+
+## What came of it
+
+Each finding was fixed, and the fix is tested by one of the scenarios of the [resilience suite](resilience.md).
+
+| Finding | Now |
+|---|---|
+| A cell wrongly taken over never got its customers back | **Failback is automatic**: the cell builds a new database from the holder's copy while the holder keeps serving, then a cutover of about 3 s |
+| Two cells took each other over for good | A cell finds out that it was replaced; when both took each other over, one gives way. The home network can veto a takeover that only Cloudflare asks for |
+| 25 acknowledged orders lost in a false takeover | The journal is replayed for as long as the cell holds the other's customers, not once |
+| Replication could stop silently | The watcher switches it back on within 30 s and alerts; a failed takeover rolls back and re-enables it |
+| A slow peer cut the healthy cell's throughput by 86% | A circuit on the journal call (gateway 0.5.0): 22.7 orders/s against 23.8 |
+| A dead host took 13.5 minutes to replace | The cell fences itself after a minute and says why; the other takes over 30 s later: **orders back in about 3 minutes** |
+| Writes refused for 5.5 minutes after the internet dropped | Both unfence 45 s after it is back |
+| No alerts anywhere | ntfy pushes for every state change and for replication, disk, clock, battery and unprotected writes |
+| Failed journal replays never retried | Retried every few seconds until they succeed |
+| A fixed two-hour replay window | From where the copy last heard from the other cell, out of a three-day journal archive |
+| A takeover blocked the watcher | It runs in a worker, and rolls back if it fails |
+| The holder dying left the cell it held with nobody serving it | The standby journals in the cell it serves; that cell resumes after 5 minutes and replays what was journalled with it |
+| The phone's WAL had no cap; archived databases piled up | A cap of 8 GB, and a retention of the newest three or three days |
+
+## Found while building it
+
+The suite found five more bugs in the new code before they could matter; each is now a unit test or a scenario.
+
+- The first automatic failback put the cell back to TAKEN_OVER 14 s after it finished, because the holder's last status (up to 90 s old) still said it held the cell. A claim now counts only if it was published after the cell last became NORMAL, with a margin for the phone's clock, which runs about 9 s ahead of the laptop's.
+- Databases that cellwatch created on the phone belonged to the OS user, not to the role the services connect as, so the standby could not start (`permission denied for schema oms`).
+- The heartbeat and a failback worker both wrote the status file through the same temporary file name, and one rename lost the race: one failback rolled back.
+- Two fenced cells after a shared outage each waited for the other to be NORMAL before using the fast unfence.
+- A holder whose cellwatch alone survived (answering over the home network that it was not well) stopped the cell it held from resuming: the home network now only vetoes a holder that is *serving*.

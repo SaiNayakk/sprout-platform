@@ -345,6 +345,23 @@ The last check of a run: Sprout's reconciliation service, which runs every day i
 to reconcile now. Every one of its seven checks must pass, reading through the services' APIs what the
 SQL checks above read from their databases.
 
+## The resilience suite { #resilience-suite }
+
+Each scenario starts with both cells NORMAL and replicating, breaks something while customers keep ordering, waits for the
+cells to repair themselves, and passes only if every acknowledged order exists once and both cells end NORMAL and replicating.
+`python deploy/cells/resilience/run.py [scenario ...]`; results in `deploy/cells/results/`. See [Resilience](../reliability/resilience.md).
+
+| Scenario | Fault | Passes when |
+|---|---|---|
+| `dead_host` | the laptop's trading host stops, and later restarts | fenced with a reason; taken over; orders back within 330 s; given back by itself; no pause over 60 s |
+| `kill_cell_a`, `kill_cell_b` | a whole cell is stopped, and later started | orders back within 6 minutes; given back by itself |
+| `cf_blind` | each cell cannot see the other through Cloudflare for 4 minutes; the LAN works | both stay NORMAL; no gap in the orders over 30 s |
+| `mutual_blind` | neither cell can see the other at all for 5.5 minutes | both NORMAL again by themselves |
+| `both_offline` | both addresses silent for 3 minutes | nobody takes anybody over; both unfence within 90 s |
+| `failed_takeover` | a takeover cannot start its standby | rolled back; the replication it paused is on again |
+| `replication_off` | replication switched off silently | switched on again within 90 s; the copy has every order |
+| `holder_dies` | the cell holding the other's customers dies too | the cell it held resumes within 10 minutes; nothing lost |
+
 ## Planned
 
 | Id | Fault | Hypothesis |
@@ -359,12 +376,12 @@ SQL checks above read from their databases.
 | CHAOS-15 | Identity's context crashes inside the edge host | Gateway answers `503` fast; circuit opens after repeated failures and closes after recovery |
 | CHAOS-16 | One host of a cell stops while its front door stays up | Done: see [CHAOS-16](#chaos-16) |
 | CHAOS-17 | A cell's address goes silent for nearly 3 minutes, then returns | Done: see [CHAOS-17](#chaos-17) |
-| CHAOS-18 | Both cells lose the internet at once, then get it back | Both fence; neither takes the other over; both unfence after staying healthy for 3.5 minutes; nothing is lost or doubled |
+| CHAOS-18 | Both cells lose the internet at once, then get it back | Done: `both_offline` in the [resilience suite](#resilience-suite) |
 | CHAOS-19 | A tunnel flaps: 30 s down every 2 minutes for 20 minutes | No fence, no takeover, no routing flip-flop; customers see short errors only |
 | CHAOS-20 | Replication stops for 30 minutes, then the cell is lost | The journal covers the gap; the lost cell's WAL on the surviving side stays bounded (no full disk) |
 | CHAOS-21 | The other cell is unreachable for the journal, then this cell is lost | The writes made meanwhile are counted as "unprotected", and the number lost never exceeds that count |
 | CHAOS-22 | One cell lost while both are loaded to their promised capacity | The survivor serves both cells' customers within the target; if it can't, the measured number replaces the estimate in [Capacity](../reliability/capacity.md) |
-| CHAOS-23 | The phone reboots (power, Android) while the laptop holds its customers | The phone starts piece by piece, comes back fenced, and takes nothing until failback |
+| CHAOS-23 | The phone reboots (power, Android) while the laptop holds its customers | The phone starts piece by piece, comes back fenced, and takes nothing until failback (the phone fell off the network for half an hour on 2026-10-10 and came back by itself; a reboot is not yet tested) |
 | CHAOS-24 | A takeover lands on a day a plan is due (the 5th) and across a settlement | Each plan buys once and each settlement runs once across the takeover |
 | CHAOS-25 | One host answers every request after 8 s (injected delay) | Customers get a fast `503`, not a hang; the cell is neither fenced nor taken over inside its limits |
 | CHAOS-26 | A forged cell key, replay or client address reaches the journal and replay endpoints | Refused; nothing is written |
