@@ -1,0 +1,25 @@
+{
+ "both_normal_after_heal_s": 128,
+ "scenario": "mutual-blind",
+ "orders": {
+  "acknowledged": 939,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+183s A=NORMAL B=TAKING_OVER",
+  "+195s A=TAKING_OVER B=TAKING_OVER",
+  "+237s A=HOLDING B=HOLDING",
+  "+410s A=TAKEN_OVER B=HOLDING",
+  "+414s A=FAILING_BACK B=HOLDING",
+  "+513s A=NORMAL B=HOLDING",
+  "+517s A=NORMAL B=NORMAL"
+ ],
+ "pass": true,
+ "checks": {
+  "both cells are NORMAL again without hands": true
+ }
+}

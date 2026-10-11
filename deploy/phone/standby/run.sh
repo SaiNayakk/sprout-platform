@@ -17,7 +17,9 @@ for svc in IDENTITY SANDBOX OMS PLANS HABITS REWARDS LEDGER ACCOUNTS PAYMENTS SE
   export "${svc}_DB_USER=sprout" "${svc}_DB_PASSWORD=$SPROUT_DB_PASSWORD"
 done
 export GATEWAY_BIND=127.0.0.1 GATEWAY_TRUST_CF_IP=true
-export GATEWAY_CELL_ID=b GATEWAY_CELL_KEY="$CELL_KEY" GATEWAY_CELL_JOURNAL_DIR="$HERE/journal"
+# The standby journals what it accepts in the cell it serves (that cell is up and well when the holder is not the one failing),
+# so a holder that dies leaves a second copy of those writes behind.
+export GATEWAY_CELL_ID=b GATEWAY_CELL_KEY="$CELL_KEY" GATEWAY_CELL_JOURNAL_DIR="$HERE/journal" GATEWAY_CELL_PEER_URL=https://sprout-b-saiworks.nncs.in
 export GATEWAY_CELL_FENCE_FILE="$HOME/sprout/journal/fenced-b"   # failback pauses cell B's writes here while moving them home
 export IDENTITY_SIGNING_KEY_PATH="$HOME/.sprout/keys/b-signing.pem" IDENTITY_DEMO_ENABLED=true
 export MARKETDATA_CLOCK=ACCELERATED MARKETDATA_SPEED=30

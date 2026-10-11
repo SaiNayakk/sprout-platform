@@ -117,12 +117,13 @@ def build_status():
         elif S.get('fb'):
             fb = dict(S['fb'])
         down = sorted(h for h, v in HEALTH['hosts'].items() if v == 'down')
-        peer_ok_since = T.get('peer_ok_since')
+        peer_ok_since = T.get('peer_reach_since')
         return {
             'cell': CELL, 'state': state, 'healthy': bool(HEALTH['local']) and not down,
             'holding': PEER if state == 'HOLDING' else None, 'at': iso(),
             'declared_down': S.get('declared_down'), 'hosts_down': down or None,
             'peer_ok_for': round(now() - peer_ok_since) if peer_ok_since else 0,
+            'resumed_at': S.get('resumed_at') if now() - S.get('resumed_at', 0) < 3600 else None,
             'lan': own_lan_addr(), 'fb': fb,
             'fb_ready': bool(state == 'HOLDING' and S.get('hb_prepared') and not S.get('hb')),
             'repl': {'lag': cw_ops.RT.get('lag'), 'copy': bool(cw_ops.RT.get('copy'))},
@@ -214,7 +215,8 @@ def to_view(raw):
     return PeerView(fresh=True, state=raw.get('state', ''), healthy=bool(raw.get('healthy')), holding=raw.get('holding'),
                     declared_down=bool(raw.get('declared_down')), peer_ok_for=float(raw.get('peer_ok_for') or 0),
                     fb=raw.get('fb'), fb_ready=bool(raw.get('fb_ready')),
-                    at=datetime.datetime.fromisoformat(raw['at']).timestamp())
+                    at=datetime.datetime.fromisoformat(raw['at']).timestamp(),
+                    resumed_at=float(raw.get('resumed_at') or 0))
 
 
 def fetch_cf():
@@ -320,9 +322,11 @@ def observe(t):
         peer_seen=bool(S.get('peer_seen')),
         retry_wait=t < S.get('retry_after', 0),
         normal_at=S.get('normal_at', 0), gave_back_recently=t - S.get('fb_done_at', 0) < 180,
+        holding_since=S.get('holding_since', 0) if S.get('state') == 'HOLDING' else S.get('takeover_started', 0),
     )
     since_of('peer_ok', peer_ok_any, t)
-    T['peer_ok_since'] = T.get('peer_ok')
+    since_of('peer_reach', cf.fresh or lan.fresh, t)    # for the other cell's decision to unfence: it sees this cell
+    T['peer_reach_since'] = T.get('peer_reach')
     return o
 
 
@@ -337,7 +341,7 @@ def act(d, o):
         notify('unfenced', d.reason, 3, 'white_check_mark', key='unfenced')
     elif d.action == 'TAKEN_OVER':
         fence(True)
-        set_state('TAKEN_OVER', declared_down=None)
+        set_state('TAKEN_OVER', declared_down=None, taken_over_at=now())
         publish_routes('TAKEN_OVER')
         notify(f'cell {PEER.upper()} holds this cell', 'fenced; it will be given back automatically', 4, 'warning', key='taken-over')
     elif d.action == 'RESUME':
@@ -345,6 +349,8 @@ def act(d, o):
         set_state('NORMAL', declared_down=None)
         publish_routes('NORMAL')
         notify(f'cell {CELL.upper()} is serving again', d.reason, 3, 'white_check_mark', key='resumed')
+    elif d.action == 'RESUME_STALE':
+        cw_ops.resume_stale(publish_routes, fence)
     elif d.action == 'TAKEOVER':
         if not cw_ops.copy_whole():
             log(f'cell {PEER} looks lost ({d.reason}), but this cell holds no whole copy of it: not taking over')
@@ -405,6 +411,24 @@ def replay_while_holding():
                 f'{r["refused"]} refused, {r["failed"]} failed')
 
 
+def unprotected_writes():
+    """The gateway writes down every write that went ahead without the other cell having it (its journal was slow or away). Those
+    are the only writes a failure of this cell right now could lose: say so, once a minute at most."""
+    import glob
+    # every line of a file touched in the last five minutes (an hour's file holds that hour's, so this over-counts a little)
+    recent = 0
+    for path in glob.glob(os.path.join(ENV['JOURNAL_DIR'], f'unprotected-{CELL}-*.jsonl')):
+        try:
+            if now() - os.path.getmtime(path) < 300:
+                with open(path, encoding='utf-8') as f:
+                    recent += sum(1 for _ in f)
+        except OSError:
+            pass
+    if recent:
+        notify(f'{recent} writes have no copy in the other cell',
+               'its journal has been slow or away: a failure of this cell right now could lose them', 4, 'warning', key='unprotected')
+
+
 def resources():
     """Disk, clock and (on the phone) battery: the quiet ways a cell stops."""
     try:
@@ -443,8 +467,10 @@ def main():
     background(cw_ops.archive_journal, 30)
     background(cw_ops.monitor_once, 30)
     background(replay_while_holding, 5)
+    background(cw_ops.selfreplay_while_active, 5)
     background(cw_ops.maintenance, 3600)
     background(resources, 300)
+    background(unprotected_writes, 60)
     recover_after_restart()
     log(f'watching (state {S["state"]})')
     while True:
@@ -457,6 +483,10 @@ def main():
                 log('the other cell has been healthy for a minute: stopping the takeover')
                 cw_ops.ABORT.set()
             d = decide(state, o, CFG)
+            if not d and state == 'TAKEN_OVER' and t - T.get('dbg', 0) > 60:
+                T['dbg'] = t          # what a taken-over cell is waiting for, once a minute
+                log(f'taken over; waiting: other cell gone {o.peer_gone_for:.0f}s (lan seen: {o.lan.fresh}), this cell healthy for '
+                    f'{o.good_for:.0f}s, retry wait: {o.retry_wait}, other cell says: {o.cf.state or "-"}/{o.cf.holding or "-"}')
             if d and not (busy() and d.action in ('TAKEOVER', 'FAILBACK')):
                 log(f'{d.action}: {d.reason}')
                 act(d, o)

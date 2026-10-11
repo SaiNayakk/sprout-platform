@@ -81,30 +81,33 @@ def _hour_of(name):
 
 
 def archive_journal():
-    """The gateway keeps two hours of the other cell's journal; this keeps ARCHIVE_KEEP_HOURS, so a replication that has been
-    broken for a day can still be covered."""
+    """The gateway keeps two hours of the journal; this keeps ARCHIVE_KEEP_HOURS, so a replication that has been broken for a day
+    can still be covered. Two journals: the other cell's writes (`a-*` here on the laptop), and the writes whoever holds THIS
+    cell's customers has accepted for it (`b-*`), which this cell replays if that holder is lost."""
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
-    for path in glob.glob(os.path.join(ENV['JOURNAL_DIR'], f'{PEER}-*.jsonl')):
-        dst = os.path.join(ARCHIVE_DIR, os.path.basename(path))
-        try:
-            if not os.path.exists(dst) or os.path.getsize(dst) != os.path.getsize(path):
-                shutil.copyfile(path, dst)
-        except OSError:
-            pass
     oldest = time.strftime('%Y%m%d%H', time.gmtime(now() - ARCHIVE_KEEP_HOURS * 3600))
-    for path in glob.glob(os.path.join(ARCHIVE_DIR, f'{PEER}-*.jsonl')):
-        if _hour_of(os.path.basename(path)) < oldest:
+    for prefix in (PEER, CELL):
+        for path in glob.glob(os.path.join(ENV['JOURNAL_DIR'], f'{prefix}-*.jsonl')):
+            dst = os.path.join(ARCHIVE_DIR, os.path.basename(path))
             try:
-                os.remove(path)
+                if not os.path.exists(dst) or os.path.getsize(dst) != os.path.getsize(path):
+                    shutil.copyfile(path, dst)
             except OSError:
                 pass
+        for path in glob.glob(os.path.join(ARCHIVE_DIR, f'{prefix}-*.jsonl')):
+            if _hour_of(os.path.basename(path)) < oldest:
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
 
 
-def read_journal(since):
+def read_journal(since, prefix=None):
     """(entries newer than `since`, ids of writes the customer was told were refused), from the archive."""
+    prefix = prefix or PEER
     start_hour = time.strftime('%Y%m%d%H', time.gmtime(max(0, _parse_iso(since) - 3600)))
     entries, refused = [], set()
-    for path in sorted(glob.glob(os.path.join(ARCHIVE_DIR, f'{PEER}-*.jsonl'))):
+    for path in sorted(glob.glob(os.path.join(ARCHIVE_DIR, f'{prefix}-*.jsonl'))):
         if _hour_of(os.path.basename(path)) < start_hour:
             continue
         with open(path, encoding='utf-8') as f:
@@ -129,8 +132,8 @@ def _parse_iso(s):
         return 0
 
 
-def replay_one(e):
-    url = ENV['STANDBY_GATEWAY'] + e['uri'] + (('?' + e['query']) if e.get('query') else '')
+def replay_one(e, target=None):
+    url = (target or ENV['STANDBY_GATEWAY']) + e['uri'] + (('?' + e['query']) if e.get('query') else '')
     headers = {'X-Cell-Replay-Key': ENV['CELL_KEY'], 'X-Cell-Replay-User': e['userId'], 'Idempotency-Key': e['idempotencyKey'],
                'Content-Type': e.get('contentType') or 'application/json', 'User-Agent': 'sprout-cellwatch'}
     body = base64.b64decode(e.get('body') or '')
@@ -150,20 +153,20 @@ def replay_one(e):
     return status
 
 
-def replay_pass():
-    """Sends the journalled writes not yet handled to the standby's gateway: different customers in parallel, one customer's
+def replay_pass(prefix=None, target=None, key='replay'):
+    """Sends the journalled writes not yet handled to the standby's gateway (or `target`): different customers in parallel, one customer's
     writes in order. A write that fails is kept and tried again every pass (and so are the writes after it, for that customer),
     so nothing the customer was told succeeded is dropped. Safe to repeat: every write carries its key."""
     with REPLAY_LOCK:
-        return _replay_pass()
+        return _replay_pass(prefix, target, key)
 
 
-def _replay_pass():
+def _replay_pass(prefix, target, key):
     with LOCK:
-        r = S.setdefault('replay', {'watermark': iso(now() - 3600), 'failed': {}})
+        r = S.setdefault(key, {'watermark': iso(now() - 3600), 'failed': {}})
         watermark, failed = r['watermark'], dict(r['failed'])
     since_read = min([watermark] + [f['at'] for f in failed.values()])
-    entries, refused = read_journal(since_read)
+    entries, refused = read_journal(since_read, prefix)
     todo = [e for e in entries if (e.get('receivedAt', '') > watermark or e.get('id') in failed) and e.get('id') not in refused]
     if not todo:
         return {'total': 0, 'applied': 0, 'repeated': 0, 'refused': 0, 'failed': len(failed)}
@@ -183,7 +186,7 @@ def _replay_pass():
                 with lock:
                     new_failed[e['id']] = {'at': e.get('receivedAt', ''), 'n': failed.get(e['id'], {}).get('n', 0)}
                 continue
-            status = replay_one(e)
+            status = replay_one(e, target)
             with lock:
                 if status in (201, 204):
                     counts['applied'] += 1
@@ -208,7 +211,7 @@ def _replay_pass():
     if gave_up:
         notify(f'{len(gave_up)} journalled writes could not be replayed', 'gave up after repeated failures: see the log', 5, 'rotating_light')
     with LOCK:
-        S['replay'] = {'watermark': max(done_max, watermark), 'failed': new_failed}
+        S[key] = {'watermark': max(done_max, watermark), 'failed': new_failed}
         save_state()
     return dict(counts, total=len(todo), failed=len(new_failed))
 
@@ -306,13 +309,38 @@ def take_over(reason, publish_routes):
         ABORT.clear()
 
 
+def resume_stale(publish_routes, fence):
+    """The cell holding this one's customers is gone: serve them from this cell's own database (as it was when it was taken over),
+    and replay the writes the holder journalled here, which is everything it accepted that it had told them succeeded."""
+    log('the cell holding this one has been gone: resuming from this cell\'s own database')
+    start = S.get('taken_over_at', now() - 3600) - 120
+    with LOCK:
+        S['selfreplay'] = {'watermark': iso(start), 'failed': {}}
+        S['selfreplay_until'] = now() + 1800
+    fence(False)
+    set_state('NORMAL', resumed_at=now(), declared_down=None)
+    publish_routes('NORMAL')
+    notify(f'cell {CELL.upper()} resumed without cell {PEER.upper()}',
+           f'cell {PEER.upper()}, which held its customers, is gone; serving from the database as it was at the takeover, plus what was journalled here since',
+           5, 'rotating_light', key='resume-stale')
+
+
+def selfreplay_while_active():
+    if S.get('selfreplay_until', 0) > now() and ENV.get('OWN_GATEWAY'):
+        archive_journal()
+        r = replay_pass(prefix=CELL, target=ENV['OWN_GATEWAY'], key='selfreplay')
+        if r['applied'] or r['failed']:
+            log(f'replayed {r["total"]} writes the holder journalled here: {r["applied"]} applied, {r["repeated"]} already done, '
+                f'{r["refused"]} refused, {r["failed"]} failed')
+
+
 def yield_to_peer(publish_routes, fence):
     """Both cells took each other over, and the other one keeps its takeover: stop serving its customers and step aside."""
     log('both cells took each other over: giving way')
     ABORT.set()
     fence(True)
     _stop_standby()
-    set_state('TAKEN_OVER', retry_after=0)
+    set_state('TAKEN_OVER', retry_after=0, taken_over_at=now())
     publish_routes('TAKEN_OVER')
     notify('gave way in a double takeover', f'cell {PEER.upper()} keeps cell {CELL.upper()}\'s customers; this copy is rebuilt', 4, 'warning')
     threading.Thread(target=rebuild_copy, daemon=True).start()

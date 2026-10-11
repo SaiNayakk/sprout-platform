@@ -98,7 +98,9 @@ def notify(title, body='', priority=3, tags='', key=None):
 # ── state ────────────────────────────────────────────────────────────────────
 
 def write_atomic(path, text):
-    tmp = path + '.tmp'
+    # one temporary file per thread: the heartbeat and a worker both publish the status, and a shared name lost the rename
+    # race (the first automatic failback rolled back because of it)
+    tmp = f'{path}.{os.getpid()}.{threading.get_ident()}.tmp'
     with open(tmp, 'w', encoding='utf-8') as f:
         f.write(text)
     os.replace(tmp, path)

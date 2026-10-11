@@ -22,7 +22,7 @@ export WEIGHTS="${CELL_WEIGHTS:-a=35,b=65}"
 export PSQL_BASE="psql -v ON_ERROR_STOP=1 -q" PGDUMP_BASE="pg_dump" OWNER_PSQL="psql -U sprout -v ON_ERROR_STOP=1 -q"
 export PEER_PG="host=127.0.0.1 port=15433 user=replicator sslmode=disable password=$CELL_B_REPLICATOR_PASSWORD"
 export STANDBY_START="sh $S/ctl.sh start sprout-standby" STANDBY_STOP="sh $S/ctl.sh stop sprout-standby"
-export STANDBY_GATEWAY=http://127.0.0.1:8200 STANDBY_CHECK=http://127.0.0.1:8200/api/marketdata/v1/market
+export OWN_GATEWAY=http://127.0.0.1:8100 STANDBY_GATEWAY=http://127.0.0.1:8200 STANDBY_CHECK=http://127.0.0.1:8200/api/marketdata/v1/market
 export RELOAD_ROUTES="sh $S/web/run.sh reload"
 # CELLWATCH_CMD runs something else in the same environment, e.g. a one-off: CELLWATCH_CMD='python3 -c "import cw_ops; cw_ops.rebuild_copy()"' sh run.sh
 eval "exec ${CELLWATCH_CMD:-python3 \"$HERE/cellwatch.py\"}"

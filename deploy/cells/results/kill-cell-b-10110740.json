@@ -1,0 +1,44 @@
+{
+ "orders_back_after_s": 234,
+ "both_normal_after_restart_s": 665,
+ "scenario": "kill-cell-b",
+ "orders": {
+  "acknowledged": 1029,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+74s A=NORMAL B=silent",
+  "+222s A=TAKING_OVER B=silent",
+  "+317s A=HOLDING B=silent",
+  "+349s A=HOLDING B=NORMAL/sick",
+  "+362s A=HOLDING B=TAKEN_OVER/sick",
+  "+395s A=HOLDING B=TAKEN_OVER",
+  "+592s A=HOLDING B=FAILING_BACK",
+  "+657s A=HOLDING B=NORMAL",
+  "+665s A=HOLDING B=FENCED",
+  "+669s A=NORMAL B=FENCED",
+  "+711s A=TAKING_OVER B=FENCED",
+  "+752s A=HOLDING B=FENCED",
+  "+756s A=HOLDING B=TAKEN_OVER",
+  "+764s A=HOLDING B=FAILING_BACK",
+  "+826s A=HOLDING B=FENCED",
+  "+834s A=NORMAL B=FENCED",
+  "+862s A=TAKING_OVER B=FENCED",
+  "+904s A=HOLDING B=FENCED",
+  "+908s A=HOLDING B=TAKEN_OVER",
+  "+920s A=HOLDING B=FAILING_BACK",
+  "+982s A=HOLDING B=NORMAL",
+  "+990s A=HOLDING B=FENCED",
+  "+998s A=NORMAL B=FENCED",
+  "+1010s A=NORMAL B=NORMAL"
+ ],
+ "pass": true,
+ "checks": {
+  "orders worked again within 6 minutes": true,
+  "the customers were given back without hands": true
+ }
+}

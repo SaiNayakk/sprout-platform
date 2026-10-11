@@ -16,7 +16,7 @@ from typing import Optional
 
 @dataclass
 class Decision:
-    action: str                   # FENCE, UNFENCE, TAKEN_OVER, TAKEOVER, YIELD, FAILBACK, RESUME
+    action: str                   # FENCE, UNFENCE, TAKEN_OVER, TAKEOVER, YIELD, FAILBACK, RESUME, RESUME_STALE
     reason: str = ''
     declared_down: bool = False   # FENCE only: this cell says it is out because a host of its own is down
 
@@ -36,6 +36,7 @@ class Cfg:
     unfence_fast_after: int = 30  # ... or this long when the other cell reports it sees this one healthy
     peer_sees_me_for: int = 15
     failback_stable_after: int = 180  # healthy this long before the cell asks for its customers back
+    resume_after: int = 300       # the cell holding this one's customers has been gone this long: serve them from here
     flap_count: int = 3
     flap_window: int = 600
 
@@ -48,10 +49,11 @@ class PeerView:
     healthy: bool = False
     holding: Optional[str] = None
     declared_down: bool = False   # it fenced itself because one of its own hosts is down
-    peer_ok_for: float = 0        # how long it has seen THIS cell healthy
+    peer_ok_for: float = 0        # how long it has been seeing THIS cell's status (whatever state this cell is in)
     fb: Optional[dict] = None     # its failback progress
     fb_ready: bool = False        # holding, with what a handback needs prepared
     at: float = 0                 # when it published this status (its clock, as a timestamp)
+    resumed_at: float = 0         # when it resumed serving its own customers because the cell holding them was gone
 
 
 @dataclass
@@ -71,12 +73,18 @@ class Obs:
     takeover_can_abort: bool = False
     normal_at: float = 0          # when this cell last became NORMAL
     gave_back_recently: bool = False   # it has just taken its customers back from the other cell
+    holding_since: float = 0      # when this cell started taking the other cell over
+
+
+# the other cell's clock may be ahead of this one's (the phone's runs about 9 s ahead of the laptop's), and its status is published every
+# 10 s: a claim has to be this much newer than this cell's becoming NORMAL to count
+CLAIM_MARGIN = 20
 
 
 def peer_holds_me(o: Obs, c: Cfg) -> bool:
     """The other cell says it holds this one's customers, in a status published after this cell last became NORMAL: right
     after a failback the holder's last status (up to 90 s old) still says it holds them, and means nothing now."""
-    return any(v.fresh and v.holding == c.cell and v.at > o.normal_at + 5 for v in (o.cf, o.lan))
+    return any(v.fresh and v.holding == c.cell and v.at > o.normal_at + CLAIM_MARGIN for v in (o.cf, o.lan))
 
 
 def lan_vetoes(o: Obs) -> bool:
@@ -118,8 +126,10 @@ def may_unfence(o: Obs, c: Cfg) -> Optional[str]:
         return f'healthy for {c.unfence_after} s'
     if o.good_for >= c.unfence_fast_after:
         for v in (o.cf, o.lan):
-            if v.fresh and v.state == 'NORMAL' and v.peer_ok_for >= c.peer_sees_me_for and not v.holding:
-                return 'the other cell sees it healthy and is not taking it over'
+            # a NORMAL or a FENCED cell sees this one (a fenced cell takes nobody over): both fenced after a shared outage would
+            # otherwise each wait for the other to be NORMAL
+            if v.fresh and v.state in ('NORMAL', 'FENCED') and v.peer_ok_for >= c.peer_sees_me_for and not v.holding:
+                return 'the other cell sees it, and is neither holding nor taking it over'
     return None
 
 
@@ -146,11 +156,16 @@ def decide(state: str, o: Obs, c: Cfg) -> Optional[Decision]:
     if state in ('TAKING_OVER', 'HOLDING'):
         if held and c.cell != c.preferred:
             return Decision('YIELD', 'both cells took each other over, and the other one keeps its takeover')
+        for v in (o.cf, o.lan):
+            if v.fresh and v.state == 'NORMAL' and v.healthy and v.resumed_at and v.resumed_at > o.holding_since:
+                return Decision('YIELD', 'the other cell has resumed serving its own customers: its database has them all')
         return None
     if state == 'TAKEN_OVER':
         v = o.cf if o.cf.fresh else o.lan
         if o.gave_back_recently and v.fresh and v.state == 'NORMAL' and not v.holding and o.good_for >= 20:
             return Decision('RESUME', 'the customers were given back, and the other cell no longer holds them')
+        if o.peer_gone_for >= c.resume_after and not lan_vetoes(o) and o.good_for >= 60 and not o.retry_wait:
+            return Decision('RESUME_STALE', 'the cell holding this one has been gone for a while: serving from here, and replaying what it journalled here')
         if (o.good_for >= c.failback_stable_after and not o.retry_wait and v.fresh and v.state == 'HOLDING'
                 and v.holding == c.cell and v.healthy and v.fb_ready):
             return Decision('FAILBACK', 'healthy and stable: the other cell can give its customers back')

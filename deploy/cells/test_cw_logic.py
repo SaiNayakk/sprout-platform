@@ -84,6 +84,11 @@ class ReturningCell(unittest.TestCase):
         o = Obs(good_for=30, cf=alive('NORMAL', peer_ok_for=20))
         self.assertEqual(act('FENCED', o), 'UNFENCE')
 
+    def test_it_unfences_in_30_s_when_the_other_cell_is_fenced_too_and_sees_it(self):
+        """Audit: both cells fenced after a shared outage waited 211 s, each for the other to be NORMAL."""
+        o = Obs(good_for=30, cf=alive('FENCED', peer_ok_for=20))
+        self.assertEqual(act('FENCED', o), 'UNFENCE')
+
     def test_but_not_while_the_other_cell_is_taking_it_over(self):
         o = Obs(good_for=30, cf=alive('TAKING_OVER', peer_ok_for=0))
         self.assertIsNone(act('FENCED', o))
@@ -127,6 +132,37 @@ class StaleClaims(unittest.TestCase):
     def test_and_not_a_cell_that_never_gave_back(self):
         o = Obs(good_for=999, gave_back_recently=False, cf=alive('NORMAL'))
         self.assertIsNone(act('TAKEN_OVER', o))
+
+
+class HolderDies(unittest.TestCase):
+    """Audit run 3: the phone, holding cell B's customers, went off the network; cell B stayed fenced with nobody serving them."""
+
+    def test_a_taken_over_cell_resumes_when_its_holder_has_been_gone_five_minutes(self):
+        o = Obs(peer_gone_for=301, good_for=120)
+        self.assertEqual(act('TAKEN_OVER', o), 'RESUME_STALE')
+
+    def test_not_before(self):
+        self.assertIsNone(act('TAKEN_OVER', Obs(peer_gone_for=299, good_for=120)))
+
+    def test_not_while_the_lan_still_shows_the_holder(self):
+        self.assertIsNone(act('TAKEN_OVER', Obs(peer_gone_for=999, good_for=120, lan=alive('HOLDING', holding='a'))))
+
+    def test_but_a_holder_whose_cellwatch_alone_survives_does_not_stop_it(self):
+        """Audit: the phone's cellwatch outlived its services and answered over the LAN, saying it was not well."""
+        sick = PeerView(fresh=True, state='HOLDING', healthy=False, holding='a', at=1000)
+        self.assertEqual(act('TAKEN_OVER', Obs(peer_gone_for=999, good_for=120, lan=sick)), 'RESUME_STALE')
+
+    def test_not_while_this_cell_is_itself_unwell(self):
+        self.assertIsNone(act('TAKEN_OVER', Obs(peer_gone_for=999, good_for=30)))
+
+    def test_a_holder_that_returns_steps_down_when_the_cell_it_holds_has_resumed(self):
+        o = Obs(holding_since=1000, cf=alive('NORMAL', resumed_at=1500))
+        self.assertEqual(act('HOLDING', o, B), 'YIELD')       # whichever cell it is
+        self.assertEqual(act('HOLDING', o, A), 'YIELD')
+
+    def test_but_not_for_a_resume_older_than_its_hold(self):
+        o = Obs(holding_since=2000, cf=alive('NORMAL', resumed_at=1500))
+        self.assertIsNone(act('HOLDING', o, A))
 
 
 class BothTookEachOther(unittest.TestCase):

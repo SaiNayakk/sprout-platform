@@ -206,6 +206,7 @@ def build() -> tuple[str, set[str]]:
       STANDBY_START: python3 /cells/dockerctl.py start sprout-laptop-standby-1
       STANDBY_STOP: python3 /cells/dockerctl.py stop sprout-laptop-standby-1
       STANDBY_GATEWAY: http://standby:8100
+      OWN_GATEWAY: http://edge:8100
       STANDBY_CHECK: http://standby:8100/api/marketdata/v1/market
       RELOAD_ROUTES: python3 /cells/dockerctl.py exec sprout-laptop-web-1 nginx -s reload
     volumes:
@@ -235,6 +236,7 @@ def build() -> tuple[str, set[str]]:
     environment:
       SPROUT_SANDBOX: "true"
       GATEWAY_CELL_ID: a
+      GATEWAY_CELL_PEER_URL: https://sprout-a-saiworks.nncs.in   # journals in the cell it serves: a second copy if the holder fails
       GATEWAY_CELL_KEY: ${CELL_KEY}
       GATEWAY_CELL_JOURNAL_DIR: /tmp/journal
       GATEWAY_CELL_FENCE_FILE: /journal/fenced-a     # failback pauses cell A's writes here while moving them home

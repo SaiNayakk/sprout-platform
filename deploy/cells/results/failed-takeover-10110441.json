@@ -1,0 +1,20 @@
+{
+ "subscription_enabled": "t",
+ "scenario": "failed-takeover",
+ "orders": {
+  "acknowledged": 297,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL"
+ ],
+ "pass": true,
+ "checks": {
+  "the failed takeover was rolled back": true,
+  "the replication it paused is enabled again": true,
+  "neither cell left NORMAL for good": true
+ }
+}
