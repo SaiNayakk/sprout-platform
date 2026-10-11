@@ -4,7 +4,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SSH=(ssh -i "${PHONE_KEY:-$HOME/.ssh/backseat_phone}" -p 8022 -o BatchMode=yes -o IdentitiesOnly=yes "${PHONE:-u0_a1@192.168.0.6}")
-for f in cellwatch.py cw_env.py cw_logic.py cw_ops.py cw_failback.py; do
+for f in cellwatch.py cw_env.py cw_logic.py cw_ops.py cw_failback.py cw_witness.py; do
   "${SSH[@]}" "cat > ~/sprout/cellwatch/$f.new && mv ~/sprout/cellwatch/$f.new ~/sprout/cellwatch/$f" < "$HERE/$f"
 done
 "${SSH[@]}" "cat > ~/sprout/cellwatch/run.sh.new && mv ~/sprout/cellwatch/run.sh.new ~/sprout/cellwatch/run.sh" < "$HERE/../phone/cellwatch/run.sh"

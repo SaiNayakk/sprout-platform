@@ -23,6 +23,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import cw_failback
 import cw_ops
+import cw_witness
 from cw_env import (CELL, CHECK_SECONDS, ENV, LAN_PORT, LOCK, PEER, PEER_SERVES, S, answers, get_json, host_checks, iso, lan_peer_url,
                     load_state, log, notify, now, probe, save_state, set_state, sh, write_atomic)
 from cw_logic import Cfg, Obs, PeerView, decide
@@ -153,6 +154,18 @@ def probe_hosts():
                 worst = 'slow'
         out[name] = worst
     return out
+
+
+def witness_loop():
+    """The lease: this cell tells the witness it is alive, on its own clock (a slow host probe must not make it look dead)."""
+    while True:
+        try:
+            if not cw_witness.beat(build_status()) and cw_witness.URL and now() - T.get('wit_warn', 0) > 600:
+                T['wit_warn'] = now()
+                log('the witness cannot be reached: deciding as before, without it')
+        except Exception as e:
+            log(f'witness beat failed: {e}')
+        time.sleep(CHECK_SECONDS)
 
 
 def heartbeat():
@@ -315,7 +328,7 @@ def observe(t):
         sick_for=since_of('sick', not local_ok, t),
         hosts_down=hosts_down, flapping=len(S['flaps']) >= CFG.flap_count,
         good_for=since_of('good', all_green, t),
-        cf=cf, lan=lan,
+        cf=cf, lan=lan, wit=cw_witness.view(),
         peer_gone_for=since_of('peer_gone', code != 200, t),
         peer_bad_for=since_of('peer_bad', not (peer_ok_cf or peer_front_door), t),
         peer_declared_for=since_of('peer_declared', (cf.fresh and cf.declared_down) or (lan.fresh and lan.declared_down), t),
@@ -352,6 +365,13 @@ def act(d, o):
     elif d.action == 'RESUME_STALE':
         cw_ops.resume_stale(publish_routes, fence)
     elif d.action == 'TAKEOVER':
+        granted, why = cw_witness.takeover()
+        if granted is False:
+            log(f'cell {PEER} looks lost ({d.reason}), but the witness does not grant the takeover: {why}')
+            S['retry_after'] = now() + 30
+            return
+        if granted is None:
+            log(f'the witness cannot be reached: taking cell {PEER} over without its leave')
         if not cw_ops.copy_whole():
             log(f'cell {PEER} looks lost ({d.reason}), but this cell holds no whole copy of it: not taking over')
             S['retry_after'] = now() + 120
@@ -464,6 +484,8 @@ def main():
     cw_ops.setup_wal_cap()
     threading.Thread(target=heartbeat, daemon=True, name='heartbeat').start()
     threading.Thread(target=serve_lan, daemon=True, name='lan').start()
+    if cw_witness.URL:
+        threading.Thread(target=witness_loop, daemon=True, name='witness').start()
     background(cw_ops.archive_journal, 30)
     background(cw_ops.monitor_once, 30)
     background(replay_while_holding, 5)
@@ -482,6 +504,8 @@ def main():
             if state == 'TAKING_OVER' and not cw_ops.RT.get('standby_up') and T.get('peer_ok') and t - T['peer_ok'] >= 60:
                 log('the other cell has been healthy for a minute: stopping the takeover')
                 cw_ops.ABORT.set()
+            if S.get('witness_granted') and state not in ('TAKING_OVER', 'HOLDING') and not busy():
+                cw_witness.release()      # the other cell's customers are back with it (or this cell gave them up)
             d = decide(state, o, CFG)
             if not d and state == 'TAKEN_OVER' and t - T.get('dbg', 0) > 60:
                 T['dbg'] = t          # what a taken-over cell is waiting for, once a minute

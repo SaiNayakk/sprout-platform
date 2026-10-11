@@ -356,9 +356,10 @@ cells to repair themselves, and passes only if every acknowledged order exists o
 | `dead_host` | the laptop's trading host stops, and later restarts | fenced with a reason; taken over; orders back within 330 s; given back by itself; no pause over 60 s |
 | `kill_cell_a`, `kill_cell_b` | a whole cell is stopped, and later started | orders back within 6 minutes; given back by itself |
 | `cf_blind` | each cell cannot see the other through Cloudflare for 4 minutes; the LAN works | both stay NORMAL; no gap in the orders over 30 s |
-| `mutual_blind` | neither cell can see the other at all for 5.5 minutes | both NORMAL again by themselves |
+| `mutual_blind` | neither cell can see the other at all for 5.5 minutes, the witness intact | both stay NORMAL throughout; no gap in the orders over 30 s |
+| `blind_no_witness` | the same, and neither cell can reach the witness | both NORMAL again by themselves |
 | `both_offline` | both addresses silent for 3 minutes | nobody takes anybody over; both unfence within 90 s |
-| `failed_takeover` | a takeover cannot start its standby | rolled back; the replication it paused is on again |
+| `failed_takeover` | a takeover cannot start its standby (the laptop also cannot reach the witness, which then does not forbid it) | rolled back; the replication it paused is on again |
 | `replication_off` | replication switched off silently | switched on again within 90 s; the copy has every order |
 | `holder_dies` | the cell holding the other's customers dies too | the cell it held resumes within 10 minutes; nothing lost |
 

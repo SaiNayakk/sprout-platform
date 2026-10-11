@@ -92,7 +92,8 @@ def own_db_orders(cell, keys):
 
 
 def partition(laptop=None, phone_side=None):
-    """Blind a cell to the other: 'all', 'cf' (only the Cloudflare path) or 'lan'; None leaves that side alone."""
+    """Blind a cell to the other: 'all' (both paths to the other cell), 'cf' (only the Cloudflare path), 'lan', 'witness' (only the
+    witness) or 'everything' (the other cell and the witness); None leaves that side alone."""
     if laptop:
         (LAPTOP_DATA / 'cells' / 'partition').write_text('' if laptop == 'all' else laptop)
     if phone_side:

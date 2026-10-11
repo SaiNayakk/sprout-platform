@@ -18,6 +18,7 @@ export HOST_CHECKS="edge=$H:8101/actuator/health,$H:8119/actuator/health;trading
 export STATUS_FILE="$S/cells/status.json" ROUTES_FILE="$S/cells/routes.conf" CELLS_FILE="$S/cells/cells.json"
 export STATE_FILE="$S/cells/state.json" LOG_FILE="$S/logs/cellwatch.log"
 export FENCE_FILE="$S/journal/fenced" STANDBY_FENCE_FILE="$S/journal/fenced-b" JOURNAL_DIR="$S/journal" JOURNAL_ARCHIVE_DIR="$S/journal/archive"
+export WITNESS_URL=https://sprout-witness.sai31nayak.workers.dev
 export WEIGHTS="${CELL_WEIGHTS:-a=35,b=65}"
 export PSQL_BASE="psql -v ON_ERROR_STOP=1 -q" PGDUMP_BASE="pg_dump" OWNER_PSQL="psql -U sprout -v ON_ERROR_STOP=1 -q"
 export PEER_PG="host=127.0.0.1 port=15433 user=replicator sslmode=disable password=$CELL_B_REPLICATOR_PASSWORD"

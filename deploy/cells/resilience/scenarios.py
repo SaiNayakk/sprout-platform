@@ -120,15 +120,35 @@ def both_offline():
 
 
 def mutual_blind():
-    """Neither cell can see the other at all (both paths). Each may think the other is lost; whatever happens, exactly one ends
-    up serving each cell's customers, nothing is lost, and the cells sort themselves out."""
+    """Neither cell can see the other at all (both paths), but both reach the witness, which sees both alive: nobody takes
+    anybody over, nobody fences, orders never stop."""
     name = 'mutual-blind'
     assert ensure_clean(120), 'the cells are not clean'
     tl, load = Timeline(name).start(), Load('a', 6, 'mb')
     load.start()
     time.sleep(45)
+    t_fault = now() - tl.t0
     partition(laptop='all', phone_side='all')
-    say('both cells completely blind to each other for 330 s')
+    say('both cells completely blind to each other, the witness intact, for 330 s')
+    time.sleep(330)
+    heal()
+    time.sleep(60)
+    ok_states = all(a == 'NORMAL' and b == 'NORMAL' for t, a, b in tl.rows if t >= t_fault)
+    gaps = sorted(y['at'] - x['at'] for x, y in zip(load.acked, load.acked[1:]))
+    checks = {'both cells stayed NORMAL throughout': ok_states, 'no gap in the orders longer than 30 s': (gaps[-1] if gaps else 0) < 30}
+    return _finish(name, tl, load, {'longest_gap_between_acknowledged_orders_s': round(gaps[-1], 1) if gaps else None}, checks, 'a')
+
+
+def blind_no_witness():
+    """Neither cell can see the other, and neither can reach the witness (the case before there was one): each may think the other is
+    lost; whatever happens, exactly one ends up serving each cell's customers, nothing is lost, and the cells sort themselves out."""
+    name = 'blind-no-witness'
+    assert ensure_clean(120), 'the cells are not clean'
+    tl, load = Timeline(name).start(), Load('a', 6, 'bnw')
+    load.start()
+    time.sleep(45)
+    partition(laptop='everything', phone_side='everything')
+    say('both cells blind to each other and to the witness for 330 s')
     time.sleep(330)
     heal()
     t_normal = wait_states(lambda a, b: (a, b) == ('NORMAL', 'NORMAL'), 1200)
@@ -145,8 +165,8 @@ def failed_takeover():
     load.start()
     docker('rm', '-f', 'sprout-laptop-standby-1')
     time.sleep(30)
-    partition(laptop='all')
-    say('the laptop cannot see the phone and has no standby to take it over with')
+    partition(laptop='everything')
+    say('the laptop cannot see the phone or the witness and has no standby to take it over with')
     time.sleep(200)
     log = chr(10).join(lib.laptop_cellwatch_log(40))
     heal()
@@ -252,5 +272,5 @@ def replication_off():
     return record(name, result)
 
 
-SCENARIOS = {'replication_off': replication_off, 'holder_dies': holder_dies, 'cf_blind': cf_blind, 'dead_host': dead_host, 'both_offline': both_offline, 'mutual_blind': mutual_blind,
+SCENARIOS = {'replication_off': replication_off, 'holder_dies': holder_dies, 'cf_blind': cf_blind, 'dead_host': dead_host, 'both_offline': both_offline, 'mutual_blind': mutual_blind, 'blind_no_witness': blind_no_witness,
              'failed_takeover': failed_takeover, 'kill_cell_a': lambda: kill_cell('a'), 'kill_cell_b': lambda: kill_cell('b')}
