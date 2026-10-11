@@ -1,0 +1,50 @@
+{
+ "orders_back_after_holder_died_s": null,
+ "both_normal_after_phone_restart_s": 285,
+ "laptop_cellwatch": [
+  "2026-10-11T00:17:10Z [b] ALERT taking cell B back from cell A: building a new database; no interruption yet",
+  "2026-10-11T00:17:10Z [b] failback 27b94b05: building a new database from cell A's copy",
+  "2026-10-11T00:17:59Z [b] failback 27b94b05: the new database is in sync",
+  "2026-10-11T00:18:08Z [b] failback 27b94b05: swapping the new database in (the old one is kept as sprout_before_failback_202610110018)",
+  "2026-10-11T00:18:10Z [b] unfenced",
+  "2026-10-11T00:18:10Z [b] state FAILING_BACK -> NORMAL",
+  "2026-10-11T00:18:11Z [b] failback 27b94b05: serving again; refused writes lasted 3 s (the old database is sprout_before_failback_202610110018)",
+  "2026-10-11T00:18:11Z [b] ALERT cell B has its customers back: cutover took 3 s; the whole failback 61 s",
+  "2026-10-11T00:18:21Z [b] TAKEN_OVER: the other cell holds this one: it was taken over while it looked lost",
+  "2026-10-11T00:18:21Z [b] fenced: this cell takes no customer writes",
+  "2026-10-11T00:18:21Z [b] state NORMAL -> TAKEN_OVER",
+  "2026-10-11T00:18:22Z [b] ALERT cell A holds this cell: fenced; it will be given back automatically",
+  "2026-10-11T00:18:32Z [b] RESUME: the customers were given back, and the other cell no longer holds them",
+  "2026-10-11T00:18:32Z [b] unfenced",
+  "2026-10-11T00:18:32Z [b] state TAKEN_OVER -> NORMAL",
+  "2026-10-11T00:18:32Z [b] ALERT cell B is serving again: the customers were given back, and the other cell no longer holds them"
+ ],
+ "scenario": "holder-dies",
+ "orders": {
+  "acknowledged": 369,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+70s A=NORMAL B=NORMAL/sick",
+  "+139s A=NORMAL B=FENCED/sick",
+  "+180s A=TAKING_OVER B=FENCED/sick",
+  "+222s A=HOLDING B=FENCED/sick",
+  "+234s A=HOLDING B=TAKEN_OVER/sick",
+  "+283s A=silent B=TAKEN_OVER/sick",
+  "+304s A=silent B=TAKEN_OVER",
+  "+1447s A=silent B=FAILING_BACK",
+  "+1455s A=HOLDING B=FAILING_BACK",
+  "+1509s A=HOLDING B=NORMAL",
+  "+1521s A=NORMAL B=TAKEN_OVER",
+  "+1533s A=NORMAL B=NORMAL"
+ ],
+ "pass": false,
+ "checks": {
+  "cell B resumed by itself within 10 minutes": false,
+  "the cells sorted themselves out when the phone returned": true
+ }
+}

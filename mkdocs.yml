@@ -63,6 +63,8 @@ nav:
   - Reliability:
       - reliability/index.md
       - Capacity: reliability/capacity.md
+      - Resilience: reliability/resilience.md
+      - Resilience audit: reliability/audit.md
       - Evidence from runs: reliability/runs/index.md
       - Runbooks: runbooks.md
       - Incidents: incidents.md

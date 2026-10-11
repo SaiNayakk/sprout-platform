@@ -299,3 +299,22 @@ restart of the web server in two seconds.
 
 **Lesson.** A rule that is safe for a crash loop (give up, wait) is wrong for the first failure; the second attempt costs nothing.
 Killing a process is not the same as freeing what it held.
+
+## 2026-10-10: the phone fell off the network for half an hour
+
+**Impact.** During a failover test the phone became unreachable at about 21:37 UTC (no ping, no ssh, its Cloudflare tunnel
+offline) and came back at about 22:05 UTC by itself, with no reboot (up 2 days 7 h). No customers were affected. The cell it
+was holding, cell B, stayed fenced and unserved for those 28 minutes.
+
+**What it showed.** The phone had taken cell B over, and then vanished. Nothing recorded the writes it had accepted for B (the
+standby had no journal peer), and a cell that has been taken over had no way to resume when its holder is gone, so it waited,
+fenced, until the holder returned. 148 orders the standby had acknowledged were only on the phone's disk.
+
+**What changed.** The standby journals in the cell it serves (and that cell's web server always keeps the journal endpoint,
+even when it forwards everything else). A cell whose holder has been gone for five minutes resumes from its own database, replays
+what was journalled with it, and takes the dead holder over; the holder, back, gives way. Tested by `holder_dies`
+([resilience suite](testing/chaos.md#resilience-suite)): 1,373 orders, none lost.
+
+**Not known.** Why the phone left the network. The `front` piece's log says only `network is unreachable`. Battery was 99% and
+charging. A phone's WiFi dropping under load is the likely cause; it is the kind of failure the second path and the alerts are
+for, and the reason the battery and the clocks are watched.

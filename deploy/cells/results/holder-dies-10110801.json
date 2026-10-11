@@ -1,0 +1,53 @@
+{
+ "orders_back_after_holder_died_s": 309,
+ "both_normal_after_phone_restart_s": 524,
+ "laptop_cellwatch": [
+  "2026-10-11T02:21:54Z [b] ALERT 124 writes have no copy in the other cell: its journal has been slow or away: a failure of this cell right now could lose them",
+  "2026-10-11T02:22:54Z [b] ALERT 233 writes have no copy in the other cell: its journal has been slow or away: a failure of this cell right now could lose them",
+  "2026-10-11T02:23:54Z [b] ALERT 346 writes have no copy in the other cell: its journal has been slow or away: a failure of this cell right now could lose them",
+  "2026-10-11T02:24:54Z [b] ALERT 461 writes have no copy in the other cell: its journal has been slow or away: a failure of this cell right now could lose them",
+  "2026-10-11T02:25:54Z [b] ALERT 546 writes have no copy in the other cell: its journal has been slow or away: a failure of this cell right now could lose them",
+  "2026-10-11T02:26:54Z [b] ALERT 546 writes have no copy in the other cell: its journal has been slow or away: a failure of this cell right now could lose them",
+  "2026-10-11T02:27:54Z [b] ALERT 546 writes have no copy in the other cell: its journal has been slow or away: a failure of this cell right now could lose them",
+  "2026-10-11T02:28:54Z [b] ALERT 546 writes have no copy in the other cell: its journal has been slow or away: a failure of this cell right now could lose them",
+  "2026-10-11T02:29:54Z [b] ALERT 546 writes have no copy in the other cell: its journal has been slow or away: a failure of this cell right now could lose them",
+  "2026-10-11T02:30:21Z [b] handback 1034c6ae: the other cell asks for its customers back",
+  "2026-10-11T02:30:24Z [b] handback 1034c6ae: standby fenced at 1/5C8DF710 (journal pass: 0 writes, 0 failed)",
+  "2026-10-11T02:30:31Z [b] state HOLDING -> NORMAL",
+  "2026-10-11T02:30:31Z [b] handback 1034c6ae: cell A has its customers back; rebuilding this cell's copy of it",
+  "2026-10-11T02:30:31Z [b] ALERT gave cell A its customers back",
+  "2026-10-11T02:30:31Z [b] rebuilding the copy of cell A",
+  "2026-10-11T02:30:39Z [b] subscribed to cell A; the initial copy is running"
+ ],
+ "scenario": "holder-dies",
+ "orders": {
+  "acknowledged": 1379,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+62s A=NORMAL B=NORMAL/sick",
+  "+148s A=NORMAL B=FENCED/sick",
+  "+194s A=TAKING_OVER B=FENCED/sick",
+  "+248s A=HOLDING B=FENCED/sick",
+  "+252s A=HOLDING B=TAKEN_OVER/sick",
+  "+309s A=silent B=TAKEN_OVER/sick",
+  "+326s A=silent B=TAKEN_OVER",
+  "+627s A=silent B=NORMAL",
+  "+640s A=silent B=TAKING_OVER",
+  "+689s A=silent B=HOLDING",
+  "+908s A=HOLDING B=HOLDING",
+  "+986s A=TAKEN_OVER B=HOLDING",
+  "+1166s A=FAILING_BACK B=HOLDING",
+  "+1199s A=NORMAL B=HOLDING",
+  "+1212s A=NORMAL B=NORMAL"
+ ],
+ "pass": true,
+ "checks": {
+  "cell B resumed by itself within 10 minutes": true,
+  "the cells sorted themselves out when the phone returned": true
+ }
+}

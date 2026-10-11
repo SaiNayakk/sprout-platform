@@ -47,6 +47,17 @@ server {
         add_header Cache-Control "no-store" always;
     }
 
+    # The other cell's journal entries are kept HERE, whatever this cell is doing for its customers (a taken-over cell
+    # forwards everything else): they are the second copy of what whoever holds this cell's customers has accepted.
+    location = /api/cells/v1/journal {
+        set $gateway ${SPROUT_API};
+        proxy_pass $gateway;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        client_max_body_size 1m;
+    }
+
     location /api/ {
         error_page 418 = @peer;
         error_page 419 = @standby;

@@ -1,135 +1,53 @@
-"""Watches this cell and the other one, and takes the other cell's customers over when it is lost (ADR-027).
+"""Runs in each cell (Termux on the phone, a container on the laptop): keeps the cell safe and the customers served (ADR-027).
 
-Runs in each cell (Termux on the phone, a container on the laptop), Python standard library only. Every CHECK_SECONDS:
+Every CHECK_SECONDS it looks at this cell (its address, its health check, every host of its own) and at the other cell (its
+published status through Cloudflare and over the home network), hands what it saw to the rules in cw_logic.py, and acts:
 
-  * publishes this cell's status (healthy?, state) to STATUS_FILE, which the cell's web server serves at
-    /cells/status.json, so the other cell can see it from outside
-  * checks this cell's own public address (through Cloudflare, as a customer would reach it) and the other's
+  fence / unfence       take no customer writes, or take them again
+  take the other over   promote the copy, start its services, replay its journal (cw_ops.py, in a worker thread)
+  give way              both took each other over: the other cell keeps what it took
+  get the customers back, or hand them back (cw_failback.py, in worker threads)
 
-and acts on what it sees:
-
-  NORMAL      this cell can't reach its own public address for FENCE_AFTER (60 s), or its own services have
-              been failing for SICK_FENCE_AFTER (300 s)                                     -> FENCED
-              it can, and the other cell is lost                                            -> HOLDING
-              Lost means its public address hasn't answered at all for TAKEOVER_AFTER (120 s, longer than
-              FENCE_AFTER, so it has fenced itself by then), or it answers but neither its services nor its
-              status have been healthy for SICK_TAKEOVER_AFTER (600 s, longer than SICK_FENCE_AFTER). An
-              overloaded cell is slow, not lost: taking it over at 120 s made two cells serve one (2026-10-09).
-  FENCED      no customer writes here (the gateway refuses them while FENCE_FILE exists). If the other cell is
-              holding this cell's customers -> TAKEN_OVER. Else, once the public address has answered and the
-              services been up for UNFENCE_AFTER (210 s: longer than the other cell needs to decide and promote)
-              -> NORMAL
-  Any state with the other cell holding this one's customers -> TAKEN_OVER, fenced: a cell that was lost and came back
-  is not the cell any more
-  HOLDING     this cell runs the other cell's services on its copy of that cell's database. Stays until failback.
-  TAKEN_OVER  this cell's customers are served by the other cell; this cell stays fenced. Stays until failback.
-
-Taking over: stop applying replication from the lost cell, move every sequence past any id it can have used, start the
-standby (the lost cell's services, with its keys, on the copy), replay the lost cell's journal through the standby's
-gateway (a write that had already replicated is recognised by its idempotency key and changes nothing), then send the
-lost cell's customers to the standby and every new customer to this cell.
-
-Configuration is the environment; commands are run through the shell, so the same file works on both cells:
-  CELL, PEER                    this cell's and the other cell's ids (a, b)
-  SELF_URL, PEER_URL            the cells' own public addresses (https://sprout-a-..., https://sprout-b-...)
-  LOCAL_CHECK                   a URL that answers 200 when this cell's own services are up
-  STATUS_FILE, ROUTES_FILE, CELLS_FILE, FENCE_FILE, STATE_FILE, JOURNAL_DIR, LOG_FILE
-  WEIGHTS                       normal weights for new customers, e.g. "a=35,b=65" (from what each cell carries: docs, Capacity)
-  REPLICA_PSQL                  a command that runs SQL (stdin) against this cell's copy of the other cell's database
-  STANDBY_START, STANDBY_STOP   commands that start and stop the standby
-  STANDBY_GATEWAY               the standby's gateway, e.g. http://127.0.0.1:8200
-  STANDBY_CHECK                 a URL that answers 200 once the standby is up
-  RELOAD_ROUTES                 a command that makes the web server read ROUTES_FILE and CELLS_FILE again
-  CELL_KEY                      the cells' shared key (replays are accepted with it)
+Beside the loop run: a heartbeat that publishes this cell's status, a server for that status on the home network, the replay of
+the journal while this cell holds the other's customers, a watch on the replication, and housekeeping. Alerts go out through
+cw_env.notify. Details of every rule and every number: cw_logic.py and docs/reliability/audit.md.
 """
-import base64
-import datetime
-import glob
+import hashlib
+import hmac
 import json
 import os
-import subprocess
-import sys
+import socket
 import threading
 import time
-import urllib.error
-import urllib.request
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-ENV = os.environ
-CELL, PEER = ENV['CELL'], ENV['PEER']
-CHECK_SECONDS = int(ENV.get('CHECK_SECONDS', '10'))
-PEER_SERVES = '/api/marketdata/v1/market'   # answers through the other cell's own web server and gateway, no sign-in
-FENCE_AFTER = int(ENV.get('FENCE_AFTER', '60'))
-TAKEOVER_AFTER = int(ENV.get('TAKEOVER_AFTER', '120'))
-SICK_FENCE_AFTER = int(ENV.get('SICK_FENCE_AFTER', '300'))
-# a fenced cell whose address answers again waits this long before it believes nobody took it over: the other cell
-# decides after TAKEOVER_AFTER of silence and then needs about a minute to promote its copy and say so
-UNFENCE_AFTER = int(ENV.get('UNFENCE_AFTER', str(TAKEOVER_AFTER + 90)))
-SICK_TAKEOVER_AFTER = int(ENV.get('SICK_TAKEOVER_AFTER', '600'))
-STATE_FILE = ENV['STATE_FILE']
+import cw_failback
+import cw_ops
+from cw_env import (CELL, CHECK_SECONDS, ENV, LAN_PORT, LOCK, PEER, PEER_SERVES, S, answers, get_json, host_checks, iso, lan_peer_url,
+                    load_state, log, notify, now, probe, save_state, set_state, sh, write_atomic)
+from cw_logic import Cfg, Obs, PeerView, decide
 
-
-def log(msg):
-    line = f'{datetime.datetime.now(datetime.timezone.utc):%Y-%m-%dT%H:%M:%SZ} [{CELL}] {msg}'
-    print(line, flush=True)
-    if ENV.get('LOG_FILE'):
-        with open(ENV['LOG_FILE'], 'a', encoding='utf-8') as f:
-            f.write(line + '\n')
+CFG = Cfg(cell=CELL, peer=PEER, preferred=ENV.get('PREFERRED_SURVIVOR', 'b'),
+          fence_after=int(ENV.get('FENCE_AFTER', '60')), takeover_after=int(ENV.get('TAKEOVER_AFTER', '120')),
+          sick_fence_after=int(ENV.get('SICK_FENCE_AFTER', '300')), sick_takeover_after=int(ENV.get('SICK_TAKEOVER_AFTER', '600')),
+          unfence_after=int(ENV.get('UNFENCE_AFTER', '210')), host_down_fence_after=int(ENV.get('HOST_DOWN_FENCE_AFTER', '60')),
+          declared_takeover_after=int(ENV.get('DECLARED_TAKEOVER_AFTER', '30')),
+          failback_stable_after=int(ENV.get('FAILBACK_STABLE_AFTER', '180')))
+STALE = 90                          # a status older than this is not believed
+HEALTH = {'local': True, 'hosts': {}}      # written by the heartbeat
+T = {}                              # trackers: since when something has been true
+WORKER = {'thread': None, 'name': None}
 
 
-def get_json(url, timeout=5):
-    try:
-        req = urllib.request.Request(url, headers={'Cache-Control': 'no-cache', 'User-Agent': 'sprout-cellwatch'})
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.status, json.loads(r.read() or b'null')
-    except urllib.error.HTTPError as e:
-        return e.code, None
-    except Exception:
-        return 0, None
-
-
-def answers(url, timeout=5):
-    try:
-        with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'sprout-cellwatch'}), timeout=timeout) as r:
-            return r.status == 200
-    except Exception:
-        return False
-
-
-def sh(cmd, stdin=None, check=True):
-    r = subprocess.run(cmd, shell=True, input=stdin, capture_output=True, text=True)
-    if check and r.returncode != 0:
-        raise RuntimeError(f'{cmd[:60]}... failed ({r.returncode}): {(r.stderr or r.stdout)[-500:]}')
-    return r.stdout
-
-
-def write_atomic(path, text):
-    tmp = path + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f:
-        f.write(text)
-    os.replace(tmp, path)
-
-
-def load_state():
-    try:
-        with open(STATE_FILE, encoding='utf-8') as f:
-            return json.load(f)
-    except (OSError, ValueError):
-        return {'state': 'NORMAL'}
-
-
-def save_state(s):
-    write_atomic(STATE_FILE, json.dumps(s, indent=1))
-
-
-# ── what the web server is told ─────────────────────────────────────────────
+# ── what the web server and the gateway are told ────────────────────────────
 
 def routes_for(state):
     """Where a request for each cell's customers goes from this cell's web server."""
     r = {'default': 'local', CELL: 'local', PEER: 'peer'}
     if state == 'HOLDING':
         r[PEER] = 'standby'
-    elif state == 'TAKEN_OVER':
-        r = {'default': 'peer', CELL: 'peer', PEER: 'peer'}   # everything here is fenced: the other cell serves it all
+    elif state in ('TAKEN_OVER', 'FAILING_BACK'):
+        r = {'default': 'peer', CELL: 'peer', PEER: 'peer'}        # everything here is fenced: the other cell serves it all
     return r
 
 
@@ -137,14 +55,14 @@ def weights_for(state):
     w = dict(kv.split('=') for kv in ENV.get('WEIGHTS', f'{CELL}=50,{PEER}=50').split(','))
     if state == 'HOLDING':
         w = {CELL: '100', PEER: '0'}
-    elif state == 'TAKEN_OVER':
+    elif state in ('TAKEN_OVER', 'FAILING_BACK'):
         w = {CELL: '0', PEER: '100'}
     return w
 
 
 def publish_routes(state):
     r = routes_for(state)
-    lines = ['# Written by cellwatch.py: where each cell\'s customers are served from this cell (ADR-027).',
+    lines = ["# Written by cellwatch.py: where each cell's customers are served from this cell (ADR-027).",
              'map $http_x_sprout_cell $sprout_route {', f'    default {r.pop("default")};']
     lines += [f'    {cell} {where};' for cell, where in sorted(r.items())]
     lines.append('}')
@@ -152,12 +70,6 @@ def publish_routes(state):
     w = weights_for(state)
     write_atomic(ENV['CELLS_FILE'], json.dumps({'cells': [{'id': c, 'weight': int(v)} for c, v in sorted(w.items())]}))
     sh(ENV['RELOAD_ROUTES'], check=False)
-
-
-def publish_status(state, healthy):
-    write_atomic(ENV['STATUS_FILE'], json.dumps({
-        'cell': CELL, 'state': state, 'healthy': healthy, 'holding': PEER if state == 'HOLDING' else None,
-        'at': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')}))
 
 
 def fence(on):
@@ -170,215 +82,426 @@ def fence(on):
         log('unfenced')
 
 
-# ── taking the other cell over ──────────────────────────────────────────────
-
-SEQUENCES = """
-DO $$
-DECLARE r record; top bigint;
-BEGIN
-  -- logical replication doesn't carry sequences: move each past any id the lost cell can have handed out
-  FOR r IN SELECT s.oid::regclass AS seq, d.refobjid::regclass AS tbl, a.attname AS col
-           FROM pg_class s
-           LEFT JOIN pg_depend d ON d.objid = s.oid AND d.deptype IN ('a', 'i')
-           LEFT JOIN pg_attribute a ON a.attrelid = d.refobjid AND a.attnum = d.refobjsubid
-           WHERE s.relkind = 'S' LOOP
-    top := 0;
-    IF r.tbl IS NOT NULL THEN
-      EXECUTE format('SELECT coalesce(max(%I), 0) FROM %s', r.col, r.tbl) INTO top;
-    -- two sequences number something that isn't their own column. Without these, a second takeover set them to
-    -- 1,000,000 again, onto numbers the first one had handed out (2026-10-09: demat accounts couldn't be opened)
-    ELSIF r.seq::text = 'depository.client_numbers' THEN
-      SELECT coalesce(max(right(bo_id, 8)::bigint), 0) INTO top FROM depository.accounts;
-    ELSIF r.seq::text = 'sandbox.demo_account_numbers' THEN
-      SELECT coalesce(max(number), 0) INTO top FROM sandbox.demo_accounts;
-    ELSE
-      RAISE WARNING 'sequence % numbers no column cellwatch knows: moved to 1000000, which may already be used', r.seq;
-    END IF;
-    PERFORM setval(r.seq, greatest(top, 0) + 1000000, false);
-  END LOOP;
-END $$;
-"""
+def fence_standby(on):
+    """The standby (the other cell's services, here) takes no writes while its fence file exists."""
+    path = ENV.get('STANDBY_FENCE_FILE')
+    if not path:
+        return
+    if on:
+        open(path, 'w').close()
+    elif os.path.exists(path):
+        os.remove(path)
 
 
-def replay(since):
-    """Sends every journalled write of the lost cell since `since` to the standby's gateway, in order."""
-    entries, refused_ids = [], set()
-    for path in sorted(glob.glob(os.path.join(ENV['JOURNAL_DIR'], f'{PEER}-*.jsonl'))):
-        with open(path, encoding='utf-8') as f:
-            for line in f:
-                try:
-                    e = json.loads(line)
-                except ValueError:
-                    continue
-                if e.get('outcomeOf'):
-                    # the customer was told this write was refused (4xx): replaying it could make it happen now
-                    if 400 <= int(e.get('status', 0)) < 500:
-                        refused_ids.add(e['outcomeOf'])
-                elif e.get('receivedAt', '') >= since:
-                    entries.append(e)
-    skipped = sum(1 for e in entries if e.get('id') in refused_ids)
-    entries = [e for e in entries if e.get('id') not in refused_ids]
-    entries.sort(key=lambda e: e.get('receivedAt', ''))
-    applied = repeated = refused = failed = 0
-    for e in entries:
-        url = ENV['STANDBY_GATEWAY'] + e['uri'] + (('?' + e['query']) if e.get('query') else '')
-        headers = {'X-Cell-Replay-Key': ENV['CELL_KEY'], 'X-Cell-Replay-User': e['userId'],
-                   'Idempotency-Key': e['idempotencyKey'], 'Content-Type': e.get('contentType') or 'application/json',
-                   'User-Agent': 'sprout-cellwatch'}
-        body = base64.b64decode(e.get('body') or '')
-        req = urllib.request.Request(url, data=body if body else None, method=e['method'], headers=headers)
-        for attempt in range(3):
-            try:
-                with urllib.request.urlopen(req, timeout=15) as r:
-                    status = r.status
-            except urllib.error.HTTPError as err:
-                status = err.code
-            except Exception:
-                status = 0
-            if status and status < 500:
-                break
-            time.sleep(2)
-        if status == 201 or status == 204:
-            applied += 1
-        elif status == 200:
-            repeated += 1    # already done (its key was found) or an idempotent state change: either way, once
-        elif status and status < 500:
-            refused += 1     # e.g. the account already exists: the effect is there
-        else:
-            failed += 1
-            log(f'replay failed: {e["method"]} {e["uri"]} key {e["idempotencyKey"]} ({status})')
-    log(f'replayed {len(entries)} journalled writes ({skipped} skipped: refused at the time): {applied} applied, '
-        f'{repeated} already done, {refused} refused, {failed} failed')
-    return failed
+# ── what this cell says about itself ────────────────────────────────────────
 
-
-def replicating():
-    """Whether this cell holds a whole copy of the other cell's database: its subscription exists and every table has
-    finished its initial copy. (Not whether it is receiving right now: a cell that has just been lost isn't sending.)"""
+def own_lan_addr():
+    if ENV.get('LAN_ADDR'):
+        return ENV['LAN_ADDR']
     try:
-        out = sh(ENV['REPLICA_PSQL'] + ' -At', stdin=(
-            "SELECT count(*) FILTER (WHERE r.srsubstate = 'r') || ' ' || count(*) FROM pg_subscription s "
-            f"JOIN pg_subscription_rel r ON r.srsubid = s.oid WHERE s.subname = 'from_{PEER}';\n"))
-        ready, total = (int(x) for x in out.split())
-        return total > 0 and ready == total
-    except RuntimeError:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('192.0.2.1', 9))
+        ip = s.getsockname()[0]
+        s.close()
+        return f'{ip}:{LAN_PORT}'
+    except OSError:
+        return None
+
+
+def build_status():
+    with LOCK:
+        state = S.get('state', 'NORMAL')
+        fb = None
+        if S.get('hb'):
+            fb = dict(S['hb'], role='holder')
+        elif S.get('fb'):
+            fb = dict(S['fb'])
+        down = sorted(h for h, v in HEALTH['hosts'].items() if v == 'down')
+        peer_ok_since = T.get('peer_reach_since')
+        return {
+            'cell': CELL, 'state': state, 'healthy': bool(HEALTH['local']) and not down,
+            'holding': PEER if state == 'HOLDING' else None, 'at': iso(),
+            'declared_down': S.get('declared_down'), 'hosts_down': down or None,
+            'peer_ok_for': round(now() - peer_ok_since) if peer_ok_since else 0,
+            'resumed_at': S.get('resumed_at') if now() - S.get('resumed_at', 0) < 3600 else None,
+            'lan': own_lan_addr(), 'fb': fb,
+            'fb_ready': bool(state == 'HOLDING' and S.get('hb_prepared') and not S.get('hb')),
+            'repl': {'lag': cw_ops.RT.get('lag'), 'copy': bool(cw_ops.RT.get('copy'))},
+        }
+
+
+LAST_STATUS = {'json': '{}'}
+
+
+def publish_status():
+    text = json.dumps(build_status())
+    LAST_STATUS['json'] = text
+    write_atomic(ENV['STATUS_FILE'], text)
+
+
+def probe_hosts():
+    """'up' | 'down' (refusing, or answering an error) | 'slow' for every host of this cell."""
+    out = {}
+    for name, urls in host_checks().items():
+        worst = 'up'
+        for u in urls:
+            p = probe(u, timeout=3)
+            if p in ('refused', 'bad'):
+                worst = 'down'
+                break
+            if p == 'slow':
+                worst = 'slow'
+        out[name] = worst
+    return out
+
+
+def heartbeat():
+    """On its own clock, whatever else cellwatch is doing: a takeover takes minutes, and a cell whose status goes stale looks
+    dead to the other cell and to the phone's starter."""
+    while True:
+        try:
+            HEALTH['local'] = answers(ENV['LOCAL_CHECK'])
+            HEALTH['hosts'] = probe_hosts()
+            publish_status()
+        except Exception as e:
+            log(f'heartbeat failed: {e}')
+        time.sleep(CHECK_SECONDS)
+
+
+class LanHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        key = ENV.get('CELL_KEY', '')
+        given = self.headers.get('X-Cell-Key', '')
+        ok = bool(key) and hmac.compare_digest(hashlib.sha256(given.encode()).digest(), hashlib.sha256(key.encode()).digest())
+        if self.path != '/status' or not ok:
+            self.send_response(403)
+            self.end_headers()
+            return
+        body = LAST_STATUS['json'].encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *a):
+        pass
+
+
+def serve_lan():
+    try:
+        ThreadingHTTPServer(('0.0.0.0', LAN_PORT), LanHandler).serve_forever()
+    except OSError as e:
+        log(f'the status server could not listen on port {LAN_PORT}: {e}')
+
+
+# ── the other cell, seen two ways ───────────────────────────────────────────
+
+def _fresh(raw):
+    if not isinstance(raw, dict):
+        return False
+    try:
+        import datetime
+        at = datetime.datetime.fromisoformat(raw['at'])
+        return (datetime.datetime.now(datetime.timezone.utc) - at).total_seconds() < STALE
+    except (KeyError, ValueError):
         return False
 
 
-def take_over(s):
-    log(f'cell {PEER} is lost: taking its customers over')
-    fence(False)
-    sh(ENV['REPLICA_PSQL'], stdin=f'ALTER SUBSCRIPTION from_{PEER} DISABLE;\n' + SEQUENCES)
-    log(f'stopped replicating from {PEER} and moved its sequences on')
-    sh(ENV['STANDBY_START'])
-    deadline = time.time() + 600
-    while not answers(ENV['STANDBY_CHECK']):
-        if time.time() > deadline:
-            raise RuntimeError('the standby didn\'t come up in 10 minutes')
-        time.sleep(5)
-    log('standby is up')
-    since = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=2)).isoformat()
-    replay(since)
-    s.update(state='HOLDING', since=datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'))
-    save_state(s)
-    publish_routes('HOLDING')
-    log(f'holding cell {PEER}: its customers are served here')
+def to_view(raw):
+    if not _fresh(raw):
+        return PeerView()
+    import datetime
+    return PeerView(fresh=True, state=raw.get('state', ''), healthy=bool(raw.get('healthy')), holding=raw.get('holding'),
+                    declared_down=bool(raw.get('declared_down')), peer_ok_for=float(raw.get('peer_ok_for') or 0),
+                    fb=raw.get('fb'), fb_ready=bool(raw.get('fb_ready')),
+                    at=datetime.datetime.fromisoformat(raw['at']).timestamp(),
+                    resumed_at=float(raw.get('resumed_at') or 0))
+
+
+def fetch_cf():
+    code, raw = get_json(ENV['PEER_URL'] + '/cells/status.json')
+    return code, (raw if code == 200 else None)
+
+
+def fetch_lan():
+    url = lan_peer_url()
+    if not url:
+        return None
+    code, raw = get_json(url + '/status', timeout=3, headers={'X-Cell-Key': ENV.get('CELL_KEY', '')})
+    return raw if code == 200 else None
+
+
+def fetch_peer_raw():
+    """The freshest status of the other cell from either path, or None."""
+    for raw in (fetch_lan(), fetch_cf()[1]):
+        if _fresh(raw):
+            return raw
+    return None
+
+
+class Ctx:
+    fetch_peer = staticmethod(fetch_peer_raw)
+    publish_status = staticmethod(publish_status)
+    publish_routes = staticmethod(publish_routes)
+    fence = staticmethod(fence)
+    fence_standby = staticmethod(fence_standby)
+
+
+# ── workers ─────────────────────────────────────────────────────────────────
+
+def start_worker(name, fn, *args):
+    t = WORKER['thread']
+    if t and t.is_alive():
+        return False
+    th = threading.Thread(target=fn, args=args, daemon=True, name=name)
+    WORKER.update(thread=th, name=name)
+    th.start()
+    return True
+
+
+def busy():
+    t = WORKER['thread']
+    return bool(t and t.is_alive())
 
 
 # ── the loop ────────────────────────────────────────────────────────────────
 
-def heartbeat(s, health):
-    # publishes the status file on its own clock: a takeover takes minutes, and a cell whose status goes stale
-    # looks dead to the other cell and to the phone's starter (which would kill it mid-takeover)
-    while True:
+def since_of(key, cond, t):
+    """Seconds `cond` has been continuously true, tracked under `key`."""
+    if cond:
+        T.setdefault(key, t)
+        return t - T[key]
+    T.pop(key, None)
+    return 0
+
+
+def observe(t):
+    self_ok = answers(ENV['SELF_URL'] + '/healthz')
+    local_ok = HEALTH['local']
+    hosts = HEALTH['hosts']
+    code, cf_raw = fetch_cf()
+    lan_raw = fetch_lan()
+    if _fresh(cf_raw) and cf_raw.get('lan'):
+        S['lan_peer'] = cf_raw['lan']            # the other cell says where it is on the home network
+    cf, lan = to_view(cf_raw), to_view(lan_raw)
+
+    peer_ok_cf = cf.fresh and cf.healthy and cf.state in ('NORMAL', 'HOLDING')
+    if peer_ok_cf and not S.get('peer_seen'):
+        with LOCK:
+            S['peer_seen'] = True                # a cell never seen working (not set up yet) is never "lost"
+        log(f'cell {PEER} seen healthy')
+    peer_front_door = (not peer_ok_cf) and answers(ENV['PEER_URL'] + PEER_SERVES)
+    peer_ok_any = peer_ok_cf or (lan.fresh and lan.healthy and lan.state in ('NORMAL', 'HOLDING'))
+
+    # the hosts of this cell: down for how long, and has one been crashing again and again?
+    hosts_down = {}
+    flaps = S.setdefault('flaps', [])
+    for h, st in hosts.items():
+        d = since_of(f'host_{h}', st == 'down', t)
+        if st == 'down':
+            hosts_down[h] = d
+        was = T.get(f'prev_{h}')
+        if was == 'down' and st == 'up' and t - T.get(f'down_at_{h}', t) < CFG.host_down_fence_after:
+            flaps.append(t)
+        if st == 'down' and was != 'down':
+            T[f'down_at_{h}'] = t
+        T[f'prev_{h}'] = st
+    S['flaps'] = [x for x in flaps if t - x < CFG.flap_window]
+
+    all_green = self_ok and local_ok and not hosts_down
+    o = Obs(
+        addr_down_for=since_of('addr_bad', not self_ok, t),
+        sick_for=since_of('sick', not local_ok, t),
+        hosts_down=hosts_down, flapping=len(S['flaps']) >= CFG.flap_count,
+        good_for=since_of('good', all_green, t),
+        cf=cf, lan=lan,
+        peer_gone_for=since_of('peer_gone', code != 200, t),
+        peer_bad_for=since_of('peer_bad', not (peer_ok_cf or peer_front_door), t),
+        peer_declared_for=since_of('peer_declared', (cf.fresh and cf.declared_down) or (lan.fresh and lan.declared_down), t),
+        peer_seen=bool(S.get('peer_seen')),
+        retry_wait=t < S.get('retry_after', 0),
+        normal_at=S.get('normal_at', 0), gave_back_recently=t - S.get('fb_done_at', 0) < 180,
+        holding_since=S.get('holding_since', 0) if S.get('state') == 'HOLDING' else S.get('takeover_started', 0),
+    )
+    since_of('peer_ok', peer_ok_any, t)
+    since_of('peer_reach', cf.fresh or lan.fresh, t)    # for the other cell's decision to unfence: it sees this cell
+    T['peer_reach_since'] = T.get('peer_reach')
+    return o
+
+
+def act(d, o):
+    if d.action == 'FENCE':
+        fence(True)
+        set_state('FENCED', declared_down=(sorted(o.hosts_down) or ['a host']) if d.declared_down else None, fenced_since=now())
+        notify(f'fenced: {d.reason}', 'this cell takes no customer writes', 5 if d.declared_down else 4, 'no_entry', key='fenced')
+    elif d.action == 'UNFENCE':
+        fence(False)
+        set_state('NORMAL', declared_down=None)
+        notify('unfenced', d.reason, 3, 'white_check_mark', key='unfenced')
+    elif d.action == 'TAKEN_OVER':
+        fence(True)
+        set_state('TAKEN_OVER', declared_down=None, taken_over_at=now())
+        publish_routes('TAKEN_OVER')
+        notify(f'cell {PEER.upper()} holds this cell', 'fenced; it will be given back automatically', 4, 'warning', key='taken-over')
+    elif d.action == 'RESUME':
+        fence(False)
+        set_state('NORMAL', declared_down=None)
+        publish_routes('NORMAL')
+        notify(f'cell {CELL.upper()} is serving again', d.reason, 3, 'white_check_mark', key='resumed')
+    elif d.action == 'RESUME_STALE':
+        cw_ops.resume_stale(publish_routes, fence)
+    elif d.action == 'TAKEOVER':
+        if not cw_ops.copy_whole():
+            log(f'cell {PEER} looks lost ({d.reason}), but this cell holds no whole copy of it: not taking over')
+            S['retry_after'] = now() + 120
+            notify(f'cell {PEER.upper()} is lost and there is no copy to take over', d.reason, 5, 'rotating_light', key='nocopy-takeover')
+            return
+        cw_ops.RT['standby_up'] = False
+        start_worker('takeover', cw_ops.take_over, d.reason, publish_routes)
+    elif d.action == 'YIELD':
+        cw_ops.yield_to_peer(publish_routes, fence)
+    elif d.action == 'FAILBACK':
+        start_worker('failback', cw_failback.failback_returning, Ctx)
+
+
+def recover_after_restart():
+    """cellwatch can be restarted anywhere: finish or undo what was in progress."""
+    st = S.get('state')
+    if st == 'TAKING_OVER':
+        log('restarted in the middle of a takeover: starting it again')
+        start_worker('takeover', cw_ops.take_over, 'resumed after a restart', publish_routes)
+    elif st == 'FAILING_BACK':
+        if S.get('fb_swapped'):
+            set_state('NORMAL')
+            publish_routes('NORMAL')
+            fence(False)
+        else:
+            log('restarted in the middle of a failback before the swap: rolling it back')
+            try:
+                cw_failback._cleanup_new()
+            except Exception as e:
+                log(f'cleanup failed: {e}')
+            set_state('TAKEN_OVER', retry_after=now() + 120)
+        cw_failback._clear_fb()
+    if S.get('hb'):
+        fence_standby(False)
+        with LOCK:
+            S['hb'] = None
+            save_state()
+
+
+def background(fn, every):
+    def loop():
+        time.sleep(5)
+        while True:
+            try:
+                fn()
+            except Exception as e:
+                log(f'{fn.__name__} failed: {e}')
+            time.sleep(every)
+    threading.Thread(target=loop, daemon=True, name=fn.__name__).start()
+
+
+def replay_while_holding():
+    if S.get('state') == 'HOLDING':
+        r = cw_ops.replay_pass()
+        if r['applied'] or r['failed']:
+            log(f'replayed {r["total"]} journalled writes: {r["applied"]} applied, {r["repeated"]} already done, '
+                f'{r["refused"]} refused, {r["failed"]} failed')
+
+
+def unprotected_writes():
+    """The gateway writes down every write that went ahead without the other cell having it (its journal was slow or away). Those
+    are the only writes a failure of this cell right now could lose: say so, once a minute at most."""
+    import glob
+    # every line of a file touched in the last five minutes (an hour's file holds that hour's, so this over-counts a little)
+    recent = 0
+    for path in glob.glob(os.path.join(ENV['JOURNAL_DIR'], f'unprotected-{CELL}-*.jsonl')):
         try:
-            health['local'] = answers(ENV['LOCAL_CHECK'])
-            publish_status(s['state'], health['local'])
-        except Exception as e:
-            log(f'publishing status failed: {e}')
-        time.sleep(CHECK_SECONDS)
+            if now() - os.path.getmtime(path) < 300:
+                with open(path, encoding='utf-8') as f:
+                    recent += sum(1 for _ in f)
+        except OSError:
+            pass
+    if recent:
+        notify(f'{recent} writes have no copy in the other cell',
+               'its journal has been slow or away: a failure of this cell right now could lose them', 4, 'warning', key='unprotected')
+
+
+def resources():
+    """Disk, clock and (on the phone) battery: the quiet ways a cell stops."""
+    try:
+        st = os.statvfs(ENV['JOURNAL_DIR'])
+        free_gb = st.f_bavail * st.f_frsize / 1e9
+        if free_gb < 2:
+            notify('disk is almost full', f'{free_gb:.1f} GB free', 5, 'floppy_disk', key='disk')
+    except OSError:
+        pass
+    raw = fetch_peer_raw()
+    if raw:
+        try:
+            import datetime
+            skew = (datetime.datetime.fromisoformat(raw['at']) - datetime.datetime.now(datetime.timezone.utc)).total_seconds()
+            if abs(skew) > 45:
+                notify('clocks disagree', f"the other cell's clock differs by {skew:.0f} s", 4, 'clock', key='skew')
+        except (KeyError, ValueError):
+            pass
+    out = sh('termux-battery-status 2>/dev/null', check=False)
+    if out.strip():
+        try:
+            b = json.loads(out)
+            if b.get('percentage', 100) <= 25 and b.get('plugged') == 'UNPLUGGED':
+                notify(f'battery at {b["percentage"]}%', 'plug the phone in', 5, 'battery', key='battery')
+        except ValueError:
+            pass
 
 
 def main():
-    s = load_state()
-    publish_routes(s['state'])
-    health = {'local': answers(ENV['LOCAL_CHECK'])}
-    threading.Thread(target=heartbeat, args=(s, health), daemon=True).start()
-    self_bad_since = self_sick_since = peer_bad_since = peer_gone_since = self_good_since = None
-    quiet_peer_logged = False
-    log(f'watching (state {s["state"]})')
+    load_state()
+    publish_routes(S['state'])
+    HEALTH['local'] = answers(ENV['LOCAL_CHECK'])
+    cw_ops.setup_wal_cap()
+    threading.Thread(target=heartbeat, daemon=True, name='heartbeat').start()
+    threading.Thread(target=serve_lan, daemon=True, name='lan').start()
+    background(cw_ops.archive_journal, 30)
+    background(cw_ops.monitor_once, 30)
+    background(replay_while_holding, 5)
+    background(cw_ops.selfreplay_while_active, 5)
+    background(cw_ops.maintenance, 3600)
+    background(resources, 300)
+    background(unprotected_writes, 60)
+    recover_after_restart()
+    log(f'watching (state {S["state"]})')
     while True:
-        now = time.time()
-        local_ok = health['local']
-        self_ok = answers(ENV['SELF_URL'] + '/healthz')
-        code, peer = get_json(ENV['PEER_URL'] + '/cells/status.json')
-        peer_fresh = False
-        if code == 200 and isinstance(peer, dict):
-            try:
-                at = datetime.datetime.fromisoformat(peer['at'])
-                peer_fresh = (datetime.datetime.now(datetime.timezone.utc) - at).total_seconds() < 90
-            except (KeyError, ValueError):
-                pass
-        peer_ok = peer_fresh and peer.get('healthy') and peer.get('state') in ('NORMAL', 'HOLDING')
-        if peer_ok and not s.get('peer_seen'):
-            s['peer_seen'] = True    # a cell that was never seen working (not set up yet) is never "lost"
-            log(f'cell {PEER} seen healthy')
-        # A silent cellwatch is not a lost cell: on 2026-10-09 the phone's was restarted, its status went stale, and
-        # the laptop took cell A over while the phone's services were up and serving, so both ran cell A's goals.
-        # The other cell counts as lost only when its own customers' front door doesn't answer either.
-        peer_serving = not peer_ok and answers(ENV['PEER_URL'] + PEER_SERVES)
-        if peer_serving and not quiet_peer_logged:
-            log(f'cell {PEER} serves, but its status is stale or unhealthy: not counting it as lost')
-        quiet_peer_logged = peer_serving
-        self_bad_since = None if self_ok else (self_bad_since or now)
-        self_sick_since = None if local_ok else (self_sick_since or now)
-        self_good_since = (self_good_since or now) if (self_ok and local_ok) else None
-        peer_holds_me = bool(peer_fresh and isinstance(peer, dict) and peer.get('holding') == CELL)
-        peer_bad_since = None if (peer_ok or peer_serving) else (peer_bad_since or now)
-        peer_gone_since = None if code == 200 else (peer_gone_since or now)   # its address didn't answer at all
-        peer_lost = ((peer_gone_since and now - peer_gone_since >= TAKEOVER_AFTER)
-                     or (peer_bad_since and now - peer_bad_since >= SICK_TAKEOVER_AFTER))
-        state = s['state']
+        t = now()
         try:
-            if state == 'NORMAL' and peer_holds_me:
-                # The other cell took this one over while it looked lost, and this one has since come back (2026-10-09:
-                # it unfenced itself 65 s after fencing, before the takeover finished, and went on taking writes for ten
-                # hours beside the copy that had become the cell). Whatever its own state, it is no longer the cell.
-                fence(True)
-                s['state'] = 'TAKEN_OVER'
-                publish_routes('TAKEN_OVER')
-                log(f'cell {PEER} holds this cell\'s customers: fenced, staying fenced until failback')
-            elif state == 'NORMAL':
-                if ((self_bad_since and now - self_bad_since >= FENCE_AFTER)
-                        or (self_sick_since and now - self_sick_since >= SICK_FENCE_AFTER)):
-                    fence(True)
-                    s['state'] = 'FENCED'
-                elif (self_ok and local_ok and peer_lost and s.get('peer_seen') and now >= s.get('retry_after', 0)):
-                    if not replicating():
-                        log(f'cell {PEER} looks lost, but this cell holds no live copy of it: not taking over')
-                        s['retry_after'] = now + 600
-                    else:
-                        try:
-                            take_over(s)
-                        except Exception as e:
-                            log(f'taking cell {PEER} over failed: {e}; trying again in ten minutes')
-                            s['retry_after'] = now + 600
-            elif state == 'FENCED':
-                if peer_holds_me:
-                    s['state'] = 'TAKEN_OVER'
-                    publish_routes('TAKEN_OVER')
-                    log(f'cell {PEER} holds this cell\'s customers: staying fenced until failback')
-                elif self_good_since and now - self_good_since >= UNFENCE_AFTER:
-                    fence(False)
-                    s['state'] = 'NORMAL'
-            save_state(s)
+            o = observe(t)
+            cw_ops.RT['peer_ok'] = bool(o.cf.fresh and o.cf.healthy)
+            state = S['state']
+            if state == 'TAKING_OVER' and not cw_ops.RT.get('standby_up') and T.get('peer_ok') and t - T['peer_ok'] >= 60:
+                log('the other cell has been healthy for a minute: stopping the takeover')
+                cw_ops.ABORT.set()
+            d = decide(state, o, CFG)
+            if not d and state == 'TAKEN_OVER' and t - T.get('dbg', 0) > 60:
+                T['dbg'] = t          # what a taken-over cell is waiting for, once a minute
+                log(f'taken over; waiting: other cell gone {o.peer_gone_for:.0f}s (lan seen: {o.lan.fresh}), this cell healthy for '
+                    f'{o.good_for:.0f}s, retry wait: {o.retry_wait}, other cell says: {o.cf.state or "-"}/{o.cf.holding or "-"}')
+            if d and not (busy() and d.action in ('TAKEOVER', 'FAILBACK')):
+                log(f'{d.action}: {d.reason}')
+                act(d, o)
+            # the other cell asks for its customers back
+            if state == 'HOLDING' and not busy() and not S.get('hb'):
+                fb = (fetch_peer_raw() or {}).get('fb') or {}
+                if fb.get('role') == 'returning' and fb.get('phase') == 'cutover' and fb.get('id') != S.get('hb_last'):
+                    with LOCK:
+                        S['hb_last'] = fb['id']
+                    start_worker('handback', cw_failback.handback_holder, Ctx, fb['id'])
+            save_state()
         except Exception as e:
-            log(f'error in state {state}: {e}')
+            log(f'error: {e}')
         time.sleep(CHECK_SECONDS)
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1 and sys.argv[1] == 'replay':
-        replay(sys.argv[2] if len(sys.argv) > 2 else '')
-    else:
-        main()
+    main()

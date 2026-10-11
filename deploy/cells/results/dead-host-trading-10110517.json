@@ -1,0 +1,66 @@
+{
+ "fenced_after_s": 79,
+ "orders_back_after_s": 175,
+ "both_normal_after_host_back_s": 299,
+ "longest_pause_during_failback_s": 14.4,
+ "laptop_cellwatch": [
+  "2026-10-10T23:46:20Z [b] failback a3a567ef: the new database is in sync",
+  "2026-10-10T23:46:32Z [b] failback a3a567ef: swapping the new database in (the old one is kept as sprout_before_failback_202610102346)",
+  "2026-10-10T23:46:33Z [b] unfenced",
+  "2026-10-10T23:46:33Z [b] state FAILING_BACK -> NORMAL",
+  "2026-10-10T23:46:35Z [b] failback a3a567ef: serving again; refused writes lasted 3 s (the old database is sprout_before_failback_202610102346)",
+  "2026-10-10T23:46:35Z [b] ALERT cell B has its customers back: cutover took 3 s; the whole failback 70 s",
+  "2026-10-10T23:46:47Z [b] TAKEN_OVER: the other cell holds this one: it was taken over while it looked lost",
+  "2026-10-10T23:46:47Z [b] fenced: this cell takes no customer writes",
+  "2026-10-10T23:46:47Z [b] state NORMAL -> TAKEN_OVER",
+  "2026-10-10T23:46:47Z [b] ALERT cell A holds this cell: fenced; it will be given back automatically",
+  "2026-10-10T23:46:57Z [b] RESUME: the customers were given back, and the other cell no longer holds them",
+  "2026-10-10T23:46:57Z [b] unfenced",
+  "2026-10-10T23:46:57Z [b] state TAKEN_OVER -> NORMAL",
+  "2026-10-10T23:46:58Z [b] ALERT cell B is serving again: the customers were given back, and the other cell no longer holds them"
+ ],
+ "phone_cellwatch": [
+  "2026-10-10T23:40:43Z [a] state NORMAL -> TAKING_OVER",
+  "2026-10-10T23:40:43Z [a] ALERT taking cell B over: it has said it is out",
+  "2026-10-10T23:40:44Z [a] stopped replicating from b and moved its sequences on",
+  "2026-10-10T23:41:23Z [a] standby is up",
+  "2026-10-10T23:41:27Z [a] replayed 107 journalled writes: 39 applied, 68 already done, 0 refused, 0 failed (retried every few seconds until they succeed)",
+  "2026-10-10T23:41:27Z [a] state TAKING_OVER -> HOLDING",
+  "2026-10-10T23:41:27Z [a] ALERT holding cell B: its customers are served here (43 s)",
+  "2026-10-10T23:46:29Z [a] handback a3a567ef: the other cell asks for its customers back",
+  "2026-10-10T23:46:32Z [a] handback a3a567ef: standby fenced at 0/F0784100 (journal pass: 0 writes, 0 failed)",
+  "2026-10-10T23:46:41Z [a] state HOLDING -> NORMAL",
+  "2026-10-10T23:46:41Z [a] handback a3a567ef: cell B has its customers back; rebuilding this cell's copy of it",
+  "2026-10-10T23:46:41Z [a] ALERT gave cell B its customers back",
+  "2026-10-10T23:46:41Z [a] rebuilding the copy of cell B",
+  "2026-10-10T23:46:45Z [a] subscribed to cell B; the initial copy is running"
+ ],
+ "scenario": "dead-host-trading",
+ "orders": {
+  "acknowledged": 730,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+90s A=NORMAL B=NORMAL/sick",
+  "+164s A=NORMAL B=FENCED/sick",
+  "+222s A=TAKING_OVER B=FENCED/sick",
+  "+263s A=HOLDING B=FENCED/sick",
+  "+283s A=HOLDING B=TAKEN_OVER/sick",
+  "+304s A=HOLDING B=TAKEN_OVER",
+  "+500s A=HOLDING B=FAILING_BACK",
+  "+565s A=HOLDING B=NORMAL",
+  "+582s A=NORMAL B=NORMAL",
+  "+586s A=NORMAL B=TAKEN_OVER",
+  "+594s A=NORMAL B=NORMAL"
+ ],
+ "pass": true,
+ "checks": {
+  "orders worked again within the target": true,
+  "the customers were given back without hands": true,
+  "the longest pause in orders during the failback is under 60 s": true
+ }
+}

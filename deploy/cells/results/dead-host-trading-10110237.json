@@ -1,0 +1,65 @@
+{
+ "fenced_after_s": 78,
+ "orders_back_after_s": 171,
+ "both_normal_after_host_back_s": 393,
+ "longest_pause_during_failback_s": 117.7,
+ "laptop_cellwatch": [
+  "2026-10-10T21:04:36Z [b] failback 8c5b5258: swapping the new database in (the old one is kept as sprout_before_failback_202610102104)",
+  "2026-10-10T21:04:37Z [b] unfenced",
+  "2026-10-10T21:04:37Z [b] state FAILING_BACK -> NORMAL",
+  "2026-10-10T21:04:39Z [b] failback 8c5b5258: serving again; refused writes lasted 3 s (the old database is sprout_before_failback_202610102104)",
+  "2026-10-10T21:04:39Z [b] ALERT cell B has its customers back: cutover took 3 s; the whole failback 65 s",
+  "2026-10-10T21:04:46Z [b] TAKEN_OVER: the other cell holds this one: it was taken over while it looked lost",
+  "2026-10-10T21:04:46Z [b] fenced: this cell takes no customer writes",
+  "2026-10-10T21:04:46Z [b] state NORMAL -> TAKEN_OVER",
+  "2026-10-10T21:04:46Z [b] ALERT cell A holds this cell: fenced; it will be given back automatically",
+  "2026-10-10T21:05:59Z [b] watching (state TAKEN_OVER)",
+  "2026-10-10T21:06:24Z [b] RESUME: the customers were given back, and the other cell no longer holds them",
+  "2026-10-10T21:06:24Z [b] unfenced",
+  "2026-10-10T21:06:24Z [b] state TAKEN_OVER -> NORMAL",
+  "2026-10-10T21:06:25Z [b] ALERT cell B is serving again: the customers were given back, and the other cell no longer holds them"
+ ],
+ "phone_cellwatch": [
+  "2026-10-10T21:04:45Z [a] state HOLDING -> NORMAL",
+  "2026-10-10T21:04:45Z [a] state HOLDING -> NORMAL",
+  "2026-10-10T21:04:45Z [a] handback 8c5b5258: cell B has its customers back; rebuilding this cell's copy of it",
+  "2026-10-10T21:04:45Z [a] handback 8c5b5258: cell B has its customers back; rebuilding this cell's copy of it",
+  "2026-10-10T21:04:45Z [a] ALERT gave cell B its customers back",
+  "2026-10-10T21:04:45Z [a] ALERT gave cell B its customers back",
+  "2026-10-10T21:04:45Z [a] rebuilding the copy of cell B",
+  "2026-10-10T21:04:45Z [a] rebuilding the copy of cell B",
+  "2026-10-10T21:04:46Z [a] ALERT no copy of the other cell: this cell has no subscription to it: run a rebuild",
+  "2026-10-10T21:04:46Z [a] ALERT no copy of the other cell: this cell has no subscription to it: run a rebuild",
+  "2026-10-10T21:04:52Z [a] subscribed to cell B; the initial copy is running",
+  "2026-10-10T21:04:52Z [a] subscribed to cell B; the initial copy is running",
+  "2026-10-10T21:06:59Z [a] watching (state NORMAL)",
+  "2026-10-10T21:06:59Z [a] watching (state NORMAL)"
+ ],
+ "scenario": "dead-host-trading",
+ "orders": {
+  "acknowledged": 739,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+96s A=NORMAL B=NORMAL/sick",
+  "+164s A=NORMAL B=FENCED/sick",
+  "+216s A=TAKING_OVER B=FENCED/sick",
+  "+267s A=HOLDING B=FENCED/sick",
+  "+271s A=HOLDING B=TAKEN_OVER/sick",
+  "+314s A=HOLDING B=TAKEN_OVER",
+  "+510s A=HOLDING B=FAILING_BACK",
+  "+570s A=HOLDING B=NORMAL",
+  "+587s A=NORMAL B=TAKEN_OVER",
+  "+680s A=NORMAL B=NORMAL"
+ ],
+ "pass": false,
+ "checks": {
+  "orders worked again within the target": true,
+  "the customers were given back without hands": true,
+  "the longest pause in orders during the failback is under 60 s": false
+ }
+}

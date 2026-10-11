@@ -44,7 +44,7 @@ def build() -> tuple[str, set[str]]:
     needed: set[str] = {'SPROUT_DB_PASSWORD', 'IDENTITY_TOTP_KEY', 'MARKETDATA_START_DATE', 'MARKETDATA_EPOCH', 'SPROUT_HOSTNAME',
                         'S_PAYROLL_PARTNER_KEY', 'S_PAYROLL_WEBHOOK_SECRET',
                         # the cells' shared settings: copied in by up.sh from the cells' own secrets, never generated here
-                        'CELL_KEY', 'CELL_A_REPLICATOR_PASSWORD', 'CELL_B_REPLICATOR_PASSWORD', 'CELL_WEIGHTS'}
+                        'CELL_KEY', 'CELL_A_REPLICATOR_PASSWORD', 'CELL_B_REPLICATOR_PASSWORD', 'CELL_WEIGHTS', 'NTFY_TOPIC'}
 
     text = must(text, 'name: sprout-preprod', 'name: sprout-laptop')
     text = must(text, 'context: ..', 'context: ../..', text.count('context: ..'))
@@ -166,30 +166,47 @@ def build() -> tuple[str, set[str]]:
     logging: {driver: json-file, options: {max-size: 10m, max-file: "3"}}
     mem_limit: 128m
 
-  # Watches both cells; fences this one, or takes cell A over (deploy/cells/cellwatch.py)
+  # Keeps this cell safe and served; takes cell A over, or gives it back (deploy/cells/cellwatch.py and cw_*.py). Its image has
+  # Python in it, so it starts without the internet.
   cellwatch:
-    image: postgres:18-alpine
-    entrypoint: ["sh", "-c", "apk add --no-cache python3 >/dev/null && exec python3 /cells/cellwatch.py"]
+    build:
+      context: ../cells
+      dockerfile: Dockerfile.cellwatch
+    image: sprout-cellwatch:local
+    entrypoint: ["python3", "/cells/cellwatch.py"]
+    ports:
+      - "8195:8195"      # this cell's status on the home network: the cells' second way of seeing each other
     environment:
+      PYTHONPATH: /cells
+      PYTHONDONTWRITEBYTECODE: "1"
       CELL: b
       PEER: a
+      PREFERRED_SURVIVOR: b
       SELF_URL: https://sprout-b-saiworks.nncs.in
       PEER_URL: https://sprout-a-saiworks.nncs.in
       LOCAL_CHECK: http://edge:8100/api/marketdata/v1/market
+      HOST_CHECKS: "edge=http://edge:8101/actuator/health;trading=http://trading:8103/actuator/health,http://trading:8109/actuator/health,http://trading:8115/actuator/health,http://trading:8116/actuator/health,http://trading:8118/actuator/health;money=http://money:8106/actuator/health,http://money:8104/actuator/health,http://money:8105/actuator/health,http://money:8112/actuator/health,http://money:8113/actuator/health,http://money:8114/actuator/health,http://money:8117/actuator/health;street=http://street:8107/actuator/health,http://street:8108/actuator/health,http://street:8111/actuator/health,http://street:8110/actuator/health"
       STATUS_FILE: /state/status.json
       ROUTES_FILE: /state/routes.conf
       CELLS_FILE: /state/cells.json
       STATE_FILE: /state/state.json
       LOG_FILE: /state/cellwatch.log
       FENCE_FILE: /journal/fenced
+      STANDBY_FENCE_FILE: /journal/fenced-a
       JOURNAL_DIR: /journal
+      JOURNAL_ARCHIVE_DIR: /journal/archive
       WEIGHTS: ${CELL_WEIGHTS}
       CELL_KEY: ${CELL_KEY}
+      NTFY_TOPIC: ${NTFY_TOPIC:-}
+      LAN_ADDR: ${LAN_ADDR:-}
       PGPASSWORD: ${SPROUT_DB_PASSWORD}
-      REPLICA_PSQL: psql -h postgres -U sprout -d sprout_a -v ON_ERROR_STOP=1 -q
+      PSQL_BASE: psql -h postgres -U sprout -v ON_ERROR_STOP=1 -q
+      PGDUMP_BASE: pg_dump -h postgres -U sprout
+      PEER_PG: host=pgpeer port=5432 user=replicator sslmode=disable password=${CELL_A_REPLICATOR_PASSWORD}
       STANDBY_START: python3 /cells/dockerctl.py start sprout-laptop-standby-1
       STANDBY_STOP: python3 /cells/dockerctl.py stop sprout-laptop-standby-1
       STANDBY_GATEWAY: http://standby:8100
+      OWN_GATEWAY: http://edge:8100
       STANDBY_CHECK: http://standby:8100/api/marketdata/v1/market
       RELOAD_ROUTES: python3 /cells/dockerctl.py exec sprout-laptop-web-1 nginx -s reload
     volumes:
@@ -201,7 +218,7 @@ def build() -> tuple[str, set[str]]:
       - web
     restart: unless-stopped
     logging: {driver: json-file, options: {max-size: 10m, max-file: "3"}}
-    mem_limit: 96m
+    mem_limit: 160m
 
   # Cell A's services on this cell's copy of cell A's database, with cell A's own keys (data/cell-a, from the phone):
   # created by up.sh, started by cellwatch only when cell A is lost
@@ -219,6 +236,7 @@ def build() -> tuple[str, set[str]]:
     environment:
       SPROUT_SANDBOX: "true"
       GATEWAY_CELL_ID: a
+      GATEWAY_CELL_PEER_URL: https://sprout-a-saiworks.nncs.in   # journals in the cell it serves: a second copy if the holder fails
       GATEWAY_CELL_KEY: ${CELL_KEY}
       GATEWAY_CELL_JOURNAL_DIR: /tmp/journal
       GATEWAY_CELL_FENCE_FILE: /journal/fenced-a     # failback pauses cell A's writes here while moving them home

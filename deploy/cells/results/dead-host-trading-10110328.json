@@ -1,0 +1,47 @@
+{
+ "fenced_after_s": 78,
+ "orders_back_after_s": 167,
+ "both_normal_after_host_back_s": null,
+ "longest_pause_during_failback_s": 2.4,
+ "laptop_cellwatch": [
+  "2026-10-10T21:10:14Z [b] fenced: this cell takes no customer writes",
+  "2026-10-10T21:10:14Z [b] state NORMAL -> FENCED",
+  "2026-10-10T21:10:14Z [b] ALERT fenced: host down: trading: this cell takes no customer writes",
+  "2026-10-10T21:24:56Z [b] UNFENCE: healthy for 210 s",
+  "2026-10-10T21:24:56Z [b] unfenced",
+  "2026-10-10T21:24:56Z [b] state FENCED -> NORMAL",
+  "2026-10-10T21:24:56Z [b] ALERT unfenced: healthy for 210 s",
+  "2026-10-10T21:34:54Z [b] FENCE: host down: trading",
+  "2026-10-10T21:34:54Z [b] fenced: this cell takes no customer writes",
+  "2026-10-10T21:34:54Z [b] state NORMAL -> FENCED",
+  "2026-10-10T21:34:54Z [b] ALERT fenced: host down: trading: this cell takes no customer writes",
+  "2026-10-10T21:36:27Z [b] TAKEN_OVER: the other cell holds this one",
+  "2026-10-10T21:36:27Z [b] state FENCED -> TAKEN_OVER",
+  "2026-10-10T21:36:27Z [b] ALERT cell A holds this cell: fenced; it will be given back automatically"
+ ],
+ "phone_cellwatch": [],
+ "scenario": "dead-host-trading",
+ "orders": {
+  "acknowledged": 257,
+  "missing": 148,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": false,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+90s A=NORMAL B=NORMAL/sick",
+  "+156s A=NORMAL B=FENCED/sick",
+  "+204s A=TAKING_OVER B=FENCED/sick",
+  "+247s A=HOLDING B=FENCED/sick",
+  "+251s A=HOLDING B=TAKEN_OVER/sick",
+  "+295s A=HOLDING B=TAKEN_OVER",
+  "+332s A=silent B=TAKEN_OVER"
+ ],
+ "pass": false,
+ "checks": {
+  "orders worked again within the target": true,
+  "the customers were given back without hands": false,
+  "the longest pause in orders during the failback is under 60 s": true
+ }
+}

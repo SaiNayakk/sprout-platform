@@ -36,11 +36,14 @@ mkdir -p data
 CELLS_SECRETS="${SPROUT_CELLS_SECRETS:-/f/Projects/sprout/cells-secrets/cells.env}"
 [ -f "$CELLS_SECRETS" ] || { echo "no cells secrets file at $CELLS_SECRETS"; exit 1; }
 touch data/.env
-for k in CELL_KEY CELL_A_REPLICATOR_PASSWORD CELL_B_REPLICATOR_PASSWORD; do
+for k in CELL_KEY CELL_A_REPLICATOR_PASSWORD CELL_B_REPLICATOR_PASSWORD NTFY_TOPIC; do
   grep -q "^$k=" data/.env || grep "^$k=" "$CELLS_SECRETS" >> data/.env
 done
 # new customers are split between the cells by what each carries (measured: see the capacity docs)
 grep -q '^CELL_WEIGHTS=' data/.env || echo 'CELL_WEIGHTS=a=35,b=65' >> data/.env
+# where this machine is on the home network: the other cell's second way of reaching it (re-read at every start: DHCP moves)
+LAN_IP="$(python -c "import socket; s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(('8.8.8.8', 80)); print(s.getsockname()[0])")"
+sed -i '/^LAN_ADDR=/d' data/.env && echo "LAN_ADDR=$LAN_IP:8195" >> data/.env
 python render.py
 mkdir -p data/keys data/cloudflared data/cloudflared-front data/cells data/journal data/cell-a/keys
 chmod 777 data/journal       # the gateway runs as its own user inside its container
