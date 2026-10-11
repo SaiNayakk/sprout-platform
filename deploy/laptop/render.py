@@ -198,6 +198,7 @@ def build() -> tuple[str, set[str]]:
       WEIGHTS: ${CELL_WEIGHTS}
       CELL_KEY: ${CELL_KEY}
       NTFY_TOPIC: ${NTFY_TOPIC:-}
+      WITNESS_URL: https://sprout-witness.sai31nayak.workers.dev
       LAN_ADDR: ${LAN_ADDR:-}
       PGPASSWORD: ${SPROUT_DB_PASSWORD}
       PSQL_BASE: psql -h postgres -U sprout -v ON_ERROR_STOP=1 -q

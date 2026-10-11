@@ -1,7 +1,7 @@
 """Every rule of cw_logic.py against the incident that taught it.   python -m unittest deploy/cells/test_cw_logic.py"""
 import unittest
 
-from cw_logic import Cfg, Obs, PeerView, decide, peer_holds_me, peer_lost
+from cw_logic import Cfg, Obs, PeerView, WitView, decide, peer_holds_me, peer_lost
 
 A = Cfg(cell='a', peer='b', preferred='b')
 B = Cfg(cell='b', peer='a', preferred='b')
@@ -203,6 +203,40 @@ class PeerLostReasons(unittest.TestCase):
         self.assertEqual(peer_lost(Obs(peer_gone_for=130), A), 'its address is silent')
         self.assertEqual(peer_lost(Obs(peer_bad_for=700), A), 'it answers but cannot serve')
         self.assertIsNone(peer_lost(Obs(), A))
+
+
+class Witness(unittest.TestCase):
+    """A third party outside both cells (deploy/witness): it holds each cell's lease, the cell's last beat."""
+
+    def wit(self, age, state='NORMAL', healthy=True, declared=False):
+        return WitView(reachable=True, seen=True, age=age, state=state, healthy=healthy, declared_down=declared)
+
+    def test_blind_to_each_other_but_the_witness_sees_it_alive_so_nobody_is_taken_over(self):
+        o = Obs(peer_gone_for=500, peer_seen=True, good_for=500, wit=self.wit(4))
+        self.assertIsNone(act('NORMAL', o))
+        self.assertIsNone(act('NORMAL', o, B))
+
+    def test_a_lapsed_lease_is_lost_in_30_s_not_120(self):
+        self.assertIsNone(act('NORMAL', Obs(peer_gone_for=40, peer_seen=True, good_for=500, wit=self.wit(29))))
+        d = decide('NORMAL', Obs(peer_gone_for=35, peer_seen=True, good_for=500, wit=self.wit(31)), A)
+        self.assertEqual(d.action, 'TAKEOVER')
+        self.assertIn('lease', d.reason)
+
+    def test_the_home_network_still_vetoes_a_lapsed_lease(self):
+        o = Obs(peer_gone_for=35, peer_seen=True, good_for=500, wit=self.wit(60), lan=alive())
+        self.assertIsNone(act('NORMAL', o))
+
+    def test_a_cell_that_says_it_is_out_is_taken_over_even_though_its_lease_is_live(self):
+        o = Obs(peer_declared_for=31, peer_seen=True, good_for=500, wit=self.wit(3, state='FENCED', declared=True))
+        self.assertEqual(act('NORMAL', o), 'TAKEOVER')
+
+    def test_a_witness_that_cannot_be_reached_changes_nothing(self):
+        self.assertEqual(act('NORMAL', Obs(peer_gone_for=120, peer_seen=True, good_for=500, wit=WitView())), 'TAKEOVER')
+        self.assertIsNone(act('NORMAL', Obs(peer_gone_for=119, peer_seen=True, good_for=500, wit=WitView())))
+
+    def test_a_sick_cell_that_still_beats_is_not_vetoed(self):
+        o = Obs(peer_bad_for=700, peer_seen=True, good_for=500, wit=self.wit(3, healthy=False))
+        self.assertEqual(act('NORMAL', o), 'TAKEOVER')
 
 
 if __name__ == '__main__':

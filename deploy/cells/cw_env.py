@@ -142,7 +142,8 @@ def lan_peer_url():
 def partitioned(url):
     """Fault injection for chaos tests: while PARTITION_FILE exists this cell cannot see the other (every request to its
     addresses fails), though nothing on the network is touched. The file's content says which paths: `cf` blocks only the
-    Cloudflare address, `lan` only the home-network one, anything else (or nothing) both."""
+    Cloudflare address, `lan` only the home-network one, `witness` only the witness, `everything` the other cell and the witness,
+    anything else (or nothing) both of the other cell's addresses."""
     try:
         with open(PARTITION_FILE, encoding='utf-8') as f:
             mode = f.read().strip()
@@ -151,6 +152,11 @@ def partitioned(url):
     lan = lan_peer_url()
     on_cf = url.startswith(ENV['PEER_URL'])
     on_lan = bool(lan and url.startswith(lan))
+    on_wit = bool(ENV.get('WITNESS_URL') and url.startswith(ENV['WITNESS_URL']))
+    if mode == 'witness':
+        return on_wit
+    if mode == 'everything':
+        return on_cf or on_lan or on_wit
     if mode == 'cf':
         return on_cf
     if mode == 'lan':

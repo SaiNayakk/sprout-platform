@@ -37,6 +37,7 @@ class Cfg:
     peer_sees_me_for: int = 15
     failback_stable_after: int = 180  # healthy this long before the cell asks for its customers back
     resume_after: int = 300       # the cell holding this one's customers has been gone this long: serve them from here
+    lease_after: int = 30         # the witness has not heard from the other cell this long: its lease has lapsed
     flap_count: int = 3
     flap_window: int = 600
 
@@ -57,6 +58,17 @@ class PeerView:
 
 
 @dataclass
+class WitView:
+    """What the witness (a Worker outside both cells) says of the other cell."""
+    reachable: bool = False       # it answered recently
+    seen: bool = False            # it has heard from the other cell at least once
+    age: float = 0                # seconds since it last did
+    state: str = ''
+    healthy: bool = False
+    declared_down: bool = False
+
+
+@dataclass
 class Obs:
     addr_down_for: float = 0      # this cell's own public address
     sick_for: float = 0           # its own health check failing
@@ -65,6 +77,7 @@ class Obs:
     good_for: float = 0           # address, health check and every host fine, continuously
     cf: PeerView = field(default_factory=PeerView)
     lan: PeerView = field(default_factory=PeerView)
+    wit: WitView = field(default_factory=WitView)
     peer_gone_for: float = 0      # the other cell's status unreachable through Cloudflare
     peer_bad_for: float = 0       # ... or answering, but neither healthy nor serving
     peer_declared_for: float = 0
@@ -99,6 +112,12 @@ def peer_lost(o: Obs, c: Cfg) -> Optional[str]:
         return 'it has said it is out'          # it fenced itself: it takes no writes, whatever the LAN shows
     if lan_vetoes(o):
         return None
+    w = o.wit
+    if w.reachable and w.seen:
+        if w.age < c.lease_after and w.healthy and w.state in ('NORMAL', 'HOLDING') and not w.declared_down:
+            return None                         # neither of our paths sees it, but the witness does: it is alive
+        if w.age >= c.lease_after:
+            return 'its lease at the witness has lapsed'
     if o.peer_gone_for >= c.takeover_after:
         return 'its address is silent'
     if o.peer_bad_for >= c.sick_takeover_after:

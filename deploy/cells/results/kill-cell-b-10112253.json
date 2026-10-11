@@ -1,0 +1,35 @@
+{
+ "orders_back_after_s": 276,
+ "both_normal_after_restart_s": 752,
+ "scenario": "kill-cell-b",
+ "orders": {
+  "acknowledged": 922,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+76s A=NORMAL B=silent",
+  "+113s A=TAKING_OVER B=silent",
+  "+351s A=HOLDING B=silent",
+  "+385s A=HOLDING B=NORMAL/sick",
+  "+393s A=HOLDING B=TAKEN_OVER/sick",
+  "+439s A=HOLDING B=TAKEN_OVER",
+  "+626s A=HOLDING B=FAILING_BACK",
+  "+705s A=HOLDING B=NORMAL",
+  "+722s A=NORMAL B=FENCED",
+  "+885s A=TAKING_OVER B=FENCED",
+  "+1030s A=HOLDING B=FENCED",
+  "+1046s A=HOLDING B=TAKEN_OVER",
+  "+1050s A=HOLDING B=FAILING_BACK",
+  "+1125s A=HOLDING B=NORMAL",
+  "+1129s A=NORMAL B=NORMAL"
+ ],
+ "pass": true,
+ "checks": {
+  "orders worked again within 6 minutes": true,
+  "the customers were given back without hands": true
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "longest_gap_between_acknowledged_orders_s": 3.1,
+ "scenario": "mutual-blind",
+ "orders": {
+  "acknowledged": 730,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL"
+ ],
+ "pass": true,
+ "checks": {
+  "both cells stayed NORMAL throughout": true,
+  "no gap in the orders longer than 30 s": true
+ }
+}

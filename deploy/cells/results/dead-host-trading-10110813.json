@@ -1,0 +1,64 @@
+{
+ "fenced_after_s": 95,
+ "orders_back_after_s": 201,
+ "both_normal_after_host_back_s": 316,
+ "longest_pause_during_failback_s": 9.9,
+ "laptop_cellwatch": [
+  "2026-10-11T02:41:20Z [b] replayed 10 writes the holder journalled here: 10 applied, 0 already done, 0 refused, 0 failed",
+  "2026-10-11T02:41:26Z [b] replayed 8 writes the holder journalled here: 8 applied, 0 already done, 0 refused, 0 failed",
+  "2026-10-11T02:41:32Z [b] replayed 11 writes the holder journalled here: 11 applied, 0 already done, 0 refused, 0 failed",
+  "2026-10-11T02:41:38Z [b] replayed 11 writes the holder journalled here: 11 applied, 0 already done, 0 refused, 0 failed",
+  "2026-10-11T02:41:45Z [b] replayed 11 writes the holder journalled here: 11 applied, 0 already done, 0 refused, 0 failed",
+  "2026-10-11T02:41:52Z [b] failback 5d9cacc9: the new database is in sync",
+  "2026-10-11T02:41:52Z [b] replayed 12 writes the holder journalled here: 12 applied, 0 already done, 0 refused, 0 failed",
+  "2026-10-11T02:41:59Z [b] replayed 12 writes the holder journalled here: 12 applied, 0 already done, 0 refused, 0 failed",
+  "2026-10-11T02:42:04Z [b] replayed 6 writes the holder journalled here: 6 applied, 0 already done, 0 refused, 0 failed",
+  "2026-10-11T02:42:06Z [b] failback 5d9cacc9: swapping the new database in (the old one is kept as sprout_before_failback_202610110242)",
+  "2026-10-11T02:42:07Z [b] unfenced",
+  "2026-10-11T02:42:07Z [b] state FAILING_BACK -> NORMAL",
+  "2026-10-11T02:42:10Z [b] failback 5d9cacc9: serving again; refused writes lasted 4 s (the old database is sprout_before_failback_202610110242)",
+  "2026-10-11T02:42:10Z [b] ALERT cell B has its customers back: cutover took 4 s; the whole failback 82 s"
+ ],
+ "phone_cellwatch": [
+  "2026-10-11T02:42:05Z [a] handback 5d9cacc9: standby fenced at 1/957E98E0 (journal pass: 0 writes, 0 failed)",
+  "2026-10-11T02:42:05Z [a] handback 5d9cacc9: standby fenced at 1/957E98E0 (journal pass: 0 writes, 0 failed)",
+  "2026-10-11T02:42:16Z [a] state HOLDING -> NORMAL",
+  "2026-10-11T02:42:16Z [a] state HOLDING -> NORMAL",
+  "2026-10-11T02:42:16Z [a] handback 5d9cacc9: cell B has its customers back; rebuilding this cell's copy of it",
+  "2026-10-11T02:42:16Z [a] handback 5d9cacc9: cell B has its customers back; rebuilding this cell's copy of it",
+  "2026-10-11T02:42:16Z [a] ALERT gave cell B its customers back",
+  "2026-10-11T02:42:16Z [a] ALERT gave cell B its customers back",
+  "2026-10-11T02:42:16Z [a] rebuilding the copy of cell B",
+  "2026-10-11T02:42:16Z [a] rebuilding the copy of cell B",
+  "2026-10-11T02:42:17Z [a] ALERT no copy of the other cell: this cell has no subscription to it: run a rebuild",
+  "2026-10-11T02:42:17Z [a] ALERT no copy of the other cell: this cell has no subscription to it: run a rebuild",
+  "2026-10-11T02:42:21Z [a] subscribed to cell B; the initial copy is running",
+  "2026-10-11T02:42:21Z [a] subscribed to cell B; the initial copy is running"
+ ],
+ "scenario": "dead-host-trading",
+ "orders": {
+  "acknowledged": 760,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+94s A=NORMAL B=NORMAL/sick",
+  "+173s A=NORMAL B=FENCED/sick",
+  "+223s A=TAKING_OVER B=FENCED/sick",
+  "+277s A=HOLDING B=FENCED/sick",
+  "+281s A=HOLDING B=TAKEN_OVER/sick",
+  "+334s A=HOLDING B=TAKEN_OVER",
+  "+528s A=HOLDING B=FAILING_BACK",
+  "+606s A=HOLDING B=NORMAL",
+  "+614s A=NORMAL B=NORMAL"
+ ],
+ "pass": true,
+ "checks": {
+  "orders worked again within the target": true,
+  "the customers were given back without hands": true,
+  "the longest pause in orders during the failback is under 60 s": true
+ }
+}
