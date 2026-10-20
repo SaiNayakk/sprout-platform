@@ -170,10 +170,10 @@ test('3. takeover is denied while other cell lease is live (last beat < 30 s ago
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Test 4 – takeover granted after 30+ s lapse; epoch increases;
+// Test 4 – takeover granted after 90+ s of silence (not 30: a mobile blip is not a death); epoch increases;
 //          repeat by same cell answers granted with reason "already granted"
 // ─────────────────────────────────────────────────────────────────────────────
-test('4. takeover granted once lease lapses (≥30 s); epoch increases; repeat returns "already granted"', async () => {
+test('4. takeover granted only after 90 s of silence (denied at 89 s); epoch increases; repeat returns "already granted"', async () => {
   const storage = makeStorage();
   const w = makeWitness(storage);
   setTime(100_000);
@@ -182,8 +182,14 @@ test('4. takeover granted once lease lapses (≥30 s); epoch increases; repeat r
   let s = await w.load();
   await w.beat(s, 'b', { state: 'NORMAL', healthy: true });
 
-  // 30 s later: age = 30 ≥ LEASE = 30  →  lapsed = true
-  setTime(100_030);
+  // 89 s later the cell is shown as not responding (30 s) but may not be taken over yet
+  setTime(100_089);
+  s = await w.load();
+  const early = await w.takeover(s, 'a');
+  assert.strictEqual(early.granted, false, 'a blip of 89 s must not be taken over');
+
+  // 90 s later: age = 90 ≥ GRANT_AFTER = 90  →  lapsed = true
+  setTime(100_090);
   s = await w.load();
   const r1 = await w.takeover(s, 'a');
 
@@ -290,7 +296,7 @@ test('8. release by holder clears it and bumps epoch; release by non-holder chan
   // After takeover: s.holder['b'] = 'a', epoch = 1
   let s = await w.load();
   await w.beat(s, 'b', { state: 'NORMAL', healthy: true });
-  setTime(100_030);
+  setTime(100_090);
   s = await w.load();
   await w.takeover(s, 'a');
 

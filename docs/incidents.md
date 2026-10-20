@@ -318,3 +318,18 @@ what was journalled with it, and takes the dead holder over; the holder, back, g
 **Not known.** Why the phone left the network. The `front` piece's log says only `network is unreachable`. Battery was 99% and
 charging. A phone's WiFi dropping under load is the likely cause; it is the kind of failure the second path and the alerts are
 for, and the reason the battery and the clocks are watched.
+
+## 2026-10-20: a mobile-data blip was taken for a dead phone
+
+**Impact.** Cell A (the phone, now on mobile data) went quiet to the witness for about 40 s at 11:10 IST. The laptop found its lease lapsed
+(30 s), was granted the takeover, and served Region A's customers from 11:12 to 11:23. Region A took them back by itself with a cutover of
+5 s (the whole failback took 546 s). No order was lost; for about 5 s writes to Region A were refused at the cutover.
+
+**Cause.** The witness lease was 30 s, tuned for a phone on a home network. On mobile data a drop of 30 to 60 s is ordinary.
+
+**What changed.** The witness grants a takeover only after 90 s of silence, and cellwatch treats the witness's lease as lapsed only after 90 s
+(unit tests for 89 s and 91 s, and Worker tests for the grant at 89 s and 90 s). The status page still shows a region as not responding after 30 s.
+
+**Also found the same day.** The laptop's Docker did not start after a reboot until someone signed in, so Sprout was down for about two and a half
+days (17 to 20 October) with the phone also off the network; the dead-man's switch fired every 30 minutes. A missing copy of the other cell
+was never remade and its alert repeated every 30 s for eight days: both are fixed (the copy rebuilds itself; the alert is limited to once an hour).

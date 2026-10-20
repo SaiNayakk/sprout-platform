@@ -216,14 +216,14 @@ class Witness(unittest.TestCase):
         self.assertIsNone(act('NORMAL', o))
         self.assertIsNone(act('NORMAL', o, B))
 
-    def test_a_lapsed_lease_is_lost_in_30_s_not_120(self):
-        self.assertIsNone(act('NORMAL', Obs(peer_gone_for=40, peer_seen=True, good_for=500, wit=self.wit(29))))
-        d = decide('NORMAL', Obs(peer_gone_for=35, peer_seen=True, good_for=500, wit=self.wit(31)), A)
+    def test_a_lapsed_lease_is_lost_in_90_s_not_120_and_a_mobile_blip_is_not_a_death(self):
+        self.assertIsNone(act('NORMAL', Obs(peer_gone_for=40, peer_seen=True, good_for=500, wit=self.wit(89))))
+        d = decide('NORMAL', Obs(peer_gone_for=35, peer_seen=True, good_for=500, wit=self.wit(91)), A)
         self.assertEqual(d.action, 'TAKEOVER')
         self.assertIn('lease', d.reason)
 
     def test_the_home_network_still_vetoes_a_lapsed_lease(self):
-        o = Obs(peer_gone_for=35, peer_seen=True, good_for=500, wit=self.wit(60), lan=alive())
+        o = Obs(peer_gone_for=35, peer_seen=True, good_for=500, wit=self.wit(120), lan=alive())
         self.assertIsNone(act('NORMAL', o))
 
     def test_a_cell_that_says_it_is_out_is_taken_over_even_though_its_lease_is_live(self):
