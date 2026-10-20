@@ -9,7 +9,9 @@
 // A cell's lease is its last beat: it lapses after LEASE seconds of silence. Cells fail open: if this Worker cannot be reached,
 // they behave as they did before it existed, so it can only ever add a veto, never block a failover by being down.
 
-const LEASE = 30;            // seconds of silence after which a cell's lease has lapsed
+const LEASE = 30;            // seconds of silence after which a cell is shown as not responding
+const GRANT_AFTER = 90;      // seconds of silence after which another cell may take it over: a phone on mobile data drops off for
+                             // 30 to 60 s now and then, and a takeover costs minutes of failback (2026-10-20: a 40 s blip did)
 const SILENT_ALERT = 180;    // both cells silent this long: alert
 const REALERT = 1800;
 const EVENTS_KEEP = 40;
@@ -97,8 +99,8 @@ export class Witness {
       return { granted: false, reason: `${s.holder[target]} already holds it`, epoch: s.epoch };
     }
     if (s.holder[target] === cell) return { granted: true, reason: 'already granted', epoch: s.epoch };
-    const lapsed = v.seen && v.age >= LEASE;
-    const declared = v.seen && v.declared_down && v.age < LEASE;     // it says itself it takes no writes
+    const lapsed = v.seen && v.age >= GRANT_AFTER;
+    const declared = v.seen && v.declared_down && v.age < GRANT_AFTER;     // it says itself it takes no writes
     if (!(lapsed || declared)) {
       return { granted: false, reason: v.seen ? `its lease is live (last beat ${v.age} s ago)` : 'it has never been seen', epoch: s.epoch };
     }

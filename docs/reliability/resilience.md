@@ -25,13 +25,15 @@ succeeded present exactly once.
 ## The witness
 
 A small Cloudflare Worker (`deploy/witness`, free plan) that neither cell controls. Each cell tells it every 10 s that it is alive and in
-what state; that is its **lease**, which lapses after 30 s of silence.
+what state; that is its **lease**. The status page shows a region as not responding after 30 s of silence, but another cell may take it
+over only after **90 s** (2026-10-20: the phone, on mobile data, went quiet for about 40 s, the laptop took it over, and getting its customers back
+took 12 minutes; see [Incidents](../incidents.md)).
 
 - A cell may take the other over only if the witness says the other's lease has lapsed, or that the other declared itself out. A cell
   that both paths show nothing of, but that the witness hears, is alive: that ends the double takeover.
-- The witness's word also shortens detection of a dead cell from 120 s to 30 s. End to end the gain is small (177 s and 276 s to orders
-  back, against 151 s and 221 s before: the standby's start and the journal's replay take most of the time, and the laptop's figure
-  includes Docker).
+- The witness's word also shortens detection of a dead cell a little (90 s instead of 120 s). End to end the gain is small (177 s and 276 s to
+  orders back, against 151 s and 221 s before: the standby's start and the journal's replay take most of the time, and the laptop's figure
+  includes Docker). It was 30 s until the phone moved to mobile data, whose short dropouts looked like deaths.
 - **It is never required.** If a cell cannot reach it, the cell decides as it did before there was one. So the witness can only add a
   veto or a faster verdict; it cannot stop a failover by being down. The cost is that two failures at once (a blind pair and a dead
   witness) still give the old double takeover, which still heals itself.

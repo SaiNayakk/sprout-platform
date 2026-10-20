@@ -37,7 +37,7 @@ class Cfg:
     peer_sees_me_for: int = 15
     failback_stable_after: int = 180  # healthy this long before the cell asks for its customers back
     resume_after: int = 300       # the cell holding this one's customers has been gone this long: serve them from here
-    lease_after: int = 30         # the witness has not heard from the other cell this long: its lease has lapsed
+    lease_after: int = 90         # the witness has not heard from the other cell this long: its lease has lapsed (30 s took a mobile blip for a death)
     flap_count: int = 3
     flap_window: int = 600
 
