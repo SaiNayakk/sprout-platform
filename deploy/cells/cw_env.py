@@ -71,14 +71,18 @@ def log(msg):
 _last_alert = {}
 
 
-def notify(title, body='', priority=3, tags='', key=None):
-    """Logs, and (when NTFY_TOPIC is set) pushes to the owner's phone. At most one push per key a minute."""
+def notify(title, body='', priority=3, tags='', key=None, cooldown=60):
+    """Logs, and (when NTFY_TOPIC is set) pushes to the owner's phone. At most one push per key a minute, or per `cooldown` seconds:
+    a longer cooldown also keeps the repeat out of the log (a condition checked every 30 s was logged 17,000 times in eight days)."""
+    k = key or title
+    t = now()
+    if cooldown > 60 and t - _last_alert.get(k, 0) < cooldown:
+        return
     log(f'ALERT {title}' + (f': {body}' if body else ''))
     topic = ENV.get('NTFY_TOPIC')
     if not topic:
+        _last_alert[k] = t
         return
-    k = key or title
-    t = now()
     if t - _last_alert.get(k, 0) < 60:
         return
     _last_alert[k] = t

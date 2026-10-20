@@ -1,7 +1,7 @@
 """Every rule of cw_logic.py against the incident that taught it.   python -m unittest deploy/cells/test_cw_logic.py"""
 import unittest
 
-from cw_logic import Cfg, Obs, PeerView, WitView, decide, peer_holds_me, peer_lost
+from cw_logic import Cfg, Obs, PeerView, WitView, decide, peer_holds_me, peer_lost, should_rebuild_copy
 
 A = Cfg(cell='a', peer='b', preferred='b')
 B = Cfg(cell='b', peer='a', preferred='b')
@@ -237,6 +237,30 @@ class Witness(unittest.TestCase):
     def test_a_sick_cell_that_still_beats_is_not_vetoed(self):
         o = Obs(peer_bad_for=700, peer_seen=True, good_for=500, wit=self.wit(3, healthy=False))
         self.assertEqual(act('NORMAL', o), 'TAKEOVER')
+
+
+class MissingCopy(unittest.TestCase):
+    """2026-10-12: the laptop's copy of the phone's database was gone for eight days; nothing made it again and the alert repeated every 30 s."""
+
+    def test_it_is_made_again_once_it_has_been_missing_for_a_minute(self):
+        self.assertFalse(should_rebuild_copy('NORMAL', 59, True, True, False))
+        self.assertTrue(should_rebuild_copy('NORMAL', 60, True, True, False))
+
+    def test_not_while_the_other_cell_cannot_be_copied_from(self):
+        self.assertFalse(should_rebuild_copy('NORMAL', 600, True, False, False))
+
+    def test_not_for_a_cell_never_seen_working(self):
+        self.assertFalse(should_rebuild_copy('NORMAL', 600, False, True, False))
+
+    def test_not_after_a_failed_attempt_until_the_wait_is_over(self):
+        self.assertFalse(should_rebuild_copy('NORMAL', 600, True, True, True))
+
+    def test_never_while_this_cell_holds_or_takes_over_the_other_or_is_handing_back(self):
+        for s in ('TAKING_OVER', 'HOLDING', 'TAKEN_OVER', 'FAILING_BACK'):
+            self.assertFalse(should_rebuild_copy(s, 600, True, True, False), s)
+
+    def test_a_fenced_cell_may_make_it(self):
+        self.assertTrue(should_rebuild_copy('FENCED', 600, True, True, False))
 
 
 if __name__ == '__main__':
