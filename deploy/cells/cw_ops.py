@@ -11,6 +11,7 @@ import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
+from cw_logic import should_rebuild_copy
 from cw_env import (ADMIN_DB, ARCHIVE_DIR, DB_OWNER, OWNER_PSQL, ARCHIVE_KEEP_HOURS, COPY_DB, ENV, LOCK, OWN_DB, PEER, S, CELL, answers, db_exists, iso,
                     log, notify, now, psql, save_state, set_state, sh)
 
@@ -66,6 +67,17 @@ def copy_info():
         return None
     enabled, ready, total, last, worker = out.split('|')
     return {'enabled': enabled == '1', 'ready': int(ready), 'total': int(total), 'last_receipt': float(last), 'worker': int(worker)}
+
+
+def copy_missing():
+    """True only when it is certain: the copy's database is not there, or it has no subscription to the other cell. A failing query
+    (Postgres starting, a timeout) says nothing, and rebuilding on it would throw away a good copy."""
+    try:
+        if not db_exists(COPY_DB):
+            return True
+        return psql(f"SELECT count(*) FROM pg_subscription WHERE subname = 'from_{PEER}'", COPY_DB, timeout=30).strip() == '0'
+    except Exception:
+        return False
 
 
 def copy_whole():
@@ -391,9 +403,17 @@ def monitor_once():
     if state not in ('NORMAL', 'FENCED'):
         return
     if info is None:
-        if S.get('peer_seen'):
-            notify('no copy of the other cell', 'this cell has no subscription to it: run a rebuild', 5, 'rotating_light', key='nocopy')
+        if S.get('peer_seen') and copy_missing():
+            since = RT.setdefault('copy_missing_since', now())
+            notify('no copy of the other cell', 'this cell has no subscription to it', 5, 'rotating_light', key='nocopy', cooldown=3600)
+            if should_rebuild_copy(state, now() - since, True, bool(RT.get('peer_ok')), now() < S.get('rebuild_after', 0)):
+                S['rebuild_after'] = now() + 600        # a failed attempt is not repeated for ten minutes
+                notify('making the missing copy again', 'the other cell is well: copying it', 3, 'wrench', key='rebuilding', cooldown=3600)
+                rebuild_copy()
+        else:
+            RT.pop('copy_missing_since', None)
         return
+    RT.pop('copy_missing_since', None)
     if not info['enabled']:
         log('the replication was disabled while nothing is being taken over: enabling it')
         try:

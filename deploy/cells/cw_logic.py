@@ -152,6 +152,13 @@ def may_unfence(o: Obs, c: Cfg) -> Optional[str]:
     return None
 
 
+def should_rebuild_copy(state: str, missing_for: float, peer_seen: bool, peer_ok: bool, retry_wait: bool, grace: int = 60) -> bool:
+    """This cell's copy of the other cell's database is certainly missing (not merely unreadable): make it again. Only while this cell
+    serves its own customers (or is fenced), only when the other cell is well enough to copy from, and only once the copy has been
+    missing for a while and no attempt failed lately."""
+    return state in ('NORMAL', 'FENCED') and missing_for >= grace and peer_seen and peer_ok and not retry_wait
+
+
 def decide(state: str, o: Obs, c: Cfg) -> Optional[Decision]:
     """The one thing to do now, or None."""
     held = peer_holds_me(o, c)
