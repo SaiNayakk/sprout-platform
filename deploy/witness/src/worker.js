@@ -128,7 +128,8 @@ export class Witness {
       const holder = s.holder[c] || null;
       const hv = holder ? this.view(s, holder) : null;
       let status, detail;
-      if (v.seen && v.age < LEASE && v.state === 'NORMAL' && v.healthy && !holder) { status = 'up'; detail = 'serving normally'; }
+      if (v.seen && v.age < LEASE && v.state === 'HOLDING' && v.healthy) { status = 'up'; detail = `serving normally, and serving ${NAMES[other(c)]}'s customers too`; }
+      else if (v.seen && v.age < LEASE && v.state === 'NORMAL' && v.healthy && !holder) { status = 'up'; detail = 'serving normally'; }
       else if (holder && hv && hv.seen && hv.age < LEASE) { status = 'degraded'; detail = `served by ${NAMES[holder]}`; }
       else if (!v.seen) { status = 'unknown'; detail = 'not seen yet'; }
       else if (v.age >= LEASE) { status = 'down'; detail = 'not responding'; }
