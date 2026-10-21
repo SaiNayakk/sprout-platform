@@ -696,3 +696,29 @@ test('12. default export: 403 without key / wrong key / missing CELL_KEY; GET /s
     assert.strictEqual(res.status, 404, 'unknown path must return 404');
   }
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Test 13 – a cell that holds the other cell's customers is up, and says so
+//           (2026-10-21: the page called it "not taking writes" and said customers could not trade)
+// ─────────────────────────────────────────────────────────────────────────────
+test('13. publicStatus: a healthy cell in HOLDING is up, the held region is served by it, and customers are served', () => {
+  const storage = makeStorage();
+  const w = makeWitness(storage);
+  const T = 100_000;
+  setTime(T);
+  const ps = w.publicStatus({
+    beats: {
+      a: { at: T - 600, state: 'NORMAL', healthy: true, holding: null, declared_down: false },
+      b: { at: T - 2, state: 'HOLDING', healthy: true, holding: 'a', declared_down: false },
+    },
+    holder: { a: 'b' }, epoch: 1, events: [], alert: {},
+  });
+  const rA = ps.regions.find((r) => r.id === 'a');
+  const rB = ps.regions.find((r) => r.id === 'b');
+  assert.strictEqual(rB.status, 'up', 'the holder is up');
+  assert.match(rB.detail, /Region A/, 'and says it also serves the other region');
+  assert.strictEqual(rA.status, 'degraded');
+  assert.strictEqual(rA.detail, 'served by Region B');
+  assert.strictEqual(ps.customers_served, true);
+  assert.strictEqual(ps.summary, 'A region is down; its customers are being served by the other');
+});
