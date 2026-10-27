@@ -66,6 +66,14 @@ export class Witness {
     if (prev && prev.state !== st.state) this.event(s, this.describe(cell, prev.state, st.state));
     if (prev && !prev.declared_down && st.declared_down) this.event(s, `${NAMES[cell]} stopped taking writes: one of its hosts is down`);
     s.beats[cell] = st;
+    // a cell still serving the other's customers whose record of it was lost (2026-10-27: the laptop came back holding Region A, but the
+    // witness had cleared the holder while the laptop was off, and the status said customers could not trade): record it again, but only
+    // while the other cell is silent long enough that it could have been granted
+    const o = other(cell);
+    if (st.state === 'HOLDING' && st.holding === o && !s.holder[o]) {
+      const ov = this.view(s, o);
+      if (!ov.seen || ov.age >= GRANT_AFTER) { s.holder[o] = cell; s.epoch += 1; }
+    }
     // a cell that is serving its own customers again, with nobody actively serving them for it (the holder is gone, or gave them back)
     const h = s.holder[cell];
     if (h && st.state === 'NORMAL' && st.healthy) {

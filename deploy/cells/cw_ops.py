@@ -374,6 +374,12 @@ def rebuild_copy():
     initial copy runs in the background and is whole when every table is ready)."""
     try:
         log(f'rebuilding the copy of cell {PEER.upper()}')
+        # the other cell's schema first, before anything is dropped: on 2026-10-21 the other cell's database was still starting, the dump
+        # came back incomplete (schema "habits" does not exist) and the old copy was already gone
+        schema = sh(f'pg_dump "{ENV["PEER_PG"]} dbname={OWN_DB}" --schema-only --no-owner --no-privileges --no-publications --no-subscriptions',
+                    timeout=300)
+        if schema.count('CREATE SCHEMA') < 3 or 'CREATE TABLE' not in schema:
+            raise RuntimeError("the other cell's schema came back incomplete; it may still be starting")
         if db_exists(COPY_DB):
             psql(f'ALTER SUBSCRIPTION from_{PEER} DISABLE', COPY_DB, check=False)
             psql(f'ALTER SUBSCRIPTION from_{PEER} SET (slot_name = NONE)', COPY_DB, check=False)
@@ -382,8 +388,7 @@ def rebuild_copy():
             psql(f'DROP DATABASE IF EXISTS {COPY_DB}', ADMIN_DB)
         drop_remote_slot(f'from_{PEER}')
         psql(f'CREATE DATABASE {COPY_DB} OWNER {DB_OWNER}', ADMIN_DB)
-        sh(f'pg_dump "{ENV["PEER_PG"]} dbname={OWN_DB}" --schema-only --no-owner --no-privileges --no-publications --no-subscriptions '
-           f'| {OWNER_PSQL} -d {COPY_DB} -q', timeout=300)
+        sh(f'{OWNER_PSQL} -d {COPY_DB} -q', stdin=schema, timeout=300)
         psql(f"CREATE SUBSCRIPTION from_{PEER} CONNECTION '{ENV['PEER_PG']} dbname={OWN_DB}' PUBLICATION cell_{PEER} "
              'WITH (copy_data = true)', COPY_DB)
         log(f'subscribed to cell {PEER.upper()}; the initial copy is running')
