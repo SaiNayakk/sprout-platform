@@ -63,10 +63,11 @@ class SandboxJourneysTest {
         String b = c.get("/api/identity/v1/users/me", second.path("accessToken").asText()).body().path("id").asText();
         assertThat(b).as("nobody shares an account").isNotEqualTo(a);
         // while the sandbox was still setting accounts up its "not yet" answers (503) can open the gateway's circuit breaker
-        // for the route for a few seconds; a bad name must then be answered by the sandbox itself
+        // for the route for a few seconds, and the retries above can spend the route's rate limit (429); a bad name must then be
+        // answered by the sandbox itself
         Client.Response bad = c.post("/api/sandbox/v3/demo-sessions", Map.of("name", "<script>"));
-        for (int i = 0; i < 20 && bad.status() == 503; i++) {
-            Thread.sleep(2000);
+        for (int i = 0; i < 20 && (bad.status() == 503 || bad.status() == 429); i++) {
+            Thread.sleep(bad.status() == 429 ? 6000 : 2000);
             bad = c.post("/api/sandbox/v3/demo-sessions", Map.of("name", "<script>"));
         }
         assertThat(bad.status()).isEqualTo(400);

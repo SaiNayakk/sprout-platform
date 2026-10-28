@@ -3,7 +3,7 @@
 # Logs both cells' published state every 5 s, as seen from outside, and what each cellwatch decided.
 OUT="${2:-/dev/stdout}"
 DUR="${1:-180}"
-SSH=(ssh -i "$HOME/.ssh/backseat_phone" -p 8022 -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=10 u0_a1@192.168.0.6)
+SSH=(ssh -i "$HOME/.ssh/backseat_phone" -p 8022 -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=10 phone)
 state() { curl -s -m 6 -H 'User-Agent: x4' "https://sprout-$1-saiworks.nncs.in/cells/status.json" | grep -o '"state": "[A-Z_]*"' | cut -d'"' -f4; }
 t0=$(date +%s)
 log() { echo "+$(( $(date +%s) - t0 ))s $*" >> "$OUT"; }

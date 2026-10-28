@@ -19,7 +19,7 @@ case "$X" in a) Y=b ;; b) Y=a ;; *) echo "a or b"; exit 2 ;; esac
 HERE="$(cd "$(dirname "$0")" && pwd)"
 LAPTOP="$HERE/../laptop"
 set -a; . "$LAPTOP/data/.env"; set +a
-PHONE="${PHONE:-u0_a1@192.168.0.6}"
+PHONE="${PHONE:-phone}"
 SSH=(ssh -i "${PHONE_KEY:-$HOME/.ssh/backseat_phone}" -p 8022 -o BatchMode=yes -o IdentitiesOnly=yes "$PHONE")
 export MSYS_NO_PATHCONV=1
 LPG=(docker exec -i -e PGPASSWORD="$SPROUT_DB_PASSWORD" sprout-laptop-postgres-1)

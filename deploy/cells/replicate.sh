@@ -15,7 +15,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE/../laptop"
 set -a; . data/.env; set +a
-PHONE="${PHONE:-u0_a1@192.168.0.6}"
+PHONE="${PHONE:-phone}"
 SSH=(ssh -i "${PHONE_KEY:-$HOME/.ssh/backseat_phone}" -p 8022 -o BatchMode=yes -o IdentitiesOnly=yes "$PHONE")
 PG=(docker exec -i -e PGPASSWORD="$SPROUT_DB_PASSWORD" sprout-laptop-postgres-1 psql -U sprout -v ON_ERROR_STOP=1 -q)
 export MSYS_NO_PATHCONV=1

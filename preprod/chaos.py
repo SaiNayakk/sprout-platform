@@ -343,8 +343,13 @@ def chaos_05():
 def recon_01():
     ledger_bank = sql("SELECT balance_paise FROM ledger.accounts WHERE name = 'sprout:bank'") or 0
     bank_holds = sql("SELECT balance_paise FROM bank.accounts WHERE vpa = 'sprout@sproutbank'") or 0
-    assets = sql("SELECT COALESCE(SUM(balance_paise), 0) FROM ledger.accounts WHERE kind = 'ASSET'")
-    liabilities = sql("SELECT COALESCE(SUM(balance_paise), 0) FROM ledger.accounts WHERE kind = 'LIABILITY'")
+    def books():    # one snapshot, so a posting between two reads cannot unbalance it; the sandbox keeps trading meanwhile
+        row = sql_text("SELECT COALESCE(SUM(balance_paise) FILTER (WHERE kind = 'ASSET'), 0) || ',' || "
+                       "COALESCE(SUM(balance_paise) FILTER (WHERE kind = 'LIABILITY'), 0) FROM ledger.accounts")
+        return [int(v) for v in row.split(",")] if row else [None, None]
+    seen = []
+    wait_until(lambda: seen.append(books()) or seen[-1][0] == seen[-1][1], 30, 1)
+    assets, liabilities = seen[-1]
     stuck = sql("SELECT COUNT(*) FROM payments.withdrawals WHERE status = 'PROCESSING'")
     rupees = lambda p: f"₹{p / 100:,.2f}"
     return result(

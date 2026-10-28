@@ -365,6 +365,13 @@ def act(d, o):
     elif d.action == 'RESUME_STALE':
         cw_ops.resume_stale(publish_routes, fence)
     elif d.action == 'TAKEOVER':
+        # no copy, no takeover: asked first, the witness was granted and given back every two minutes (2026-10-21)
+        if not cw_ops.copy_whole():
+            log(f'cell {PEER} looks lost ({d.reason}), but this cell holds no whole copy of it: not taking over')
+            S['retry_after'] = now() + 120
+            notify(f'cell {PEER.upper()} is lost and there is no copy to take over', d.reason, 5, 'rotating_light', key='nocopy-takeover',
+                   cooldown=3600)
+            return
         granted, why = cw_witness.takeover()
         if granted is False:
             log(f'cell {PEER} looks lost ({d.reason}), but the witness does not grant the takeover: {why}')
@@ -372,11 +379,6 @@ def act(d, o):
             return
         if granted is None:
             log(f'the witness cannot be reached: taking cell {PEER} over without its leave')
-        if not cw_ops.copy_whole():
-            log(f'cell {PEER} looks lost ({d.reason}), but this cell holds no whole copy of it: not taking over')
-            S['retry_after'] = now() + 120
-            notify(f'cell {PEER.upper()} is lost and there is no copy to take over', d.reason, 5, 'rotating_light', key='nocopy-takeover')
-            return
         cw_ops.RT['standby_up'] = False
         start_worker('takeover', cw_ops.take_over, d.reason, publish_routes)
     elif d.action == 'YIELD':

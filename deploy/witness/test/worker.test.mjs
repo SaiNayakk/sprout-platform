@@ -722,3 +722,31 @@ test('13. publicStatus: a healthy cell in HOLDING is up, the held region is serv
   assert.strictEqual(ps.customers_served, true);
   assert.strictEqual(ps.summary, 'A region is down; its customers are being served by the other');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Test 14 – a holder that is still serving is recorded again; never over a live cell
+//           (2026-10-27: the laptop came back HOLDING Region A, but the record was gone)
+// ─────────────────────────────────────────────────────────────────────────────
+test('14. a HOLDING beat re-records the holder only while the held cell is silent 90+ s', async () => {
+  const storage = makeStorage();
+  const w = makeWitness(storage);
+  setTime(100_000);
+  let s = await w.load();
+  await w.beat(s, 'a', { state: 'NORMAL', healthy: true });
+
+  // 'a' beat 10 s ago: a stray HOLDING claim from 'b' must not take it
+  setTime(100_010);
+  s = await w.load();
+  await w.beat(s, 'b', { state: 'HOLDING', healthy: true, holding: 'a' });
+  assert.strictEqual((await storage.get('s')).holder.a, undefined, 'a live cell is never recorded as held');
+
+  // 'a' silent for 200 s: the holder is recorded again and the status says so
+  setTime(100_200);
+  s = await w.load();
+  await w.beat(s, 'b', { state: 'HOLDING', healthy: true, holding: 'a' });
+  const snap = await storage.get('s');
+  assert.strictEqual(snap.holder.a, 'b');
+  const ps = w.publicStatus(snap);
+  assert.strictEqual(ps.regions.find((r) => r.id === 'a').detail, 'served by Region B');
+  assert.strictEqual(ps.customers_served, true);
+});

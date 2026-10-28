@@ -3,7 +3,9 @@
 # The starter script start.sh is only copied: the running one is not restarted (that restarts Sprout: ctl.sh restart sprout).
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-SSH=(ssh -i "${PHONE_KEY:-$HOME/.ssh/backseat_phone}" -p 8022 -o BatchMode=yes -o IdentitiesOnly=yes "${PHONE:-u0_a1@192.168.0.6}")
+# nothing that does not compile reaches a live cell (2026-10-28: a quote broke cw_ops.py and cellwatch crashed on start)
+python -m py_compile "$HERE"/cellwatch.py "$HERE"/cw_*.py || { echo "cellwatch does not compile: not pushing"; exit 1; }
+SSH=(ssh -i "${PHONE_KEY:-$HOME/.ssh/backseat_phone}" -p 8022 -o BatchMode=yes -o IdentitiesOnly=yes "${PHONE:-phone}")
 for f in cellwatch.py cw_env.py cw_logic.py cw_ops.py cw_failback.py cw_witness.py; do
   "${SSH[@]}" "cat > ~/sprout/cellwatch/$f.new && mv ~/sprout/cellwatch/$f.new ~/sprout/cellwatch/$f" < "$HERE/$f"
 done
