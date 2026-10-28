@@ -124,14 +124,25 @@ def docker(*args, check=False):
     return subprocess.run(['docker', *args], capture_output=True, text=True, check=check).stdout
 
 
-def ensure_clean(timeout=900):
-    """Both cells NORMAL and replicating, or fail: every scenario starts and ends here."""
+def copy_whole(cell):
+    """Whether `cell`'s copy of the other has finished its initial copy (every table ready), as cellwatch asks before a takeover."""
+    sql = ("SELECT count(*) FILTER (WHERE r.srsubstate = 'r') || '/' || count(*) FROM pg_subscription_rel r "
+           "JOIN pg_subscription s ON s.oid = r.srsubid")
+    out = laptop_psql('sprout_a', sql) if cell == 'b' else phone_psql('sprout_b', sql)
+    ready, _, total = out.partition('/')
+    return out != '' and total not in ('', '0') and ready == total
+
+
+def ensure_clean(timeout=1800, whole=True):
+    """Both cells NORMAL, replicating, and each holding a whole copy of the other, or fail: every scenario starts and ends here.
+    A copy still being rebuilt counts as replicating, but the other cell cannot be taken over from it (2026-10-28: kill_cell_a began
+    while the laptop rebuilt its copy after a handback, and the takeover waited 17 minutes for it)."""
     t0 = now()
     while now() - t0 < timeout:
         a, b = states()
         if (a, b) == ('NORMAL', 'NORMAL'):
             ra, rb = status('a') or {}, status('b') or {}
-            if (ra.get('repl') or {}).get('copy') and (rb.get('repl') or {}).get('copy'):
+            if (ra.get('repl') or {}).get('copy') and (rb.get('repl') or {}).get('copy') and (not whole or (copy_whole('a') and copy_whole('b'))):
                 return True
         time.sleep(5)
     return False
