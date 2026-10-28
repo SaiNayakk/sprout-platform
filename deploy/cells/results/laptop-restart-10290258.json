@@ -1,0 +1,27 @@
+{
+ "both_normal_after_s": 8,
+ "orders_back_after_s": 45,
+ "longest_overlap_s": 0,
+ "laptop_cellwatch": [
+  "2026-10-28T21:26:56Z [b] watching (state NORMAL)"
+ ],
+ "scenario": "laptop-restart",
+ "orders": {
+  "acknowledged": 158,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+62s A=NORMAL B=NORMAL/sick",
+  "+112s A=NORMAL B=NORMAL"
+ ],
+ "pass": true,
+ "checks": {
+  "a restart is not taken for a crash loop": true,
+  "never both cells serving cell B (beyond a failback: a few seconds)": true,
+  "both NORMAL again without hands": true
+ }
+}
