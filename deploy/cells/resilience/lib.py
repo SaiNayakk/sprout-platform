@@ -70,6 +70,8 @@ def wait_states(pred, timeout, every=4):
 
 def phone(cmd, stdin=None, timeout=90):
     r = subprocess.run(c12.SSH + [cmd], input=stdin, capture_output=True, text=True, timeout=timeout)
+    if r.returncode == 255:     # ssh itself failed: never read that as an empty answer (2026-10-28: a stale address made every order look missing)
+        raise RuntimeError(f'cannot reach the phone: {r.stderr.strip()[:200]}')
     return r.stdout.strip()
 
 

@@ -5,7 +5,7 @@ set -uo pipefail
 cd /c/Users/sai34/Desktop/Projects/sprout/sprout-platform-cells/deploy/laptop
 set -a; . data/.env; set +a
 export MSYS_NO_PATHCONV=1
-SSH=(ssh -i "$HOME/.ssh/backseat_phone" -p 8022 -o BatchMode=yes -o IdentitiesOnly=yes u0_a1@192.168.0.6)
+SSH=(ssh -i "$HOME/.ssh/backseat_phone" -p 8022 -o BatchMode=yes -o IdentitiesOnly=yes phone)
 LPG=(docker exec -i -e PGPASSWORD="$SPROUT_DB_PASSWORD" sprout-laptop-postgres-1 psql -U sprout -q)
 COMPOSE=(docker compose --env-file data/.env -f docker-compose.yml)
 export SPROUT_WEB_IMAGE="sprout-web:$(tr -d '[:space:]' < web.version)"

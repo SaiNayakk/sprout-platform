@@ -11,7 +11,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 DATA="$HERE/../laptop/data"
-PHONE="${PHONE:-u0_a1@192.168.0.6}"
+PHONE="${PHONE:-phone}"
 SSH=(ssh -i "${PHONE_KEY:-$HOME/.ssh/backseat_phone}" -p 8022 -o BatchMode=yes -o IdentitiesOnly=yes "$PHONE")
 umask 077
 mkdir -p "$DATA/cell-a/keys"

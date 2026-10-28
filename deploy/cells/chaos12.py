@@ -29,7 +29,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 PUBLIC = 'https://sprout-saiworks.nncs.in/api'
-PHONE = os.environ.get('PHONE', 'u0_a1@192.168.0.6')
+PHONE = os.environ.get('PHONE', 'phone')     # the ssh alias (~/.ssh/config); phone-wan reaches it over the tunnel
 SSH = ['ssh', '-i', os.path.expanduser(os.environ.get('PHONE_KEY', '~/.ssh/backseat_phone')), '-p', '8022',
        '-o', 'BatchMode=yes', '-o', 'IdentitiesOnly=yes', PHONE]
 PASSWORD = 'chaos-ten-mango-42'
