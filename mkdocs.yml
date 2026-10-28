@@ -66,6 +66,7 @@ nav:
       - Resilience: reliability/resilience.md
       - Resilience audit: reliability/audit.md
       - Evidence from runs: reliability/runs/index.md
+      - Demo: demo.md
       - Runbooks: runbooks.md
       - Incidents: incidents.md
   - Decisions: decisions.md
