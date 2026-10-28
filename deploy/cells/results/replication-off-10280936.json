@@ -1,0 +1,15 @@
+{
+ "switched_back_on_after_s": 31,
+ "orders_in_the_copy": 121,
+ "orders_acknowledged": 121,
+ "scenario": "replication-off",
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL"
+ ],
+ "checks": {
+  "the watcher switched it back on within 90 s": true,
+  "it said so": true,
+  "the copy has every order placed meanwhile": true
+ },
+ "pass": true
+}

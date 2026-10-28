@@ -3,6 +3,73 @@
 Blameless write-ups: what happened, why, and what changed so it can't happen the same way again.
 These come from the infrastructure Sprout will share with the other apps on the phone.
 
+## 2026-10-28 03:20–07:58 IST: Region A silent for 4.5 hours (Termux stopped by Android)
+
+**Impact.** The phone (Region A) went silent at 03:20 IST. The laptop took Region A over at 03:22 and
+served its customers for about 4.5 hours. When the phone came back the laptop gave the customers back
+automatically; the cutover lasted 2 s and the whole failback took 63 s. No customer impact beyond the
+takeover window.
+
+**Cause.** Termux was most likely stopped by Android's battery optimiser while the phone was on mobile
+data overnight. The phone's Sprout processes were gone; the cellwatch stopped beating.
+
+**What changed.** Battery optimisation is now off for Termux and Backseat. **Follow-up:** a watcher
+that restarts the phone's processes if they stop.
+
+## 2026-10-27: status page showed Region A's customers unable to trade while the laptop was serving them
+
+**Impact.** After the laptop came back from being off (see the 2026-10-21–27 entry below), the status
+page reported Region A's customers as unable to trade even though the laptop was in fact serving them.
+Only the status page was wrong.
+
+**Cause.** While the laptop was off, its record of holding Region A had been cleared from the witness.
+When the laptop came back it was still in HOLDING state but the witness had no record of it, so the
+status page did not show it as serving Region A. Separately, a cell in HOLDING was shown as "not
+taking writes" on the status page rather than "up".
+
+**What changed.** The witness now re-records a holder that beats with state HOLDING when the held cell
+has been silent for 90 s or more, so a returning holder is recognised (PR #32). The status page now
+shows a cell in HOLDING as up (PR #31).
+
+## 2026-10-27: rebuilding a missing copy failed with `schema "habits" does not exist`
+
+**Impact.** A copy rebuild failed part-way through, leaving that cell without a copy of the other until
+the next automatic attempt succeeded. No customer impact; a takeover in that window would not have
+been possible.
+
+**Cause.** The rebuild dropped the old copy first, then copied the schema from the other cell, whose
+database was still starting and had not created all its schemas yet. The restore failed on the missing
+`habits` schema, with the old copy already gone.
+
+**What changed.** The rebuild now dumps the schema first, checks that all expected schemas and tables
+are present, and only then drops the old copy and restores. A dump that is not complete is rejected
+before anything is dropped (PR #32).
+
+## 2026-10-21–27: Docker Desktop quit by itself several times, taking Region B down
+
+**Impact.** Docker Desktop on the laptop exited without warning several times during the week of
+2026-10-21. Each time, Region B went down; the phone took it over and gave it back when Docker
+restarted. No orders were lost.
+
+**Cause.** Partly found. Windows logged no Docker Desktop crash, but it logged two reboots without a clean shutdown
+(21 Oct 12:52 and 23 Oct 21:47 IST, Kernel-Power 41). Windows then waited at the sign-in screen, and Docker
+Desktop starts only at sign-in, so the cell stayed down until someone signed in.
+
+**Follow-up.** Windows signs in automatically after a reboot, so Docker Desktop and the cell come back by
+themselves. Watch for a quit with no reboot behind it.
+
+## 2026-10-21–27: laptop slept on AC power overnight, taking Region B down repeatedly
+
+**Impact.** The laptop entered Windows Modern Standby overnight on AC power several times during the
+week of 2026-10-21. Each time, Region B went silent; the phone took it over and gave it back when the
+laptop woke. No orders were lost.
+
+**Root cause.** Windows Modern Standby is enabled by default and applies even on AC power unless
+overridden in the host's power settings.
+
+**What changed.** The host's power plan was set to never sleep when plugged in. This is not a Sprout
+change.
+
 ## 2026-09: a public site's stats were blank on iPhones, fine on desktops
 
 **Impact.** For several days the live server stats on the portfolio site were blank for visitors on

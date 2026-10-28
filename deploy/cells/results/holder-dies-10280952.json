@@ -1,0 +1,47 @@
+{
+ "orders_back_after_holder_died_s": 7,
+ "both_normal_after_phone_restart_s": 0,
+ "laptop_cellwatch": [
+  "2026-10-28T04:14:26Z [b] ALERT cell A holds this cell: fenced; it will be given back automatically",
+  "2026-10-28T04:14:36Z [b] taken over; waiting: other cell gone 0s (lan seen: True), this cell healthy for 0s, retry wait: False, other cell says: HOLDING/b",
+  "2026-10-28T04:15:37Z [b] taken over; waiting: other cell gone 0s (lan seen: True), this cell healthy for 0s, retry wait: False, other cell says: HOLDING/b",
+  "2026-10-28T04:16:39Z [b] taken over; waiting: other cell gone 0s (lan seen: True), this cell healthy for 41s, retry wait: False, other cell says: HOLDING/b",
+  "2026-10-28T04:17:41Z [b] taken over; waiting: other cell gone 0s (lan seen: True), this cell healthy for 103s, retry wait: False, other cell says: HOLDING/b",
+  "2026-10-28T04:18:42Z [b] taken over; waiting: other cell gone 0s (lan seen: True), this cell healthy for 164s, retry wait: False, other cell says: HOLDING/b",
+  "2026-10-28T04:19:03Z [b] FAILBACK: healthy and stable: the other cell can give its customers back",
+  "2026-10-28T04:19:03Z [b] state TAKEN_OVER -> FAILING_BACK",
+  "2026-10-28T04:19:03Z [b] ALERT taking cell B back from cell A: building a new database; no interruption yet",
+  "2026-10-28T04:19:03Z [b] failback 42ab3db8: building a new database from cell A's copy",
+  "2026-10-28T04:20:11Z [b] failback 42ab3db8: the new database is in sync",
+  "2026-10-28T04:20:21Z [b] failback 42ab3db8: swapping the new database in (the old one is kept as sprout_before_failback_202610280420)",
+  "2026-10-28T04:20:23Z [b] unfenced",
+  "2026-10-28T04:20:23Z [b] state FAILING_BACK -> NORMAL",
+  "2026-10-28T04:20:23Z [b] failback 42ab3db8: serving again; refused writes lasted 2 s (the old database is sprout_before_failback_202610280420)",
+  "2026-10-28T04:20:23Z [b] ALERT cell B has its customers back: cutover took 2 s; the whole failback 81 s"
+ ],
+ "scenario": "holder-dies",
+ "orders": {
+  "acknowledged": 938,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+81s A=NORMAL B=NORMAL/sick",
+  "+150s A=NORMAL B=FENCED/sick",
+  "+202s A=TAKING_OVER B=FENCED/sick",
+  "+462s A=HOLDING B=FENCED/sick",
+  "+471s A=HOLDING B=TAKEN_OVER/sick",
+  "+556s A=HOLDING B=TAKEN_OVER",
+  "+746s A=HOLDING B=FAILING_BACK",
+  "+824s A=HOLDING B=NORMAL",
+  "+837s A=NORMAL B=NORMAL"
+ ],
+ "pass": true,
+ "checks": {
+  "cell B resumed by itself within 10 minutes": true,
+  "the cells sorted themselves out when the phone returned": true
+ }
+}
