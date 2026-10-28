@@ -34,7 +34,14 @@ class SandboxJourneysTest {
     @Test
     @DisplayName("E2E-100 a visitor names themselves and is signed in to a demo account of their own, a real customer")
     void aVisitorGetsADemoAccountOfTheirOwn() throws InterruptedException {
-        assertThat(c.get("/api/sandbox/v3/demo", null).body().path("endsAfterMinutes").asInt()).isPositive();
+        // the sandbox's "not yet" answers while it sets up can open the gateway's circuit breaker for the route for a few seconds
+        Client.Response info = c.get("/api/sandbox/v3/demo", null);
+        for (int i = 0; i < 15 && info.status() != 200; i++) {
+            Thread.sleep(2000);
+            info = c.get("/api/sandbox/v3/demo", null);
+        }
+        assertThat(info.status()).as("the demo's terms: %s", info.body()).isEqualTo(200);
+        assertThat(info.body().path("endsAfterMinutes").asInt()).isPositive();
         JsonNode s = demo("Asha");
         String token = s.path("accessToken").asText();
         assertThat(s.path("name").asText()).isEqualTo("Asha");
