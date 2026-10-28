@@ -1,0 +1,24 @@
+{
+ "both_normal_after_addresses_back_s": 43,
+ "scenario": "both-offline",
+ "orders": {
+  "acknowledged": 180,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+88s A=silent B=silent",
+  "+221s A=FENCED B=silent",
+  "+253s A=FENCED B=FENCED",
+  "+270s A=NORMAL B=FENCED",
+  "+293s A=NORMAL B=NORMAL"
+ ],
+ "pass": true,
+ "checks": {
+  "nobody took anybody over": true,
+  "both unfenced within 90 s of the addresses coming back": true
+ }
+}

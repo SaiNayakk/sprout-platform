@@ -9,7 +9,7 @@ What the two cells do when something fails, how fast, and how that is checked. T
 |---|---|---|
 | A **host** of one cell stays down | It fences itself after a minute and says why; the other cell takes its customers over 30 s after that announcement; when the host is back and stable for 3 minutes the customers are **given back automatically** (3 s of refused writes) | **175 s** (was 813 s) |
 | A host crashes and restarts itself | Nothing: a 30 s blip is not a failure, and nothing is fenced | 27 s |
-| A **whole cell** is lost (the phone, or the laptop) | The other cell sees its address go silent and takes over; when the lost cell is back it is given its customers back | **177 s** (phone), **276 s** (laptop) |
+| A **whole cell** is lost (the phone, or the laptop) | The other cell sees its address go silent and takes over; when the lost cell is back it is given its customers back | **176 s** (phone), **258 s** (laptop) |
 | Cloudflare shows each cell silent to the other, but both are fine | The home network shows both up: **nobody takes anybody over** | no interruption |
 | The cells cannot see each other at all (both paths), but both reach the witness | The [witness](#the-witness) sees both alive and **forbids any takeover**: nobody leaves NORMAL | no interruption (longest gap between orders 3 s) |
 | The cells cannot see each other, and the witness cannot be reached either | Each may take the other over (the old behaviour: the witness is never required); when they can see each other again, **one gives way** and the customers are handed back | back to normal 164 s after healing |
@@ -62,10 +62,35 @@ states every few seconds). The rules themselves are tested with `python -m unitt
 which runs in CI: each test is an incident (a returning cell that unfenced too soon, a cell fenced again by a stale status,
 two cells holding each other) written down.
 
+### Latest full run: 2026-10-28, v0.18.0 code
+
+Both cells on the home network, the phone on charge. 7,000 orders acknowledged during the failures; **0 lost, 0 applied twice**.
+
+| Scenario | Result | |
+|---|---|---|
+| `kill_cell_a`: the phone's cell stopped | pass | the laptop served its customers again after **176 s** |
+| `kill_cell_b`: the laptop's cell stopped | pass | the phone served its customers again after **258 s** |
+| `dead_host`: one JVM host killed | pass | fenced after 91 s, orders back after 308 s |
+| `holder_dies`: the cell serving both dies | pass | |
+| `cf_blind`, `mutual_blind`: the cells cannot see each other | pass | no takeover; longest pause between orders 2.7 s |
+| `blind_no_witness`: blind to each other and to the witness | pass | the cells fall back to their own rules |
+| `both_offline`: both public addresses down | pass | |
+| `failed_takeover`: a takeover that cannot finish | pass | |
+| `replication_off`: replication silently switched off | pass | switched back on, the copy has every order |
+
+The first attempt that day failed 7 of 10, all on the test side: the suite reached the phone by an address it no longer had,
+so nothing it asked of the phone happened and every order looked missing. The scripts now use the ssh alias and stop when the
+phone cannot be reached. A second attempt showed `kill_cell_a` waiting 17 minutes to take over: it began while the laptop was
+still rebuilding its copy of the phone after the previous scenario, and a cell never takes over from a partial copy. Scenarios
+now start only when both copies are whole.
+
 ## Not done yet
 
-- **Boot.** The laptop starts Docker only after someone signs in to Windows; the phone does not restart Sprout after a
-  reboot by itself.
+- **Boot.** The laptop starts Docker only after someone signs in to Windows (two unclean reboots in October left it waiting at
+  the sign-in screen); the phone restarts Sprout after a reboot by itself (Termux:Boot).
+- **The copy after a handback.** When a cell gives the other its customers back, it rebuilds its copy of it from scratch, which
+  takes about 20 minutes; until that is done, the other cell cannot be taken over. At the cutover both databases are the same,
+  so the copy could resume from that point instead.
 - **A warm standby** (taking over in seconds instead of about 90 s): the standby's start is now most of the time to recover.
 - **The phone's cellwatch was killed once without a trace** on 2026-10-11 (the log is silent; the starter had just started it) and
   nothing restarted it until it was started by hand. The witness noticed within 30 s and the laptop began a takeover that its own

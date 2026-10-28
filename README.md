@@ -72,12 +72,13 @@ status page and pushes alerts via ntfy.
 
 ## Resilience, measured
 
-Results from the [resilience suite](docs/reliability/resilience.md) and [chaos tests](docs/testing/chaos.md).
+From the [resilience suite](docs/reliability/resilience.md) on 2026-10-28: all 10 scenarios pass, 7,000 orders placed
+during failures, 0 lost, 0 applied twice. More in [chaos tests](docs/testing/chaos.md).
 
 | Scenario | Result |
 |---|---|
-| Whole cell lost (phone) | Its customers served again in **177 s**; 0 orders lost, 0 doubled |
-| Whole cell lost (laptop) | Its customers served again in **276 s**; 0 orders lost, 0 doubled |
+| Whole cell lost (phone) | Its customers served again in **176 s**; 0 orders lost, 0 doubled |
+| Whole cell lost (laptop) | Its customers served again in **258 s**; 0 orders lost, 0 doubled |
 | Failback cutover (writes refused) | **2–5 s** |
 | Cell cut off from the other, but the witness sees it alive | No takeover (witness vetoes it) |
 | Takeover threshold at the witness | **90 s** of silence (phone on mobile data drops for 30–60 s at times) |
