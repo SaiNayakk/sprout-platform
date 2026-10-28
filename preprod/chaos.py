@@ -493,13 +493,20 @@ def recon_02():
     # let in-flight callbacks and ledger postings land first
     wait_until(lambda: sql("SELECT COUNT(*) FROM oms.ledger_outbox WHERE posted_at IS NULL") == 0
                and sql("SELECT COUNT(*) FROM exchange.outbox WHERE delivered_at IS NULL") == 0, 60, 1)
-    filled = sql("SELECT COUNT(*) FROM oms.orders WHERE status = 'FILLED'")
-    trades = sql("SELECT COUNT(*) FROM exchange.trades")
-    mismatched = sql("""SELECT COUNT(*) FROM oms.orders o LEFT JOIN exchange.orders e ON e.client_order_id = o.id::text
-                        WHERE o.status = 'FILLED' AND (e.status IS DISTINCT FROM 'FILLED' OR e.price_paise <> o.fill_price_paise
-                                                       OR e.quantity <> o.quantity)""")
-    orphans = sql("""SELECT COUNT(*) FROM exchange.orders e LEFT JOIN oms.orders o ON e.client_order_id = o.id::text
-                     WHERE e.status = 'FILLED' AND o.status IS DISTINCT FROM 'FILLED'""")
+    # the sandbox keeps trading for its demo accounts (every 2 s), so the counts are read in one statement (one snapshot),
+    # and read again while a fill is still on its way back to Sprout (2026-10-27: separate reads gave 350 / 351)
+    def snapshot():
+        row = sql_text("""SELECT (SELECT COUNT(*) FROM oms.orders WHERE status = 'FILLED') || ',' ||
+                                 (SELECT COUNT(*) FROM exchange.trades) || ',' ||
+                                 (SELECT COUNT(*) FROM oms.orders o LEFT JOIN exchange.orders e ON e.client_order_id = o.id::text
+                                  WHERE o.status = 'FILLED' AND (e.status IS DISTINCT FROM 'FILLED'
+                                        OR e.price_paise <> o.fill_price_paise OR e.quantity <> o.quantity)) || ',' ||
+                                 (SELECT COUNT(*) FROM exchange.orders e LEFT JOIN oms.orders o ON e.client_order_id = o.id::text
+                                  WHERE e.status = 'FILLED' AND o.status IS DISTINCT FROM 'FILLED')""")
+        return [int(v) for v in row.split(",")] if row else [None] * 4
+    counts = []
+    wait_until(lambda: counts.append(snapshot()) or (counts[-1][0] == counts[-1][1] and counts[-1][3] == 0), 30, 1)
+    filled, trades, mismatched, orphans = counts[-1]
     holds = sql("""WITH expected AS (
                        SELECT user_id, SUM(paise) AS paise FROM (
                            SELECT user_id, blocked_paise AS paise FROM oms.orders
