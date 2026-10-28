@@ -369,6 +369,61 @@ def terminate_connections(db):
     psql(f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{db}' AND pid <> pg_backend_pid()", ADMIN_DB, check=False)
 
 
+PROBE = f'hb_probe_{PEER}'      # on the holder: shows whether its copy changed after the handback's cutover point
+
+
+def start_probe():
+    """A slot on this cell's copy of the other, made at the handback's cutover point: whatever is written to the copy after it shows
+    up in it. False if it could not be made (the copy is then rebuilt from scratch, as before)."""
+    drop_probe()
+    try:
+        psql(f"SET statement_timeout = '15s'; SELECT pg_create_logical_replication_slot('{PROBE}', 'pgoutput')", COPY_DB)
+        return True
+    except Exception as e:
+        log(f'could not mark the cutover point on the copy: {e}')
+        return False
+
+
+def drop_probe():
+    psql(f"SELECT pg_drop_replication_slot(slot_name) FROM pg_replication_slots WHERE slot_name = '{PROBE}'", ADMIN_DB, check=False)
+
+
+def copy_untouched():
+    """Nothing was inserted, updated, deleted or truncated in the copy since the probe was made (pgoutput message types I, U, D, T)."""
+    try:
+        out = psql(f"SELECT count(*) FROM pg_logical_slot_peek_binary_changes('{PROBE}', NULL, NULL, 'proto_version', '1', "
+                   f"'publication_names', 'handback') WHERE get_byte(data, 0) IN (73, 85, 68, 84)", COPY_DB, timeout=120).strip()
+        if out != '0':
+            log(f'the copy changed after the cutover point ({out or "?"} changes): it cannot be resumed')
+        return out == '0'
+    except Exception as e:
+        log(f'could not read what changed in the copy after the cutover point: {e}')
+        return False
+
+
+def resume_copy():
+    """After a handback: this cell's copy of the other cell is, row for row, the database the other cell now serves from (it was built
+    from this copy up to the cutover point, and the copy has not changed since). Subscribe again from the slot the other cell made at
+    its swap, before it took any write, instead of copying everything again (about 20 minutes, during which the other cell could not
+    be taken over). False if that slot is not there; the caller then rebuilds."""
+    try:
+        q = (f"SELECT count(*) FROM pg_replication_slots WHERE slot_name = 'from_{PEER}' AND database = '{OWN_DB}' AND NOT active")
+        there = sh(f'psql "{ENV["PEER_PG"]} dbname={OWN_DB}" -At', stdin=q + ';', timeout=30).strip()
+        if there != '1':
+            log(f'the other cell has no slot for this copy to resume from ({there or "?"})')
+            return False
+        psql(f'ALTER SUBSCRIPTION from_{PEER} DISABLE', COPY_DB, check=False)
+        psql(f'ALTER SUBSCRIPTION from_{PEER} SET (slot_name = NONE)', COPY_DB, check=False)
+        psql(f'DROP SUBSCRIPTION IF EXISTS from_{PEER}', COPY_DB)
+        psql(f"CREATE SUBSCRIPTION from_{PEER} CONNECTION '{ENV['PEER_PG']} dbname={OWN_DB}' PUBLICATION cell_{PEER} "
+             f"WITH (copy_data = false, create_slot = false, slot_name = 'from_{PEER}')", COPY_DB)
+        log(f'resumed the copy of cell {PEER.upper()} from the cutover point: no rebuild')
+        return True
+    except Exception as e:
+        log(f'resuming the copy failed: {e}')
+        return False
+
+
 def rebuild_copy():
     """Makes this cell's copy of the other cell's database again, from scratch: drops the old one and subscribes anew (the
     initial copy runs in the background and is whole when every table is ready)."""
