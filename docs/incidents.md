@@ -51,9 +51,12 @@ before anything is dropped (PR #32).
 2026-10-21. Each time, Region B went down; the phone took it over and gave it back when Docker
 restarted. No orders were lost.
 
-**Cause.** Not found.
+**Cause.** Partly found. Windows logged no Docker Desktop crash, but it logged two reboots without a clean shutdown
+(21 Oct 12:52 and 23 Oct 21:47 IST, Kernel-Power 41). Windows then waited at the sign-in screen, and Docker
+Desktop starts only at sign-in, so the cell stayed down until someone signed in.
 
-**Follow-up.** Watch for recurrence; check Docker Desktop's event log and Windows event log.
+**Follow-up.** Windows signs in automatically after a reboot, so Docker Desktop and the cell come back by
+themselves. Watch for a quit with no reboot behind it.
 
 ## 2026-10-21–27: laptop slept on AC power overnight, taking Region B down repeatedly
 
