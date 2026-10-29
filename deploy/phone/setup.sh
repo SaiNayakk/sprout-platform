@@ -46,8 +46,11 @@ register() { # NAME DIR
 # 1. Postgres, for the steps below only: start.sh runs it from now on
 mkdir -p "$SPROUT/postgres"
 # no exec: postgres changes into its data directory, and start.sh follows the piece by this shell
+# its memory comes from the profile (profile.sh): SPROUT_PROFILE in ~/.sprout.env
 printf '#!/data/data/com.termux/files/usr/bin/sh
-postgres -D "%s"
+SPROUT_PROFILE=$(sed -n "s/^SPROUT_PROFILE=//p" "$HOME/.sprout.env" 2>/dev/null | tail -1)
+. "$HOME/sprout/profile.sh" postgres
+postgres -D "%s" $SPROUT_PG_OPTS
 ' "$PGDATA" > "$SPROUT/postgres/run.sh"
 STARTED_PG=false
 if pg_isready -q -h 127.0.0.1 -p 5432; then
