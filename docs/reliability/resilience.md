@@ -74,6 +74,17 @@ states every few seconds). The rules themselves are tested with `python -m unitt
 which runs in CI: each test is an incident (a returning cell that unfenced too soon, a cell fenced again by a stale status,
 two cells holding each other) written down.
 
+### Copy resume check: 2026-10-29, v0.18.1 code
+
+`kill_cell_a` and `kill_cell_b` run again to check that the cell that held the other's customers resumes its copy after the
+handback instead of copying the whole database again. Both pass, and in both the holder's log says it resumed the copy and the
+copy was whole at once.
+
+| Scenario | Result | |
+|---|---|---|
+| `kill_cell_a` | pass | orders back after 154 s; both NORMAL 794 s after the phone's cell started again; copy resumed |
+| `kill_cell_b` | pass | orders back after 336 s; both NORMAL 322 s after the laptop's cell started again; copy resumed |
+
 ### Latest full run: 2026-10-28, v0.18.0 code
 
 Both cells on the home network, the phone on charge. 7,000 orders acknowledged during the failures; **0 lost, 0 applied twice**.
