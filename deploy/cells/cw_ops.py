@@ -279,6 +279,7 @@ def take_over(reason, publish_routes):
         archive_journal()
         watermark = initial_watermark()
         psql(f'ALTER SUBSCRIPTION from_{PEER} DISABLE', COPY_DB)
+        freeze_copy(False)   # a handback cut short by a crash must not leave the standby unable to write
         psql(SEQUENCES, COPY_DB)
         log(f'stopped replicating from {PEER} and moved its sequences on')
         sh(ENV['STANDBY_START'])
@@ -372,12 +373,26 @@ def terminate_connections(db):
 PROBE = f'hb_probe_{PEER}'      # on the holder: shows whether its copy changed after the handback's cutover point
 
 
+def freeze_copy(on):
+    """While a handback runs, nothing may write to the copy after the cutover point. The standby is fenced from customers, but
+    its own background jobs keep running until it is stopped (2026-10-30: one wrote a row after the probe, and the copy had to be
+    copied again from scratch). On: new transactions on the copy are read-only, and the sessions already open are closed so they
+    come back read-only. Off: as before. Safe to repeat; also undone before a standby starts, in case cellwatch died mid-handback."""
+    if on:
+        psql(f'ALTER DATABASE {COPY_DB} SET default_transaction_read_only = on', ADMIN_DB)
+        psql(f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{COPY_DB}' AND backend_type = 'client backend' "
+             f"AND pid <> pg_backend_pid()", ADMIN_DB, check=False)
+    else:
+        psql(f'ALTER DATABASE {COPY_DB} RESET default_transaction_read_only', ADMIN_DB, check=False)
+
+
 def start_probe():
     """A slot on this cell's copy of the other, made at the handback's cutover point: whatever is written to the copy after it shows
     up in it. False if it could not be made (the copy is then rebuilt from scratch, as before)."""
     drop_probe()
     try:
-        psql(f"SET statement_timeout = '15s'; SELECT pg_create_logical_replication_slot('{PROBE}', 'pgoutput')", COPY_DB)
+        psql(f"SET statement_timeout = '15s'; SET default_transaction_read_only = off; "
+             f"SELECT pg_create_logical_replication_slot('{PROBE}', 'pgoutput')", COPY_DB)
         return True
     except Exception as e:
         log(f'could not mark the cutover point on the copy: {e}')
