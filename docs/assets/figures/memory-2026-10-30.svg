@@ -1,20 +1,67 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 250" font-family="system-ui, sans-serif" font-size="12" role="img" aria-label="Sprout on the phone: memory per piece, peak vs demo profile">
-<rect width="640" height="250" fill="#fff"/>
-<text x="150" y="18" fill="#141833" font-weight="600">Sprout on the phone: memory per piece, peak vs demo profile</text>
-<text x="142" y="50" text-anchor="end" fill="#333">trading host</text>
-<rect x="150" y="34" width="420.0" height="11" fill="#9ca3af"/><text x="574.0" y="44" fill="#555">247 MB</text>
-<rect x="150" y="47" width="360.5" height="11" fill="#2f7d4f"/><text x="514.5" y="57" fill="#2f7d4f">212 MB</text>
-<text x="142" y="84" text-anchor="end" fill="#333">money host</text>
-<rect x="150" y="68" width="397.9" height="11" fill="#9ca3af"/><text x="551.9" y="78" fill="#555">234 MB</text>
-<rect x="150" y="81" width="340.1" height="11" fill="#2f7d4f"/><text x="494.1" y="91" fill="#2f7d4f">200 MB</text>
-<text x="142" y="118" text-anchor="end" fill="#333">street host</text>
-<rect x="150" y="102" width="340.1" height="11" fill="#9ca3af"/><text x="494.1" y="112" fill="#555">200 MB</text>
-<rect x="150" y="115" width="307.8" height="11" fill="#2f7d4f"/><text x="461.8" y="125" fill="#2f7d4f">181 MB</text>
-<text x="142" y="152" text-anchor="end" fill="#333">edge host</text>
-<rect x="150" y="136" width="340.1" height="11" fill="#9ca3af"/><text x="494.1" y="146" fill="#555">200 MB</text>
-<rect x="150" y="149" width="307.8" height="11" fill="#2f7d4f"/><text x="461.8" y="159" fill="#2f7d4f">181 MB</text>
-<text x="142" y="186" text-anchor="end" fill="#333">Postgres</text>
-<rect x="150" y="170" width="331.6" height="11" fill="#9ca3af"/><text x="485.6" y="180" fill="#555">195 MB</text>
-<rect x="150" y="183" width="197.2" height="11" fill="#2f7d4f"/><text x="351.2" y="193" fill="#2f7d4f">116 MB</text>
-<rect x="150" y="228" width="12" height="12" fill="#9ca3af"/><text x="166" y="238" fill="#333">peak profile (00:15 IST)</text><rect x="340" y="228" width="12" height="12" fill="#2f7d4f"/><text x="356" y="238" fill="#333">demo profile (00:43 IST)</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 302" class="viz" role="img" aria-label="Sprout on the phone: memory per piece, peak profile to demo profile">
+<style>
+  .viz { --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7;
+         --own:#2a78d6; --both:#eb6834; --switching:#1baf7a; --out:#c3c2b7; --peak:#c3c2b7; --demo:#2a78d6;
+         --on-fill:#ffffff; --on-out:#0b0b0b; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  @media (prefers-color-scheme: dark) {
+    .viz { --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --grid:#2c2c2a; --axis:#383835;
+           --own:#3987e5; --both:#d95926; --switching:#199e70; --out:#52514e; --peak:#6d6c67; --demo:#3987e5; --on-out:#f0efec; }
+  }
+  .bg { fill: var(--surface); }
+  .t1 { fill: var(--ink); font-size: 15px; font-weight: 600; }
+  .t2 { fill: var(--ink2); font-size: 12.5px; }
+  .lab { fill: var(--ink2); font-size: 12px; }
+  .tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .grid { stroke: var(--grid); stroke-width: 1; }
+  .axis { stroke: var(--axis); stroke-width: 1; }
+  .mark { stroke: var(--ink2); stroke-width: 1; }
+  .in { fill: var(--on-fill); font-size: 11px; font-weight: 600; }
+  .in.dim { fill: var(--on-out); font-weight: 500; }
+  .own { fill: var(--own); } .both { fill: var(--both); } .switching { fill: var(--switching); } .out { fill: var(--out); }
+  .peak { fill: var(--peak); stroke: var(--surface); stroke-width: 2; }
+  .demo { fill: var(--demo); stroke: var(--surface); stroke-width: 2; }
+  .link { stroke: var(--axis); stroke-width: 2; stroke-linecap: round; }
+</style>
+<rect class="bg" width="640" height="302" rx="8"/>
+<text class="t1" x="128" y="28">Sprout on the phone: memory per piece, peak profile to demo profile</text>
+<text class="t2" x="128" y="48">186 MB less in all, 1076 MB to 890 MB: the same services and cells, sized for a demo.</text>
+<line class="grid" x1="128.0" x2="128.0" y1="76" y2="242"/>
+<text class="tick" x="128.0" y="258" text-anchor="middle">0 MB</text>
+<line class="grid" x1="203.6" x2="203.6" y1="76" y2="242"/>
+<text class="tick" x="203.6" y="258" text-anchor="middle">50 MB</text>
+<line class="grid" x1="279.1" x2="279.1" y1="76" y2="242"/>
+<text class="tick" x="279.1" y="258" text-anchor="middle">100 MB</text>
+<line class="grid" x1="354.7" x2="354.7" y1="76" y2="242"/>
+<text class="tick" x="354.7" y="258" text-anchor="middle">150 MB</text>
+<line class="grid" x1="430.3" x2="430.3" y1="76" y2="242"/>
+<text class="tick" x="430.3" y="258" text-anchor="middle">200 MB</text>
+<line class="grid" x1="505.9" x2="505.9" y1="76" y2="242"/>
+<text class="tick" x="505.9" y="258" text-anchor="middle">250 MB</text>
+<text class="lab" x="118" y="96" text-anchor="end">trading host</text>
+<line class="link" x1="448.4" x2="501.3" y1="92" y2="92"/>
+<circle class="peak" cx="501.3" cy="92" r="6"><title>peak: 247 MB</title></circle>
+<circle class="demo" cx="448.4" cy="92" r="6"><title>demo: 212 MB</title></circle>
+<text class="lab" x="513.3" y="96">212 MB <tspan class="tick">from 247</tspan></text>
+<text class="lab" x="118" y="130" text-anchor="end">money host</text>
+<line class="link" x1="430.3" x2="481.7" y1="126" y2="126"/>
+<circle class="peak" cx="481.7" cy="126" r="6"><title>peak: 234 MB</title></circle>
+<circle class="demo" cx="430.3" cy="126" r="6"><title>demo: 200 MB</title></circle>
+<text class="lab" x="493.7" y="130">200 MB <tspan class="tick">from 234</tspan></text>
+<text class="lab" x="118" y="164" text-anchor="end">street host</text>
+<line class="link" x1="401.6" x2="430.3" y1="160" y2="160"/>
+<circle class="peak" cx="430.3" cy="160" r="6"><title>peak: 200 MB</title></circle>
+<circle class="demo" cx="401.6" cy="160" r="6"><title>demo: 181 MB</title></circle>
+<text class="lab" x="442.3" y="164">181 MB <tspan class="tick">from 200</tspan></text>
+<text class="lab" x="118" y="198" text-anchor="end">edge host</text>
+<line class="link" x1="401.6" x2="430.3" y1="194" y2="194"/>
+<circle class="peak" cx="430.3" cy="194" r="6"><title>peak: 200 MB</title></circle>
+<circle class="demo" cx="401.6" cy="194" r="6"><title>demo: 181 MB</title></circle>
+<text class="lab" x="442.3" y="198">181 MB <tspan class="tick">from 200</tspan></text>
+<text class="lab" x="118" y="232" text-anchor="end">Postgres</text>
+<line class="link" x1="303.3" x2="422.7" y1="228" y2="228"/>
+<circle class="peak" cx="422.7" cy="228" r="6"><title>peak: 195 MB</title></circle>
+<circle class="demo" cx="303.3" cy="228" r="6"><title>demo: 116 MB</title></circle>
+<text class="lab" x="434.7" y="232">116 MB <tspan class="tick">from 195</tspan></text>
+<circle class="peak" cx="134" cy="286" r="6"/><text class="lab" x="146" y="290">peak profile (00:15 IST)</text>
+<circle class="demo" cx="337.28000000000003" cy="286" r="6"/><text class="lab" x="349.28000000000003" y="290">demo profile (00:43 IST)</text>
 </svg>

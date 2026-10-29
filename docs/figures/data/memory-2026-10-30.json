@@ -1,5 +1,5 @@
 {
-  "title": "Sprout on the phone: memory per piece, peak vs demo profile",
+  "title": "Sprout on the phone: memory per piece, peak profile to demo profile",
   "measured": "2026-10-30, Pss + SwapPss of every process, summed by piece (deploy/phone, pss.sh)",
   "before": "peak profile (00:15 IST)",
   "after": "demo profile (00:43 IST)",

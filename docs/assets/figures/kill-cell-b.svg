@@ -1,413 +1,68 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 208" font-family="system-ui, sans-serif" font-size="12" role="img" aria-label="the laptop's cell stopped: both cells' states over time">
-<rect width="760" height="208" fill="#fff"/>
-<text x="102" y="81" text-anchor="end" fill="#333">Region A (phone)</text>
-<rect x="110.0" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 0 s</title></rect>
-<rect x="113.2" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 4 s</title></rect>
-<rect x="117.1" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 9 s</title></rect>
-<rect x="120.3" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 13 s</title></rect>
-<rect x="123.4" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 17 s</title></rect>
-<rect x="126.6" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 21 s</title></rect>
-<rect x="129.8" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 25 s</title></rect>
-<rect x="133.7" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 30 s</title></rect>
-<rect x="136.9" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 34 s</title></rect>
-<rect x="140.0" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 38 s</title></rect>
-<rect x="143.2" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 42 s</title></rect>
-<rect x="146.4" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 46 s</title></rect>
-<rect x="150.3" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 51 s</title></rect>
-<rect x="153.5" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 55 s</title></rect>
-<rect x="156.6" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 59 s</title></rect>
-<rect x="159.8" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 63 s</title></rect>
-<rect x="163.0" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 67 s</title></rect>
-<rect x="166.9" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 72 s</title></rect>
-<rect x="170.1" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 76 s</title></rect>
-<rect x="173.2" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 80 s</title></rect>
-<rect x="176.4" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 84 s</title></rect>
-<rect x="179.6" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 88 s</title></rect>
-<rect x="183.5" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 93 s</title></rect>
-<rect x="186.7" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 97 s</title></rect>
-<rect x="189.8" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 101 s</title></rect>
-<rect x="193.0" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 105 s</title></rect>
-<rect x="196.2" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 109 s</title></rect>
-<rect x="200.1" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 114 s</title></rect>
-<rect x="203.3" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 118 s</title></rect>
-<rect x="206.4" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 122 s</title></rect>
-<rect x="209.6" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 126 s</title></rect>
-<rect x="212.8" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 130 s</title></rect>
-<rect x="215.9" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 134 s</title></rect>
-<rect x="219.1" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 138 s</title></rect>
-<rect x="223.0" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 143 s</title></rect>
-<rect x="226.2" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 147 s</title></rect>
-<rect x="230.2" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 152 s</title></rect>
-<rect x="234.1" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 157 s</title></rect>
-<rect x="237.3" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 161 s</title></rect>
-<rect x="241.2" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 166 s</title></rect>
-<rect x="245.2" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 171 s</title></rect>
-<rect x="248.3" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 175 s</title></rect>
-<rect x="251.5" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 179 s</title></rect>
-<rect x="254.7" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 183 s</title></rect>
-<rect x="258.6" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 188 s</title></rect>
-<rect x="261.8" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 192 s</title></rect>
-<rect x="264.9" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 196 s</title></rect>
-<rect x="268.9" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 201 s</title></rect>
-<rect x="272.8" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 206 s</title></rect>
-<rect x="276.0" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 210 s</title></rect>
-<rect x="279.9" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 215 s</title></rect>
-<rect x="283.1" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 219 s</title></rect>
-<rect x="286.3" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 223 s</title></rect>
-<rect x="289.4" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 227 s</title></rect>
-<rect x="292.6" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 231 s</title></rect>
-<rect x="295.8" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 235 s</title></rect>
-<rect x="299.7" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 240 s</title></rect>
-<rect x="302.9" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 244 s</title></rect>
-<rect x="306.0" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 248 s</title></rect>
-<rect x="309.2" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 252 s</title></rect>
-<rect x="312.4" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 256 s</title></rect>
-<rect x="316.3" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 261 s</title></rect>
-<rect x="319.5" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 265 s</title></rect>
-<rect x="322.6" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 269 s</title></rect>
-<rect x="325.8" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 273 s</title></rect>
-<rect x="329.0" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 277 s</title></rect>
-<rect x="332.1" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 281 s</title></rect>
-<rect x="336.1" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 286 s</title></rect>
-<rect x="339.2" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 290 s</title></rect>
-<rect x="342.4" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 294 s</title></rect>
-<rect x="346.3" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 299 s</title></rect>
-<rect x="350.3" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 304 s</title></rect>
-<rect x="354.3" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 309 s</title></rect>
-<rect x="357.4" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 313 s</title></rect>
-<rect x="360.6" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 317 s</title></rect>
-<rect x="363.7" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 321 s</title></rect>
-<rect x="367.7" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 326 s</title></rect>
-<rect x="370.9" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 330 s</title></rect>
-<rect x="374.8" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 335 s</title></rect>
-<rect x="378.0" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 339 s</title></rect>
-<rect x="381.1" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 343 s</title></rect>
-<rect x="385.1" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 348 s</title></rect>
-<rect x="388.2" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 352 s</title></rect>
-<rect x="391.4" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 356 s</title></rect>
-<rect x="394.6" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 360 s</title></rect>
-<rect x="397.7" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 364 s</title></rect>
-<rect x="400.9" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 368 s</title></rect>
-<rect x="404.8" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 373 s</title></rect>
-<rect x="408.8" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 378 s</title></rect>
-<rect x="412.0" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 382 s</title></rect>
-<rect x="415.1" y="64" width="4.0" height="26" fill="#d4a017"><title>TAKING_OVER at 386 s</title></rect>
-<rect x="419.1" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 391 s</title></rect>
-<rect x="422.2" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 395 s</title></rect>
-<rect x="425.4" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 399 s</title></rect>
-<rect x="428.6" y="64" width="3.2" height="26" fill="#d4a017"><title>TAKING_OVER at 403 s</title></rect>
-<rect x="431.7" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 407 s</title></rect>
-<rect x="434.9" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 411 s</title></rect>
-<rect x="438.8" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 416 s</title></rect>
-<rect x="442.0" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 420 s</title></rect>
-<rect x="445.2" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 424 s</title></rect>
-<rect x="448.3" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 428 s</title></rect>
-<rect x="451.5" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 432 s</title></rect>
-<rect x="455.4" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 437 s</title></rect>
-<rect x="458.6" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 441 s</title></rect>
-<rect x="461.8" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 445 s</title></rect>
-<rect x="464.9" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 449 s</title></rect>
-<rect x="468.1" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 453 s</title></rect>
-<rect x="472.0" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 458 s</title></rect>
-<rect x="475.2" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 462 s</title></rect>
-<rect x="478.4" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 466 s</title></rect>
-<rect x="481.5" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 470 s</title></rect>
-<rect x="484.7" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 474 s</title></rect>
-<rect x="488.6" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 479 s</title></rect>
-<rect x="491.8" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 483 s</title></rect>
-<rect x="495.0" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 487 s</title></rect>
-<rect x="498.1" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 491 s</title></rect>
-<rect x="501.3" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 495 s</title></rect>
-<rect x="505.2" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 500 s</title></rect>
-<rect x="508.4" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 504 s</title></rect>
-<rect x="511.6" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 508 s</title></rect>
-<rect x="514.7" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 512 s</title></rect>
-<rect x="517.9" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 516 s</title></rect>
-<rect x="521.8" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 521 s</title></rect>
-<rect x="525.0" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 525 s</title></rect>
-<rect x="528.2" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 529 s</title></rect>
-<rect x="531.3" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 533 s</title></rect>
-<rect x="534.5" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 537 s</title></rect>
-<rect x="538.4" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 542 s</title></rect>
-<rect x="541.6" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 546 s</title></rect>
-<rect x="544.8" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 550 s</title></rect>
-<rect x="547.9" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 554 s</title></rect>
-<rect x="551.9" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 559 s</title></rect>
-<rect x="555.0" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 563 s</title></rect>
-<rect x="558.2" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 567 s</title></rect>
-<rect x="561.4" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 571 s</title></rect>
-<rect x="564.5" y="64" width="4.7" height="26" fill="#1d4ed8"><title>HOLDING at 575 s</title></rect>
-<rect x="569.3" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 581 s</title></rect>
-<rect x="572.4" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 585 s</title></rect>
-<rect x="575.6" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 589 s</title></rect>
-<rect x="578.7" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 593 s</title></rect>
-<rect x="581.9" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 597 s</title></rect>
-<rect x="585.9" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 602 s</title></rect>
-<rect x="589.0" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 606 s</title></rect>
-<rect x="592.2" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 610 s</title></rect>
-<rect x="595.3" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 614 s</title></rect>
-<rect x="598.5" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 618 s</title></rect>
-<rect x="602.5" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 623 s</title></rect>
-<rect x="605.6" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 627 s</title></rect>
-<rect x="608.8" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 631 s</title></rect>
-<rect x="611.9" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 635 s</title></rect>
-<rect x="615.1" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 639 s</title></rect>
-<rect x="619.1" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 644 s</title></rect>
-<rect x="622.2" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 648 s</title></rect>
-<rect x="625.4" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 652 s</title></rect>
-<rect x="628.5" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 656 s</title></rect>
-<rect x="631.7" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 660 s</title></rect>
-<rect x="635.7" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 665 s</title></rect>
-<rect x="638.8" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 669 s</title></rect>
-<rect x="642.0" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 673 s</title></rect>
-<rect x="645.1" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 677 s</title></rect>
-<rect x="648.3" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 681 s</title></rect>
-<rect x="652.3" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 686 s</title></rect>
-<rect x="655.4" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 690 s</title></rect>
-<rect x="658.6" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 694 s</title></rect>
-<rect x="661.7" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 698 s</title></rect>
-<rect x="664.9" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 702 s</title></rect>
-<rect x="668.1" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 706 s</title></rect>
-<rect x="672.0" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 711 s</title></rect>
-<rect x="675.2" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 715 s</title></rect>
-<rect x="678.3" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 719 s</title></rect>
-<rect x="681.5" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 723 s</title></rect>
-<rect x="684.7" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 727 s</title></rect>
-<rect x="688.6" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 732 s</title></rect>
-<rect x="691.8" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 736 s</title></rect>
-<rect x="694.9" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 740 s</title></rect>
-<rect x="698.1" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 744 s</title></rect>
-<rect x="701.3" y="64" width="4.0" height="26" fill="#1d4ed8"><title>HOLDING at 748 s</title></rect>
-<rect x="705.2" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 753 s</title></rect>
-<rect x="708.4" y="64" width="3.2" height="26" fill="#1d4ed8"><title>HOLDING at 757 s</title></rect>
-<rect x="711.5" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 761 s</title></rect>
-<rect x="714.7" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 765 s</title></rect>
-<rect x="717.9" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 769 s</title></rect>
-<rect x="721.8" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 774 s</title></rect>
-<rect x="725.0" y="64" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 778 s</title></rect>
-<rect x="728.1" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 782 s</title></rect>
-<rect x="732.1" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 787 s</title></rect>
-<rect x="736.0" y="64" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 792 s</title></rect>
-<text x="102" y="115" text-anchor="end" fill="#333">Region B (laptop)</text>
-<rect x="110.0" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 0 s</title></rect>
-<rect x="113.2" y="98" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 4 s</title></rect>
-<rect x="117.1" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 9 s</title></rect>
-<rect x="120.3" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 13 s</title></rect>
-<rect x="123.4" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 17 s</title></rect>
-<rect x="126.6" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 21 s</title></rect>
-<rect x="129.8" y="98" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 25 s</title></rect>
-<rect x="133.7" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 30 s</title></rect>
-<rect x="136.9" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 34 s</title></rect>
-<rect x="140.0" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 38 s</title></rect>
-<rect x="143.2" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 42 s</title></rect>
-<rect x="146.4" y="98" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 46 s</title></rect>
-<rect x="150.3" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 51 s</title></rect>
-<rect x="153.5" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 55 s</title></rect>
-<rect x="156.6" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 59 s</title></rect>
-<rect x="159.8" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 63 s</title></rect>
-<rect x="163.0" y="98" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 67 s</title></rect>
-<rect x="166.9" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 72 s</title></rect>
-<rect x="170.1" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 76 s</title></rect>
-<rect x="173.2" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 80 s</title></rect>
-<rect x="176.4" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 84 s</title></rect>
-<rect x="179.6" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 88 s</title></rect>
-<rect x="183.5" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 93 s</title></rect>
-<rect x="186.7" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 97 s</title></rect>
-<rect x="189.8" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 101 s</title></rect>
-<rect x="193.0" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 105 s</title></rect>
-<rect x="196.2" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 109 s</title></rect>
-<rect x="200.1" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 114 s</title></rect>
-<rect x="203.3" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 118 s</title></rect>
-<rect x="206.4" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 122 s</title></rect>
-<rect x="209.6" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 126 s</title></rect>
-<rect x="212.8" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 130 s</title></rect>
-<rect x="215.9" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 134 s</title></rect>
-<rect x="219.1" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 138 s</title></rect>
-<rect x="223.0" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 143 s</title></rect>
-<rect x="226.2" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 147 s</title></rect>
-<rect x="230.2" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 152 s</title></rect>
-<rect x="234.1" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 157 s</title></rect>
-<rect x="237.3" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 161 s</title></rect>
-<rect x="241.2" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 166 s</title></rect>
-<rect x="245.2" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 171 s</title></rect>
-<rect x="248.3" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 175 s</title></rect>
-<rect x="251.5" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 179 s</title></rect>
-<rect x="254.7" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 183 s</title></rect>
-<rect x="258.6" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 188 s</title></rect>
-<rect x="261.8" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 192 s</title></rect>
-<rect x="264.9" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 196 s</title></rect>
-<rect x="268.9" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 201 s</title></rect>
-<rect x="272.8" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 206 s</title></rect>
-<rect x="276.0" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 210 s</title></rect>
-<rect x="279.9" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 215 s</title></rect>
-<rect x="283.1" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 219 s</title></rect>
-<rect x="286.3" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 223 s</title></rect>
-<rect x="289.4" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 227 s</title></rect>
-<rect x="292.6" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 231 s</title></rect>
-<rect x="295.8" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 235 s</title></rect>
-<rect x="299.7" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 240 s</title></rect>
-<rect x="302.9" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 244 s</title></rect>
-<rect x="306.0" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 248 s</title></rect>
-<rect x="309.2" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 252 s</title></rect>
-<rect x="312.4" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 256 s</title></rect>
-<rect x="316.3" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 261 s</title></rect>
-<rect x="319.5" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 265 s</title></rect>
-<rect x="322.6" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 269 s</title></rect>
-<rect x="325.8" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 273 s</title></rect>
-<rect x="329.0" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 277 s</title></rect>
-<rect x="332.1" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 281 s</title></rect>
-<rect x="336.1" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 286 s</title></rect>
-<rect x="339.2" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 290 s</title></rect>
-<rect x="342.4" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 294 s</title></rect>
-<rect x="346.3" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 299 s</title></rect>
-<rect x="350.3" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 304 s</title></rect>
-<rect x="354.3" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 309 s</title></rect>
-<rect x="357.4" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 313 s</title></rect>
-<rect x="360.6" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 317 s</title></rect>
-<rect x="363.7" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 321 s</title></rect>
-<rect x="367.7" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 326 s</title></rect>
-<rect x="370.9" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 330 s</title></rect>
-<rect x="374.8" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 335 s</title></rect>
-<rect x="378.0" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 339 s</title></rect>
-<rect x="381.1" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 343 s</title></rect>
-<rect x="385.1" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 348 s</title></rect>
-<rect x="388.2" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 352 s</title></rect>
-<rect x="391.4" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 356 s</title></rect>
-<rect x="394.6" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 360 s</title></rect>
-<rect x="397.7" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 364 s</title></rect>
-<rect x="400.9" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 368 s</title></rect>
-<rect x="404.8" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 373 s</title></rect>
-<rect x="408.8" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 378 s</title></rect>
-<rect x="412.0" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 382 s</title></rect>
-<rect x="415.1" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 386 s</title></rect>
-<rect x="419.1" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 391 s</title></rect>
-<rect x="422.2" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 395 s</title></rect>
-<rect x="425.4" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 399 s</title></rect>
-<rect x="428.6" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 403 s</title></rect>
-<rect x="431.7" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 407 s</title></rect>
-<rect x="434.9" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 411 s</title></rect>
-<rect x="438.8" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 416 s</title></rect>
-<rect x="442.0" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 420 s</title></rect>
-<rect x="445.2" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 424 s</title></rect>
-<rect x="448.3" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 428 s</title></rect>
-<rect x="451.5" y="98" width="4.0" height="26" fill="#4b5563"><title>silent at 432 s</title></rect>
-<rect x="455.4" y="98" width="3.2" height="26" fill="#4b5563"><title>silent at 437 s</title></rect>
-<rect x="458.6" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL/sick at 441 s</title></rect>
-<rect x="461.8" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL/sick at 445 s</title></rect>
-<rect x="464.9" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL/sick at 449 s</title></rect>
-<rect x="468.1" y="98" width="4.0" height="26" fill="#7c3aed"><title>TAKEN_OVER/sick at 453 s</title></rect>
-<rect x="472.0" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER/sick at 458 s</title></rect>
-<rect x="475.2" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER/sick at 462 s</title></rect>
-<rect x="478.4" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER/sick at 466 s</title></rect>
-<rect x="481.5" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER/sick at 470 s</title></rect>
-<rect x="484.7" y="98" width="4.0" height="26" fill="#7c3aed"><title>TAKEN_OVER/sick at 474 s</title></rect>
-<rect x="488.6" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER/sick at 479 s</title></rect>
-<rect x="491.8" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 483 s</title></rect>
-<rect x="495.0" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 487 s</title></rect>
-<rect x="498.1" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 491 s</title></rect>
-<rect x="501.3" y="98" width="4.0" height="26" fill="#7c3aed"><title>TAKEN_OVER at 495 s</title></rect>
-<rect x="505.2" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 500 s</title></rect>
-<rect x="508.4" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 504 s</title></rect>
-<rect x="511.6" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 508 s</title></rect>
-<rect x="514.7" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 512 s</title></rect>
-<rect x="517.9" y="98" width="4.0" height="26" fill="#7c3aed"><title>TAKEN_OVER at 516 s</title></rect>
-<rect x="521.8" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 521 s</title></rect>
-<rect x="525.0" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 525 s</title></rect>
-<rect x="528.2" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 529 s</title></rect>
-<rect x="531.3" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 533 s</title></rect>
-<rect x="534.5" y="98" width="4.0" height="26" fill="#7c3aed"><title>TAKEN_OVER at 537 s</title></rect>
-<rect x="538.4" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 542 s</title></rect>
-<rect x="541.6" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 546 s</title></rect>
-<rect x="544.8" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 550 s</title></rect>
-<rect x="547.9" y="98" width="4.0" height="26" fill="#7c3aed"><title>TAKEN_OVER at 554 s</title></rect>
-<rect x="551.9" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 559 s</title></rect>
-<rect x="555.0" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 563 s</title></rect>
-<rect x="558.2" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 567 s</title></rect>
-<rect x="561.4" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 571 s</title></rect>
-<rect x="564.5" y="98" width="4.7" height="26" fill="#7c3aed"><title>TAKEN_OVER at 575 s</title></rect>
-<rect x="569.3" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 581 s</title></rect>
-<rect x="572.4" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 585 s</title></rect>
-<rect x="575.6" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 589 s</title></rect>
-<rect x="578.7" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 593 s</title></rect>
-<rect x="581.9" y="98" width="4.0" height="26" fill="#7c3aed"><title>TAKEN_OVER at 597 s</title></rect>
-<rect x="585.9" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 602 s</title></rect>
-<rect x="589.0" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 606 s</title></rect>
-<rect x="592.2" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 610 s</title></rect>
-<rect x="595.3" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 614 s</title></rect>
-<rect x="598.5" y="98" width="4.0" height="26" fill="#7c3aed"><title>TAKEN_OVER at 618 s</title></rect>
-<rect x="602.5" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 623 s</title></rect>
-<rect x="605.6" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 627 s</title></rect>
-<rect x="608.8" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 631 s</title></rect>
-<rect x="611.9" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 635 s</title></rect>
-<rect x="615.1" y="98" width="4.0" height="26" fill="#7c3aed"><title>TAKEN_OVER at 639 s</title></rect>
-<rect x="619.1" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 644 s</title></rect>
-<rect x="622.2" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 648 s</title></rect>
-<rect x="625.4" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 652 s</title></rect>
-<rect x="628.5" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 656 s</title></rect>
-<rect x="631.7" y="98" width="4.0" height="26" fill="#7c3aed"><title>TAKEN_OVER at 660 s</title></rect>
-<rect x="635.7" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 665 s</title></rect>
-<rect x="638.8" y="98" width="3.2" height="26" fill="#7c3aed"><title>TAKEN_OVER at 669 s</title></rect>
-<rect x="642.0" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 673 s</title></rect>
-<rect x="645.1" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 677 s</title></rect>
-<rect x="648.3" y="98" width="4.0" height="26" fill="#0e7490"><title>FAILING_BACK at 681 s</title></rect>
-<rect x="652.3" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 686 s</title></rect>
-<rect x="655.4" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 690 s</title></rect>
-<rect x="658.6" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 694 s</title></rect>
-<rect x="661.7" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 698 s</title></rect>
-<rect x="664.9" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 702 s</title></rect>
-<rect x="668.1" y="98" width="4.0" height="26" fill="#0e7490"><title>FAILING_BACK at 706 s</title></rect>
-<rect x="672.0" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 711 s</title></rect>
-<rect x="675.2" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 715 s</title></rect>
-<rect x="678.3" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 719 s</title></rect>
-<rect x="681.5" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 723 s</title></rect>
-<rect x="684.7" y="98" width="4.0" height="26" fill="#0e7490"><title>FAILING_BACK at 727 s</title></rect>
-<rect x="688.6" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 732 s</title></rect>
-<rect x="691.8" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 736 s</title></rect>
-<rect x="694.9" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 740 s</title></rect>
-<rect x="698.1" y="98" width="3.2" height="26" fill="#0e7490"><title>FAILING_BACK at 744 s</title></rect>
-<rect x="701.3" y="98" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 748 s</title></rect>
-<rect x="705.2" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 753 s</title></rect>
-<rect x="708.4" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 757 s</title></rect>
-<rect x="711.5" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 761 s</title></rect>
-<rect x="714.7" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 765 s</title></rect>
-<rect x="717.9" y="98" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 769 s</title></rect>
-<rect x="721.8" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 774 s</title></rect>
-<rect x="725.0" y="98" width="3.2" height="26" fill="#2f7d4f"><title>NORMAL at 778 s</title></rect>
-<rect x="728.1" y="98" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 782 s</title></rect>
-<rect x="732.1" y="98" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 787 s</title></rect>
-<rect x="736.0" y="98" width="4.0" height="26" fill="#2f7d4f"><title>NORMAL at 792 s</title></rect>
-<line x1="110.0" x2="110.0" y1="60" y2="132" stroke="#d1d5db" stroke-dasharray="2 3"/>
-<text x="110.0" y="146" text-anchor="middle" fill="#555">0 min</text>
-<line x1="204.9" x2="204.9" y1="60" y2="132" stroke="#d1d5db" stroke-dasharray="2 3"/>
-<text x="204.9" y="146" text-anchor="middle" fill="#555">2 min</text>
-<line x1="299.7" x2="299.7" y1="60" y2="132" stroke="#d1d5db" stroke-dasharray="2 3"/>
-<text x="299.7" y="146" text-anchor="middle" fill="#555">4 min</text>
-<line x1="394.6" x2="394.6" y1="60" y2="132" stroke="#d1d5db" stroke-dasharray="2 3"/>
-<text x="394.6" y="146" text-anchor="middle" fill="#555">6 min</text>
-<line x1="489.4" x2="489.4" y1="60" y2="132" stroke="#d1d5db" stroke-dasharray="2 3"/>
-<text x="489.4" y="146" text-anchor="middle" fill="#555">8 min</text>
-<line x1="584.3" x2="584.3" y1="60" y2="132" stroke="#d1d5db" stroke-dasharray="2 3"/>
-<text x="584.3" y="146" text-anchor="middle" fill="#555">10 min</text>
-<line x1="679.1" x2="679.1" y1="60" y2="132" stroke="#d1d5db" stroke-dasharray="2 3"/>
-<text x="679.1" y="146" text-anchor="middle" fill="#555">12 min</text>
-<line x1="170.1" x2="170.1" y1="58" y2="132" stroke="#141833" stroke-width="1"/>
-<text x="173.1" y="56" text-anchor="start" fill="#141833">B silent</text>
-<line x1="245.2" x2="245.2" y1="44" y2="132" stroke="#141833" stroke-width="1"/>
-<text x="248.2" y="42" text-anchor="start" fill="#141833">A taking over</text>
-<line x1="431.7" x2="431.7" y1="30" y2="132" stroke="#141833" stroke-width="1"/>
-<text x="434.7" y="28" text-anchor="start" fill="#141833">A holding</text>
-<line x1="458.6" x2="458.6" y1="58" y2="132" stroke="#141833" stroke-width="1"/>
-<text x="461.6" y="56" text-anchor="start" fill="#141833">B normal/sick</text>
-<line x1="468.1" x2="468.1" y1="44" y2="132" stroke="#141833" stroke-width="1"/>
-<text x="471.1" y="42" text-anchor="start" fill="#141833">B taken over/sick</text>
-<line x1="491.8" x2="491.8" y1="30" y2="132" stroke="#141833" stroke-width="1"/>
-<text x="494.8" y="28" text-anchor="start" fill="#141833">B taken over</text>
-<rect x="110" y="168" width="12" height="12" fill="#2f7d4f"/><text x="126" y="178" fill="#333">normal</text>
-<rect x="174" y="168" width="12" height="12" fill="#d4a017"/><text x="190" y="178" fill="#333">taking over</text>
-<rect x="273" y="168" width="12" height="12" fill="#1d4ed8"/><text x="289" y="178" fill="#333">holding</text>
-<rect x="344" y="168" width="12" height="12" fill="#7c3aed"/><text x="360" y="178" fill="#333">taken over</text>
-<rect x="436" y="168" width="12" height="12" fill="#0e7490"/><text x="452" y="178" fill="#333">failing back</text>
-<rect x="542" y="168" width="12" height="12" fill="#b4432f"/><text x="558" y="178" fill="#333">fenced</text>
-<rect x="606" y="168" width="12" height="12" fill="#4b5563"/><text x="622" y="178" fill="#333">silent</text>
-<text x="110" y="198" fill="#333">759 orders acknowledged during the run: 0 lost, 0 applied twice. Orders back after 336 s.</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 254" class="viz" role="img" aria-label="Region B stopped; the other region served its customers, then handed them back">
+<style>
+  .viz { --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7;
+         --own:#2a78d6; --both:#eb6834; --switching:#1baf7a; --out:#c3c2b7; --peak:#c3c2b7; --demo:#2a78d6;
+         --on-fill:#ffffff; --on-out:#0b0b0b; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  @media (prefers-color-scheme: dark) {
+    .viz { --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --grid:#2c2c2a; --axis:#383835;
+           --own:#3987e5; --both:#d95926; --switching:#199e70; --out:#52514e; --peak:#6d6c67; --demo:#3987e5; --on-out:#f0efec; }
+  }
+  .bg { fill: var(--surface); }
+  .t1 { fill: var(--ink); font-size: 15px; font-weight: 600; }
+  .t2 { fill: var(--ink2); font-size: 12.5px; }
+  .lab { fill: var(--ink2); font-size: 12px; }
+  .tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .grid { stroke: var(--grid); stroke-width: 1; }
+  .axis { stroke: var(--axis); stroke-width: 1; }
+  .mark { stroke: var(--ink2); stroke-width: 1; }
+  .in { fill: var(--on-fill); font-size: 11px; font-weight: 600; }
+  .in.dim { fill: var(--on-out); font-weight: 500; }
+  .own { fill: var(--own); } .both { fill: var(--both); } .switching { fill: var(--switching); } .out { fill: var(--out); }
+  .peak { fill: var(--peak); stroke: var(--surface); stroke-width: 2; }
+  .demo { fill: var(--demo); stroke: var(--surface); stroke-width: 2; }
+  .link { stroke: var(--axis); stroke-width: 2; stroke-linecap: round; }
+</style>
+<rect class="bg" width="760" height="254" rx="8"/>
+<text class="t1" x="128" y="28">Region B stopped: the other region took its customers, then gave them back</text>
+<text class="t2" x="128" y="48">Orders worked again after 336 s. 759 orders acknowledged during the run: 0 lost, 0 applied twice.</text>
+<line class="grid" x1="174.7" x2="174.7" y1="92" y2="158"/>
+<text class="tick" x="174.7" y="178" text-anchor="middle">stopped</text>
+<line class="grid" x1="268.1" x2="268.1" y1="92" y2="158"/>
+<text class="tick" x="268.1" y="178" text-anchor="middle">+2 min</text>
+<line class="grid" x1="361.5" x2="361.5" y1="92" y2="158"/>
+<text class="tick" x="361.5" y="178" text-anchor="middle">+4 min</text>
+<line class="grid" x1="455.0" x2="455.0" y1="92" y2="158"/>
+<text class="tick" x="455.0" y="178" text-anchor="middle">+6 min</text>
+<line class="grid" x1="548.4" x2="548.4" y1="92" y2="158"/>
+<text class="tick" x="548.4" y="178" text-anchor="middle">+8 min</text>
+<line class="grid" x1="641.8" x2="641.8" y1="92" y2="158"/>
+<text class="tick" x="641.8" y="178" text-anchor="middle">+10 min</text>
+<line class="grid" x1="735.2" x2="735.2" y1="92" y2="158"/>
+<text class="tick" x="735.2" y="178" text-anchor="middle">+12 min</text>
+<line class="axis" x1="128" x2="736" y1="164" y2="164"/>
+<text class="lab" x="118" y="112" text-anchor="end">Region A (phone)</text>
+<rect class="own" x="129.0" y="96" width="118.7" height="24" rx="4"><title>its own customers: -60 s to +95 s</title></rect>
+<text class="in" x="135.0" y="112">own customers</text>
+<rect class="switching" x="249.7" y="96" width="181.7" height="24" rx="4"><title>switching over: +95 s to +331 s</title></rect>
+<text class="in" x="255.7" y="112">switching</text>
+<rect class="both" x="433.4" y="96" width="273.6" height="24" rx="4"><title>both regions' customers: +331 s to +685 s</title></rect>
+<text class="in" x="439.4" y="112">both regions</text>
+<rect class="own" x="709.0" y="96" width="26.0" height="24" rx="4"><title>its own customers: +685 s to +721 s</title></rect>
+<text class="lab" x="118" y="150" text-anchor="end">Region B (laptop)</text>
+<rect class="own" x="129.0" y="134" width="44.7" height="24" rx="4"><title>its own customers: -60 s to +0 s</title></rect>
+<rect class="out" x="175.7" y="134" width="282.1" height="24" rx="4"><title>out: stopped, fenced or handed over: +0 s to +365 s</title></rect>
+<text class="in dim" x="181.7" y="150">out</text>
+<rect class="own" x="459.9" y="134" width="7.3" height="24" rx="4"><title>its own customers: +365 s to +377 s</title></rect>
+<rect class="out" x="469.2" y="134" width="169.3" height="24" rx="4"><title>out: stopped, fenced or handed over: +377 s to +597 s</title></rect>
+<text class="in dim" x="475.2" y="150">out</text>
+<rect class="switching" x="640.5" y="134" width="56.4" height="24" rx="4"><title>switching over: +597 s to +672 s</title></rect>
+<rect class="own" x="698.9" y="134" width="36.1" height="24" rx="4"><title>its own customers: +672 s to +721 s</title></rect>
+<line class="mark" x1="432.4" x2="432.4" y1="80" y2="158"/>
+<text class="lab" x="437.4" y="76" text-anchor="start">took over at 5:31</text>
+<line class="mark" x1="708.0" x2="708.0" y1="80" y2="158"/>
+<text class="lab" x="703.0" y="76" text-anchor="end">handed back at 11:25</text>
+<rect class="own" x="128" y="208" width="12" height="12" rx="3"/><text class="lab" x="145" y="218">its own customers</text>
+<rect class="both" x="277.24" y="208" width="12" height="12" rx="3"/><text class="lab" x="294.24" y="218">both regions' customers</text>
+<rect class="switching" x="466.8" y="208" width="12" height="12" rx="3"/><text class="lab" x="483.8" y="218">switching over</text>
+<rect class="out" x="128" y="226" width="12" height="12" rx="3"/><text class="lab" x="145" y="236">out: stopped, fenced or handed over</text>
 </svg>
