@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 250" font-family="system-ui, sans-serif" font-size="12" role="img" aria-label="Sprout on the phone: memory per piece, peak vs demo profile">
+<rect width="640" height="250" fill="#fff"/>
+<text x="150" y="18" fill="#141833" font-weight="600">Sprout on the phone: memory per piece, peak vs demo profile</text>
+<text x="142" y="50" text-anchor="end" fill="#333">trading host</text>
+<rect x="150" y="34" width="420.0" height="11" fill="#9ca3af"/><text x="574.0" y="44" fill="#555">247 MB</text>
+<rect x="150" y="47" width="360.5" height="11" fill="#2f7d4f"/><text x="514.5" y="57" fill="#2f7d4f">212 MB</text>
+<text x="142" y="84" text-anchor="end" fill="#333">money host</text>
+<rect x="150" y="68" width="397.9" height="11" fill="#9ca3af"/><text x="551.9" y="78" fill="#555">234 MB</text>
+<rect x="150" y="81" width="340.1" height="11" fill="#2f7d4f"/><text x="494.1" y="91" fill="#2f7d4f">200 MB</text>
+<text x="142" y="118" text-anchor="end" fill="#333">street host</text>
+<rect x="150" y="102" width="340.1" height="11" fill="#9ca3af"/><text x="494.1" y="112" fill="#555">200 MB</text>
+<rect x="150" y="115" width="307.8" height="11" fill="#2f7d4f"/><text x="461.8" y="125" fill="#2f7d4f">181 MB</text>
+<text x="142" y="152" text-anchor="end" fill="#333">edge host</text>
+<rect x="150" y="136" width="340.1" height="11" fill="#9ca3af"/><text x="494.1" y="146" fill="#555">200 MB</text>
+<rect x="150" y="149" width="307.8" height="11" fill="#2f7d4f"/><text x="461.8" y="159" fill="#2f7d4f">181 MB</text>
+<text x="142" y="186" text-anchor="end" fill="#333">Postgres</text>
+<rect x="150" y="170" width="331.6" height="11" fill="#9ca3af"/><text x="485.6" y="180" fill="#555">195 MB</text>
+<rect x="150" y="183" width="197.2" height="11" fill="#2f7d4f"/><text x="351.2" y="193" fill="#2f7d4f">116 MB</text>
+<rect x="150" y="228" width="12" height="12" fill="#9ca3af"/><text x="166" y="238" fill="#333">peak profile (00:15 IST)</text><rect x="340" y="228" width="12" height="12" fill="#2f7d4f"/><text x="356" y="238" fill="#333">demo profile (00:43 IST)</text>
+</svg>

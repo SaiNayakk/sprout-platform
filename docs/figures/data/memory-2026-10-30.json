@@ -1,0 +1,13 @@
+{
+  "title": "Sprout on the phone: memory per piece, peak vs demo profile",
+  "measured": "2026-10-30, Pss + SwapPss of every process, summed by piece (deploy/phone, pss.sh)",
+  "before": "peak profile (00:15 IST)",
+  "after": "demo profile (00:43 IST)",
+  "pieces": [
+    {"name": "trading host", "before_mb": 247, "after_mb": 212},
+    {"name": "money host", "before_mb": 234, "after_mb": 200},
+    {"name": "street host", "before_mb": 200, "after_mb": 181},
+    {"name": "edge host", "before_mb": 200, "after_mb": 181},
+    {"name": "Postgres", "before_mb": 195, "after_mb": 116}
+  ]
+}
