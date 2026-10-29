@@ -85,6 +85,21 @@ address. With `SPROUT_SANDBOX=true` in `~/.sprout.env` the hosts run the 30x dem
 (settlement, reconciliation, plans, goals, the demo accounts) as the laptop and pre-prod do; `MARKETDATA_START_DATE`
 and `MARKETDATA_EPOCH` there keep the market's place across restarts, and moving data from the laptop moves them too.
 
+**Two sizes, one system.** `deploy/phone/profile.sh` sizes every host and Postgres from `SPROUT_PROFILE` in
+`~/.sprout.env`. `peak` (the default) is what the capacity runs measured, so the published numbers are `peak`'s.
+`demo` runs the same services in the same cells for a handful of visitors: one idle Tomcat thread per service
+instead of ten, two database connections per service, a 96 MB heap that hands back what it frees, and 32 MB of Postgres
+buffers. `sh ~/sprout/ctl.sh profile demo|peak` switches and
+restarts Sprout; the other cell serves the phone's customers while it does.
+
+Measured on the phone (2026-10-30, memory each process holds in RAM or swap): the four hosts went from 881 MB to
+774 MB and Postgres from 195 MB to 116 MB, about 190 MB in all. Each host keeps about 60 MB of loaded classes and
+its compiled code whatever its load, so a host stays near 180-210 MB; going much lower means fewer JVMs or native
+images. Tried and dropped, because they saved nothing measurable: closing idle database connections (every
+service's housekeepers use theirs every few seconds), forcing idle hosts to collect (the freed heap doesn't leave
+the process on Android), and capping Node's heap for the phone's other apps. A shared class archive
+(`-XX:+AutoCreateSharedArchive`) isn't written by Termux's JDK.
+
 **Starting on the phone, one piece at a time.** Sprout is one Backseat app, `sprout`, running
 `deploy/phone/start.sh`. It waits until the phone has been up five minutes, then starts Postgres, NATS,
 the four hosts and the web app in turn, each only once the one before answers its health check and enough
