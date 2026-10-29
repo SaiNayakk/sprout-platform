@@ -3,6 +3,25 @@
 Blameless write-ups: what happened, why, and what changed so it can't happen the same way again.
 These come from the infrastructure Sprout will share with the other apps on the phone.
 
+## 2026-10-28 21:08 UTC: both cells served Region B's customers for 100 s after Docker came back
+
+**Impact.** Docker Desktop had been closed on purpose and the phone was serving Region B. When Docker started again, the
+phone gave Region B its customers back (1 s cutover). Seven seconds later the laptop fenced itself and said it was out; the
+phone began taking Region B over again; 51 s later the laptop unfenced while that takeover was still running. For about 100 s
+both cells served Region B's customers, until they handed the customers back to the laptop by themselves. The journal pass at
+the handback found 0 writes taken at the phone, so nothing was lost or applied twice; with real traffic in that window, writes
+taken at the laptop could have been left out of the copy that served them.
+
+**Cause.** Two rules. A crash loop was counted across all hosts: five hosts coming up together after Docker started counted as
+one host crashing five times, so the cell fenced itself as broken. And a fenced cell unfenced after 210 s healthy "whatever the
+other cell says", even while the other cell was taking it over.
+
+**What changed.** Crash loops are counted per host. A cell fences when it sees the other start taking it over, and does not
+unfence while it does. A new scenario in the resilience suite, `laptop_restart`, restarts every laptop container at once; it
+passed (no fence, no takeover, orders back within about a minute). While testing, a third gap showed: a cell fenced because its
+address went silent never said it was out even when all its hosts stayed down, so the witness never granted the takeover. It now
+says so once its hosts have been down a minute.
+
 ## 2026-10-28 03:20–07:58 IST: Region A silent for 4.5 hours (Termux stopped by Android)
 
 **Impact.** The phone (Region A) went silent at 03:20 IST. The laptop took Region A over at 03:22 and

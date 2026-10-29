@@ -26,7 +26,7 @@ import cw_ops
 import cw_witness
 from cw_env import (CELL, CHECK_SECONDS, ENV, LAN_PORT, LOCK, PEER, PEER_SERVES, S, answers, get_json, host_checks, iso, lan_peer_url,
                     load_state, log, notify, now, probe, save_state, set_state, sh, write_atomic)
-from cw_logic import Cfg, Obs, PeerView, decide
+from cw_logic import Cfg, Obs, PeerView, decide, flapping
 
 CFG = Cfg(cell=CELL, peer=PEER, preferred=ENV.get('PREFERRED_SURVIVOR', 'b'),
           fence_after=int(ENV.get('FENCE_AFTER', '60')), takeover_after=int(ENV.get('TAKEOVER_AFTER', '120')),
@@ -309,24 +309,24 @@ def observe(t):
 
     # the hosts of this cell: down for how long, and has one been crashing again and again?
     hosts_down = {}
-    flaps = S.setdefault('flaps', [])
+    flaps = S.get('flaps') if isinstance(S.get('flaps'), dict) else {}     # host -> when it came back (a list before 2026-10-29)
     for h, st in hosts.items():
         d = since_of(f'host_{h}', st == 'down', t)
         if st == 'down':
             hosts_down[h] = d
         was = T.get(f'prev_{h}')
         if was == 'down' and st == 'up' and t - T.get(f'down_at_{h}', t) < CFG.host_down_fence_after:
-            flaps.append(t)
+            flaps.setdefault(h, []).append(t)
         if st == 'down' and was != 'down':
             T[f'down_at_{h}'] = t
         T[f'prev_{h}'] = st
-    S['flaps'] = [x for x in flaps if t - x < CFG.flap_window]
+    S['flaps'] = {h: kept for h, times in flaps.items() if (kept := [x for x in times if t - x < CFG.flap_window])}
 
     all_green = self_ok and local_ok and not hosts_down
     o = Obs(
         addr_down_for=since_of('addr_bad', not self_ok, t),
         sick_for=since_of('sick', not local_ok, t),
-        hosts_down=hosts_down, flapping=len(S['flaps']) >= CFG.flap_count,
+        hosts_down=hosts_down, flapping=flapping(S['flaps'], CFG), declared=bool(S.get('declared_down')),
         good_for=since_of('good', all_green, t),
         cf=cf, lan=lan, wit=cw_witness.view(),
         peer_gone_for=since_of('peer_gone', code != 200, t),

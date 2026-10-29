@@ -74,6 +74,7 @@ class Obs:
     sick_for: float = 0           # its own health check failing
     hosts_down: dict = field(default_factory=dict)   # host -> seconds, for the hosts refusing connections now
     flapping: bool = False
+    declared: bool = False        # this cell, fenced, has already said it is out
     good_for: float = 0           # address, health check and every host fine, continuously
     cf: PeerView = field(default_factory=PeerView)
     lan: PeerView = field(default_factory=PeerView)
@@ -125,6 +126,19 @@ def peer_lost(o: Obs, c: Cfg) -> Optional[str]:
     return None
 
 
+def flapping(flaps: dict, c: Cfg) -> bool:
+    """One host came back from being down `flap_count` times in `flap_window` (host -> the times it came back, kept for the window).
+    Counted per host: after Docker starts, every host comes up within a minute of the others, and on 2026-10-28 five hosts starting
+    together counted as one host crashing five times; the cell fenced itself, said it was out, and was taken over again."""
+    return any(len(times) >= c.flap_count for times in flaps.values())
+
+
+def peer_taking_me(o: Obs) -> bool:
+    """The other cell is promoting its copy of this one: it has stopped replicating from here, so a write taken here now would be
+    missing from the copy that will serve this cell's customers."""
+    return any(v.fresh and v.state == 'TAKING_OVER' for v in (o.cf, o.lan))
+
+
 def fence_reason(o: Obs, c: Cfg) -> Optional[tuple]:
     """(why, declared_down): why this cell must stop taking writes."""
     if o.hosts_down:
@@ -137,10 +151,14 @@ def fence_reason(o: Obs, c: Cfg) -> Optional[tuple]:
         return ('its address is unreachable', False)
     if o.sick_for >= c.sick_fence_after:
         return ('its services are failing', False)
+    if peer_taking_me(o):
+        return ('the other cell is taking this one over', False)
     return None
 
 
 def may_unfence(o: Obs, c: Cfg) -> Optional[str]:
+    if peer_taking_me(o):
+        return None     # 2026-10-28: unfenced while the other cell took it over, and both served its customers for 100 s
     if o.good_for >= c.unfence_after:
         return f'healthy for {c.unfence_after} s'
     if o.good_for >= c.unfence_fast_after:
@@ -175,6 +193,11 @@ def decide(state: str, o: Obs, c: Cfg) -> Optional[Decision]:
     if state == 'FENCED':
         if held:
             return Decision('TAKEN_OVER', 'the other cell holds this one')
+        f = fence_reason(o, c)
+        if f and f[1] and not o.declared:
+            # 2026-10-29: fenced because its address went silent, then every host stayed down while cellwatch kept beating; it never
+            # said it was out, so the witness (lease live) never let the other cell take its customers
+            return Decision('FENCE', f[0], True)
         why = may_unfence(o, c)
         if why and not o.hosts_down and not o.flapping:
             return Decision('UNFENCE', why)

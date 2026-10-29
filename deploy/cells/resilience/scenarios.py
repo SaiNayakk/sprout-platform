@@ -203,9 +203,15 @@ def kill_cell(cell='a'):
         docker('start', *[f'sprout-laptop-{s}-1' for s in ('edge', 'trading', 'money', 'street', 'web', 'front', 'cellwatch', 'cloudflared')])
     t_back = wait_states(lambda a, b: (a, b) == ('NORMAL', 'NORMAL'), 1500)
     time.sleep(30)
+    holder = 'b' if cell == 'a' else 'a'
+    holder_log = lib.laptop_cellwatch_log(80) if holder == 'b' else lib.phone_cellwatch_log(80)
+    resumed = any('resumed the copy' in l for l in holder_log)
+    whole = lib.copy_whole(holder)
     checks = {'orders worked again within 6 minutes': orders_back is not None and orders_back <= 360,
-              'the customers were given back without hands': t_back is not None}
-    return _finish(name, tl, load, {'orders_back_after_s': orders_back, 'both_normal_after_restart_s': t_back}, checks, cell)
+              'the customers were given back without hands': t_back is not None,
+              'the holder resumed its copy instead of rebuilding it, and it is whole': resumed and whole}
+    return _finish(name, tl, load, {'orders_back_after_s': orders_back, 'both_normal_after_restart_s': t_back,
+                                     'holder_copy_resumed': resumed, 'holder_copy_whole_at_once': whole}, checks, cell)
 
 
 def holder_dies():
@@ -236,6 +242,48 @@ def holder_dies():
               'the cells sorted themselves out when the phone returned': t_back is not None}
     return _finish(name, tl, load, {'orders_back_after_holder_died_s': orders_back, 'both_normal_after_phone_restart_s': t_back,
                                      'laptop_cellwatch': lib.laptop_cellwatch_log(16)}, checks, 'b')
+
+
+def _overlap(tl, holder, held):
+    """The longest stretch (s) in which `holder` held `held`'s customers while `held` served them itself. A failback has a few
+    seconds of it (the returning cell serves before the holder's next status); on 2026-10-28 it was 100 s."""
+    longest, start = 0, None
+    for t, a, b in tl.rows:
+        both = (a if holder == 'a' else b).startswith('HOLDING') and (b if held == 'b' else a) == 'NORMAL'
+        if both and start is None:
+            start = t
+        if not both:
+            start = None
+        if start is not None:
+            longest = max(longest, t - start)
+    return longest
+
+
+def laptop_restart():
+    """Every container of the laptop cell restarts at once, as when Docker Desktop restarts or the laptop reboots. All its hosts come
+    up within a minute of each other: that must not count as one host crashing again and again (2026-10-28 it did: the cell fenced
+    itself, said it was out, was taken over, unfenced during the takeover, and both cells served its customers for 100 s)."""
+    name = 'laptop-restart'
+    assert ensure_clean(), 'the cells are not clean'
+    tl, load = Timeline(name).start(), Load('b', 6, 'lr')
+    load.start()
+    time.sleep(45)
+    t_fault = now()
+    names = [n for n in docker('ps', '--format', '{{.Names}}').split() if n.startswith('sprout-laptop-')]
+    docker('restart', *names)
+    say(f'restarted {len(names)} laptop containers')
+    time.sleep(30)
+    t_back = wait_states(lambda a, b: (a, b) == ('NORMAL', 'NORMAL'), 1500, every=4)
+    orders_back = first_order_after(load, t_fault, timeout=60)
+    time.sleep(30)
+    log = [l for l in lib.laptop_cellwatch_log(300) if l[:19] >= time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(t_fault))]
+    crashing = [l for l in log if 'keeps crashing' in l]
+    overlap = _overlap(tl, 'a', 'b')
+    checks = {'a restart is not taken for a crash loop': not crashing,
+              'never both cells serving cell B (beyond a failback: a few seconds)': overlap <= 20,
+              'both NORMAL again without hands': t_back is not None}
+    return _finish(name, tl, load, {'both_normal_after_s': t_back, 'orders_back_after_s': orders_back, 'longest_overlap_s': overlap,
+                                     'laptop_cellwatch': log[-20:]}, checks, 'b')
 
 
 def replication_off():
@@ -273,4 +321,5 @@ def replication_off():
 
 
 SCENARIOS = {'replication_off': replication_off, 'holder_dies': holder_dies, 'cf_blind': cf_blind, 'dead_host': dead_host, 'both_offline': both_offline, 'mutual_blind': mutual_blind, 'blind_no_witness': blind_no_witness,
-             'failed_takeover': failed_takeover, 'kill_cell_a': lambda: kill_cell('a'), 'kill_cell_b': lambda: kill_cell('b')}
+             'failed_takeover': failed_takeover, 'kill_cell_a': lambda: kill_cell('a'), 'kill_cell_b': lambda: kill_cell('b'),
+             'laptop_restart': laptop_restart}

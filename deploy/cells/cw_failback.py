@@ -19,7 +19,8 @@ import time
 import uuid
 
 from cw_env import (ADMIN_DB, DB_OWNER, OWNER_PSQL, CELL, ENV, LOCK, OWN_DB, PEER, S, db_exists, iso, log, notify, now, psql, save_state, set_state, sh)
-from cw_ops import (ABORT, SEQUENCES, archive_journal, drop_remote_slot, rebuild_copy, replay_pass, terminate_connections)
+from cw_ops import (ABORT, SEQUENCES, archive_journal, copy_untouched, drop_probe, drop_remote_slot, rebuild_copy, replay_pass, resume_copy,
+                    start_probe, terminate_connections)
 
 NEW_DB = 'sprout_new'
 SUB = f'back_{CELL}'
@@ -49,6 +50,7 @@ def _peer_fb(ctx):
 
 def _cleanup_new():
     if db_exists(NEW_DB):
+        psql(f"SELECT pg_drop_replication_slot(slot_name) FROM pg_replication_slots WHERE database = '{NEW_DB}'", ADMIN_DB, check=False)
         psql(f'ALTER SUBSCRIPTION {SUB} DISABLE', NEW_DB, check=False)
         psql(f'ALTER SUBSCRIPTION {SUB} SET (slot_name = NONE)', NEW_DB, check=False)
         psql(f'DROP SUBSCRIPTION IF EXISTS {SUB}', NEW_DB, check=False)
@@ -110,6 +112,14 @@ DO $$ DECLARE s text; BEGIN
 END $$;
 CREATE PUBLICATION cell_{CELL} FOR ALL TABLES;
 """, NEW_DB)
+    # the holder's copy of this cell is this database as it is now: a slot made now, before anything is written to it, lets the holder
+    # resume its copy from here instead of copying everything again
+    try:
+        psql(f"SET statement_timeout = '15s'; SELECT pg_create_logical_replication_slot('from_{CELL}', 'pgoutput')", NEW_DB)
+        slot = True
+    except RuntimeError as e:
+        log(f'failback {fid[:8]}: no slot for the holder to resume its copy from (it will rebuild it): {e}')
+        slot = False
     psql(f'ALTER DATABASE {OWN_DB} ALLOW_CONNECTIONS false', ADMIN_DB)
     last = None
     for _ in range(20):
@@ -125,7 +135,7 @@ CREATE PUBLICATION cell_{CELL} FOR ALL TABLES;
         psql(f'ALTER DATABASE {OWN_DB} ALLOW_CONNECTIONS true', ADMIN_DB, check=False)
         raise RuntimeError(f'could not rename the old database: {last}')
     psql(f'ALTER DATABASE {NEW_DB} RENAME TO {OWN_DB}', ADMIN_DB)
-    return archive
+    return archive, slot
 
 
 def failback_returning(ctx):
@@ -153,7 +163,7 @@ def failback_returning(ctx):
             raise RuntimeError('the holder did not stop its standby in time')
         _wait_lsn(lsn)
         t_swap = now()
-        archive = _swap(fid)
+        archive, slot = _swap(fid)
         swapped = True
         with LOCK:
             S['fb_swapped'] = True          # the point of no return: a restart after this finishes forwards
@@ -162,7 +172,7 @@ def failback_returning(ctx):
         ctx.fence(False)
         set_state('NORMAL', failback_id=None, retry_after=0, takeover_failures=0, replay=None, hb_prepared=False)
         ctx.publish_routes('NORMAL')
-        _set_fb(role='returning', id=fid, phase='done')
+        _set_fb(role='returning', id=fid, phase='done', slot=slot)
         ctx.publish_status()
         log(f'failback {fid[:8]}: serving again; refused writes lasted {now() - t_swap:.0f} s (the old database is {archive})')
         notify(f'cell {CELL.upper()} has its customers back', f'cutover took {now() - t_swap:.0f} s; the whole failback {now() - t0:.0f} s', 3, 'white_check_mark', key='failback-done')
@@ -208,6 +218,7 @@ def handback_holder(ctx, fid):
         time.sleep(3)
         archive_journal()
         r = replay_pass()
+        probe = start_probe()      # before the position is read: what the other cell builds from includes everything up to the probe
         lsn = psql('SELECT pg_current_wal_lsn()', ADMIN_DB).strip()
         with LOCK:
             S['hb'] = {'id': fid, 'phase': 'fenced', 'lsn': lsn, 'at': iso()}
@@ -215,11 +226,11 @@ def handback_holder(ctx, fid):
         ctx.publish_status()
         log(f'handback {fid[:8]}: standby fenced at {lsn} (journal pass: {r["total"]} writes, {r["failed"]} failed)')
         deadline = time.time() + 120
-        outcome = None
+        outcome, slot = None, False
         while time.time() < deadline:
             fb = _peer_fb(ctx)
             if fb.get('id') == fid and fb.get('phase') in ('done', 'abort'):
-                outcome = fb['phase']
+                outcome, slot = fb['phase'], bool(fb.get('slot'))
                 break
             time.sleep(1)
         if outcome != 'done':
@@ -231,9 +242,12 @@ def handback_holder(ctx, fid):
         with LOCK:
             S['hb'] = None
             save_state()
-        log(f'handback {fid[:8]}: cell {PEER.upper()} has its customers back; rebuilding this cell\'s copy of it')
+        log(f'handback {fid[:8]}: cell {PEER.upper()} has its customers back')
         notify(f'gave cell {PEER.upper()} its customers back', '', 3, 'white_check_mark', key='handback-done')
-        rebuild_copy()
+        # the standby has stopped: if nothing reached the copy after the cutover point, it is what the other cell serves from
+        if not (slot and probe and copy_untouched() and resume_copy()):
+            log(f'handback {fid[:8]}: rebuilding this cell\'s copy of cell {PEER.upper()}')
+            rebuild_copy()
     except Exception as e:
         log(f'handback {fid[:8]} did not complete: {e}; the standby serves again')
         ctx.fence_standby(False)
@@ -241,3 +255,5 @@ def handback_holder(ctx, fid):
             S['hb'] = None
             save_state()
         notify('handback did not complete', str(e)[:200], 4, 'warning', key='handback-failed')
+    finally:
+        drop_probe()          # a slot left behind would keep this cell's WAL forever

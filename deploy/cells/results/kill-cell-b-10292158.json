@@ -1,0 +1,32 @@
+{
+ "orders_back_after_s": 336,
+ "both_normal_after_restart_s": 322,
+ "holder_copy_resumed": true,
+ "holder_copy_whole_at_once": true,
+ "scenario": "kill-cell-b",
+ "orders": {
+  "acknowledged": 759,
+  "missing": 0,
+  "applied_twice": 0,
+  "missing_at_seconds": null
+ },
+ "both_normal_and_replicating": true,
+ "timeline": [
+  "+0s A=NORMAL B=NORMAL",
+  "+76s A=NORMAL B=silent",
+  "+171s A=TAKING_OVER B=silent",
+  "+407s A=HOLDING B=silent",
+  "+441s A=HOLDING B=NORMAL/sick",
+  "+453s A=HOLDING B=TAKEN_OVER/sick",
+  "+483s A=HOLDING B=TAKEN_OVER",
+  "+673s A=HOLDING B=FAILING_BACK",
+  "+748s A=HOLDING B=NORMAL",
+  "+761s A=NORMAL B=NORMAL"
+ ],
+ "pass": true,
+ "checks": {
+  "orders worked again within 6 minutes": true,
+  "the customers were given back without hands": true,
+  "the holder resumed its copy instead of rebuilding it, and it is whole": true
+ }
+}

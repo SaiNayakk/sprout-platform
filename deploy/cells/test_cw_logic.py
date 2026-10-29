@@ -1,7 +1,7 @@
 """Every rule of cw_logic.py against the incident that taught it.   python -m unittest deploy/cells/test_cw_logic.py"""
 import unittest
 
-from cw_logic import Cfg, Obs, PeerView, WitView, decide, peer_holds_me, peer_lost, should_rebuild_copy
+from cw_logic import Cfg, Obs, PeerView, WitView, decide, flapping, peer_holds_me, peer_lost, should_rebuild_copy
 
 A = Cfg(cell='a', peer='b', preferred='b')
 B = Cfg(cell='b', peer='a', preferred='b')
@@ -31,6 +31,11 @@ class Fencing(unittest.TestCase):
 
     def test_a_host_that_keeps_crashing_counts_as_down(self):
         self.assertEqual(act('NORMAL', Obs(flapping=True)), 'FENCE')
+
+    def test_crashes_are_counted_per_host(self):
+        """2026-10-28: Docker started five hosts together; each coming up counted once, five counted as a crash loop."""
+        self.assertFalse(flapping({'edge': [1], 'trading': [2], 'money': [3], 'street': [4], 'web': [5]}, A))
+        self.assertTrue(flapping({'edge': [1], 'trading': [2, 100, 200]}, A))
 
     def test_slow_but_answering_waits_five_minutes(self):
         self.assertIsNone(act('NORMAL', Obs(sick_for=299)))
@@ -92,6 +97,26 @@ class ReturningCell(unittest.TestCase):
     def test_but_not_while_the_other_cell_is_taking_it_over(self):
         o = Obs(good_for=30, cf=alive('TAKING_OVER', peer_ok_for=0))
         self.assertIsNone(act('FENCED', o))
+
+    def test_2026_10_28_not_even_after_210_s_healthy_while_the_other_cell_is_taking_it_over(self):
+        """The laptop unfenced 51 s after fencing (it had been healthy longer) while the phone took it over: both served its customers."""
+        o = Obs(good_for=500, lan=alive('TAKING_OVER'))
+        self.assertIsNone(act('FENCED', o))
+
+    def test_a_serving_cell_fences_when_the_other_cell_starts_taking_it_over(self):
+        """The other cell no longer replicates from here: a write taken here now would be missing from what serves these customers."""
+        d = decide('NORMAL', Obs(good_for=500, peer_seen=True, cf=alive('TAKING_OVER')), A)
+        self.assertEqual((d.action, d.declared_down), ('FENCE', False))
+
+    def test_a_stale_taking_over_is_not_believed(self):
+        self.assertIsNone(act('NORMAL', Obs(good_for=500, peer_seen=True, cf=PeerView(fresh=False, state='TAKING_OVER'))))
+
+    def test_2026_10_29_a_cell_fenced_for_its_address_says_it_is_out_once_its_hosts_stay_down(self):
+        """Its services all stopped, its cellwatch kept beating: without saying it is out, the witness never grants the takeover."""
+        d = decide('FENCED', Obs(addr_down_for=200, hosts_down={'edge': 61, 'trading': 61}), A)
+        self.assertEqual((d.action, d.declared_down), ('FENCE', True))
+        self.assertIsNone(act('FENCED', Obs(addr_down_for=200, hosts_down={'edge': 61}, declared=True)))
+        self.assertIsNone(act('FENCED', Obs(addr_down_for=200, hosts_down={'edge': 30})))
 
     def test_a_fenced_cell_whose_host_is_still_down_never_unfences(self):
         self.assertIsNone(act('FENCED', Obs(good_for=999, hosts_down={'money': 5})))
