@@ -1,0 +1,387 @@
+/* docs/assets/walkthrough.css */
+
+/* Theme variables matching Sprout brand & mkdocs-material */
+:root,
+[data-md-color-scheme="default"] {
+  --wt-card-bg: var(--md-default-bg-color, #ffffff);
+  --wt-card-fg: var(--md-default-fg-color, #141833);
+  --wt-card-border: rgba(20, 24, 51, 0.12);
+  --wt-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --wt-accent: #157a45;
+  --wt-accent-hover: #1f9a59;
+  --wt-btn-bg: #f4f5f7;
+  --wt-btn-fg: #141833;
+  --wt-btn-border: #d0d5dd;
+  --wt-btn-hover-bg: #e5e7eb;
+  --wt-dot-active: #157a45;
+  --wt-dot-inactive: #cbd5e1;
+  --wt-muted-fg: #64748b;
+}
+
+[data-md-color-scheme="slate"] {
+  --wt-card-bg: #151932;
+  --wt-card-fg: #f4f1e8;
+  --wt-card-border: rgba(255, 255, 255, 0.12);
+  --wt-card-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  --wt-accent: #5fd08f;
+  --wt-accent-hover: #7be4a6;
+  --wt-btn-bg: #1e2348;
+  --wt-btn-fg: #f4f1e8;
+  --wt-btn-border: rgba(255, 255, 255, 0.18);
+  --wt-btn-hover-bg: #282f60;
+  --wt-dot-active: #5fd08f;
+  --wt-dot-inactive: #3b4268;
+  --wt-muted-fg: #94a3b8;
+}
+
+/* Banner toggle button at top of page */
+.walkthrough-toggle-banner {
+  margin: 1rem 0 1.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.walkthrough-btn {
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.55rem 1.15rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  line-height: 1.3;
+  box-sizing: border-box;
+}
+
+.walkthrough-btn:focus-visible {
+  outline: 2px solid var(--wt-accent);
+  outline-offset: 2px;
+}
+
+/* Page mode toggle button styling */
+.walkthrough-toggle-btn {
+  background: var(--wt-accent);
+  color: #ffffff;
+  border: 1px solid var(--wt-accent);
+}
+
+.walkthrough-toggle-btn:hover {
+  background: var(--wt-accent-hover);
+  border-color: var(--wt-accent-hover);
+}
+
+[data-md-color-scheme="slate"] .walkthrough-toggle-btn {
+  background: #0f5c34;
+  color: #f4f1e8;
+  border: 1px solid var(--wt-accent);
+}
+
+[data-md-color-scheme="slate"] .walkthrough-toggle-btn:hover {
+  background: var(--wt-accent);
+  color: #11142a;
+}
+
+/* Walkthrough mode toggle button changes to secondary */
+body.walkthrough-active .walkthrough-toggle-btn {
+  background: var(--wt-btn-bg);
+  color: var(--wt-btn-fg);
+  border: 1px solid var(--wt-btn-border);
+}
+
+body.walkthrough-active .walkthrough-toggle-btn:hover {
+  background: var(--wt-btn-hover-bg);
+}
+
+/* Base state: Page mode (default) */
+.walkthrough-card-header,
+.walkthrough-card-footer,
+.walkthrough-step-0-title {
+  display: none !important;
+}
+
+.walkthrough-step {
+  display: block;
+}
+
+/* Walkthrough mode active */
+body.walkthrough-active .walkthrough-card {
+  /* lands below mkdocs-material's fixed header, not under it */
+  scroll-margin-top: calc(var(--md-header-height, 2.4rem) + 1rem);
+  display: block;
+  max-width: 800px;
+  margin: 1.5rem auto 2.5rem auto;
+  padding: 2rem;
+  background: var(--wt-card-bg);
+  color: var(--wt-card-fg);
+  border: 1px solid var(--wt-card-border);
+  border-radius: 12px;
+  box-shadow: var(--wt-card-shadow);
+  box-sizing: border-box;
+}
+
+body.walkthrough-active .walkthrough-card-header {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--wt-card-border);
+  margin-bottom: 1.5rem;
+}
+
+body.walkthrough-active .walkthrough-card-footer {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--wt-card-border);
+  margin-top: 2rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+body.walkthrough-active .walkthrough-step {
+  display: none;
+}
+
+body.walkthrough-active .walkthrough-step.active {
+  display: block;
+}
+
+body.walkthrough-active .walkthrough-step-0-title {
+  display: block !important;
+}
+
+/* Step Title inside walkthrough card */
+.walkthrough-step-title {
+  outline: none;
+}
+
+/* Dots and Progress indicator */
+.walkthrough-dots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.walkthrough-dot {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.walkthrough-dot:focus-visible {
+  outline: 2px solid var(--wt-accent);
+  outline-offset: 1px;
+}
+
+.walkthrough-dot::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--wt-dot-inactive);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.walkthrough-dot:hover::after {
+  background: var(--wt-accent-hover);
+}
+
+.walkthrough-dot.is-active::after {
+  background: var(--wt-dot-active);
+  transform: scale(1.35);
+}
+
+.walkthrough-header-counter,
+.walkthrough-footer-counter {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--wt-muted-fg);
+  white-space: nowrap;
+}
+
+/* Card Esc button */
+.walkthrough-btn-text {
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  color: var(--wt-muted-fg);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.walkthrough-btn-text:hover {
+  color: var(--wt-card-fg);
+  background: var(--wt-btn-bg);
+}
+
+.walkthrough-btn-text:focus-visible {
+  outline: 2px solid var(--wt-accent);
+  outline-offset: 2px;
+}
+
+/* Navigation buttons (Back / Next) */
+.walkthrough-back-btn {
+  background: var(--wt-btn-bg);
+  color: var(--wt-btn-fg);
+  border: 1px solid var(--wt-btn-border);
+  min-height: 40px;
+}
+
+.walkthrough-back-btn:hover:not(:disabled) {
+  background: var(--wt-btn-hover-bg);
+}
+
+.walkthrough-back-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.walkthrough-next-btn {
+  background: var(--wt-accent);
+  color: #ffffff;
+  border: 1px solid var(--wt-accent);
+  min-height: 40px;
+}
+
+.walkthrough-next-btn:hover:not(:disabled) {
+  background: var(--wt-accent-hover);
+  border-color: var(--wt-accent-hover);
+}
+
+[data-md-color-scheme="slate"] .walkthrough-next-btn {
+  background: #0f5c34;
+  color: #f4f1e8;
+  border: 1px solid var(--wt-accent);
+}
+
+[data-md-color-scheme="slate"] .walkthrough-next-btn:hover:not(:disabled) {
+  background: var(--wt-accent);
+  color: #11142a;
+}
+
+.walkthrough-next-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Screen reader announcement region */
+.walkthrough-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Content responsiveness inside walkthrough card */
+.walkthrough-card img,
+.walkthrough-card svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+}
+
+.walkthrough-card table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.walkthrough-card pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Phone width 360 px adaptation */
+@media (max-width: 600px) {
+  body.walkthrough-active .walkthrough-card {
+    padding: 1.25rem 0.85rem;
+    margin: 1rem 0;
+    border-radius: 8px;
+  }
+
+  body.walkthrough-active .walkthrough-card-header {
+    gap: 0.5rem;
+    padding-bottom: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .walkthrough-dot {
+    width: 24px;
+    height: 24px;
+  }
+
+  .walkthrough-dot::after {
+    width: 8px;
+    height: 8px;
+  }
+
+  body.walkthrough-active .walkthrough-card-footer {
+    gap: 0.5rem;
+    padding-top: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .walkthrough-step-title {
+    font-size: 1.3rem;
+  }
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .walkthrough-btn,
+  .walkthrough-dot::after,
+  .walkthrough-btn-text,
+  .walkthrough-card {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.walkthrough-step-title {
+  scroll-margin-top: calc(var(--md-header-height, 2.4rem) + 1rem);
+}
+
+/* wide content (diagrams, tables, figures) scrolls inside the card instead of widening it past a phone's screen */
+body.walkthrough-active .walkthrough-card {
+  width: 100%;
+  min-width: 0;
+}
+body.walkthrough-active .walkthrough-card pre,
+body.walkthrough-active .walkthrough-card table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+body.walkthrough-active .walkthrough-card img {
+  max-width: 100%;
+  height: auto;
+}
