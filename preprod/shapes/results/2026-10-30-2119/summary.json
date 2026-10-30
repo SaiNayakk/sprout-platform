@@ -1,0 +1,154 @@
+{
+ "one-jvm": {
+  "start": {
+   "healthyAfterMs": 56947
+  },
+  "kill": {
+   "killed": "cell",
+   "services": 19,
+   "answeringWhileDown": 0,
+   "recoveredAfterMs": 41177
+  },
+  "load": {
+   "5": {
+    "failed": "test did not finish: a funding step answered 401"
+   },
+   "10": {
+    "failed": "test did not finish: a funding step answered 401"
+   },
+   "20": {
+    "failed": "test did not finish: a funding step answered 401"
+   },
+   "40": {
+    "customers": 40,
+    "ordersPerSecond": 40,
+    "seconds": 60,
+    "orders": 2400,
+    "filled": 2400,
+    "serverErrors": 0,
+    "clientErrors": 0,
+    "holdingsMismatched": 0,
+    "p50Ms": 45,
+    "p95Ms": 84,
+    "p99Ms": 136,
+    "maxMs": 340,
+    "statuses": {
+     "201": 2400
+    },
+    "outcomes": {
+     "FILLED": 2400
+    }
+   },
+   "80": {
+    "failed": "test did not finish: a funding step answered 401"
+   }
+  }
+ },
+ "four-hosts": {
+  "start": {
+   "healthyAfterMs": 43307
+  },
+  "kill": {
+   "killed": "money",
+   "services": 19,
+   "answeringWhileDown": 10,
+   "recoveredAfterMs": 17196
+  },
+  "load": {
+   "5": {
+    "failed": "test did not finish: a funding step answered 401"
+   },
+   "10": {
+    "customers": 40,
+    "ordersPerSecond": 10,
+    "seconds": 60,
+    "orders": 600,
+    "filled": 600,
+    "serverErrors": 0,
+    "clientErrors": 0,
+    "holdingsMismatched": 0,
+    "p50Ms": 47,
+    "p95Ms": 69,
+    "p99Ms": 80,
+    "maxMs": 122,
+    "statuses": {
+     "201": 600
+    },
+    "outcomes": {
+     "FILLED": 600
+    }
+   },
+   "20": {
+    "customers": 40,
+    "ordersPerSecond": 20,
+    "seconds": 60,
+    "orders": 1200,
+    "filled": 1200,
+    "serverErrors": 0,
+    "clientErrors": 0,
+    "holdingsMismatched": 0,
+    "p50Ms": 43,
+    "p95Ms": 87,
+    "p99Ms": 993,
+    "maxMs": 1713,
+    "statuses": {
+     "201": 1200
+    },
+    "outcomes": {
+     "FILLED": 1200
+    }
+   },
+   "40": {
+    "customers": 40,
+    "ordersPerSecond": 40,
+    "seconds": 60,
+    "orders": 2400,
+    "filled": 2400,
+    "serverErrors": 0,
+    "clientErrors": 0,
+    "holdingsMismatched": 0,
+    "p50Ms": 48,
+    "p95Ms": 88,
+    "p99Ms": 136,
+    "maxMs": 395,
+    "statuses": {
+     "201": 2400
+    },
+    "outcomes": {
+     "FILLED": 2400
+    }
+   },
+   "80": {
+    "failed": "test did not finish: a funding step answered 401"
+   }
+  }
+ },
+ "per-service": {
+  "start": {
+   "healthyAfterMs": 127971
+  },
+  "kill": {
+   "killed": "ledger",
+   "services": 19,
+   "answeringWhileDown": 16,
+   "recoveredAfterMs": 12574
+  },
+  "load": {
+   "5": {
+    "failed": "test did not finish: a funding step answered 401"
+   },
+   "10": {
+    "failed": "test did not finish: see the run log"
+   },
+   "20": {
+    "failed": "test did not finish: a funding step answered 401"
+   },
+   "40": {
+    "failed": "test did not finish: a funding step answered 401"
+   },
+   "80": {
+    "failed": "test did not finish: a funding step answered 401"
+   }
+  }
+ }
+}

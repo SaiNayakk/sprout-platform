@@ -1,0 +1,249 @@
+{
+ "one-jvm": {
+  "start": {
+   "healthyAfterMs": 49875
+  },
+  "kill": {
+   "killed": "cell",
+   "services": 19,
+   "answeringWhileDown": 0,
+   "recoveredAfterMs": 44264
+  },
+  "load": {
+   "5": {
+    "customers": 20,
+    "ordersPerSecond": 5,
+    "seconds": 60,
+    "orders": 300,
+    "filled": 300,
+    "serverErrors": 0,
+    "clientErrors": 0,
+    "holdingsMismatched": 0,
+    "p50Ms": 59,
+    "p95Ms": 121,
+    "p99Ms": 652,
+    "maxMs": 1296,
+    "statuses": {
+     "201": 300
+    },
+    "outcomes": {
+     "FILLED": 300
+    }
+   },
+   "10": {
+    "customers": 20,
+    "ordersPerSecond": 10,
+    "seconds": 60,
+    "orders": 600,
+    "filled": 600,
+    "serverErrors": 0,
+    "clientErrors": 0,
+    "holdingsMismatched": 0,
+    "p50Ms": 48,
+    "p95Ms": 73,
+    "p99Ms": 124,
+    "maxMs": 191,
+    "statuses": {
+     "201": 600
+    },
+    "outcomes": {
+     "FILLED": 600
+    }
+   },
+   "20": {
+    "customers": 20,
+    "ordersPerSecond": 20,
+    "seconds": 60,
+    "orders": 1200,
+    "filled": 1200,
+    "serverErrors": 0,
+    "clientErrors": 0,
+    "holdingsMismatched": 0,
+    "p50Ms": 40,
+    "p95Ms": 62,
+    "p99Ms": 77,
+    "maxMs": 174,
+    "statuses": {
+     "201": 1200
+    },
+    "outcomes": {
+     "FILLED": 1200
+    }
+   },
+   "40": {
+    "customers": 20,
+    "ordersPerSecond": 40,
+    "seconds": 60,
+    "orders": 2400,
+    "filled": 2400,
+    "serverErrors": 0,
+    "clientErrors": 0,
+    "holdingsMismatched": 0,
+    "p50Ms": 44,
+    "p95Ms": 77,
+    "p99Ms": 122,
+    "maxMs": 222,
+    "statuses": {
+     "201": 2400
+    },
+    "outcomes": {
+     "FILLED": 2400
+    }
+   },
+   "80": {
+    "customers": 20,
+    "ordersPerSecond": 80,
+    "seconds": 60,
+    "orders": 4800,
+    "filled": 4465,
+    "serverErrors": 1,
+    "clientErrors": 0,
+    "holdingsMismatched": 1,
+    "p50Ms": 48,
+    "p95Ms": 207,
+    "p99Ms": 395,
+    "maxMs": 5017,
+    "statuses": {
+     "504": 1,
+     "201": 4668,
+     "429": 131
+    },
+    "outcomes": {
+     "FILLED": 4465,
+     "504": 1,
+     "429": 131,
+     "REJECTED": 203
+    }
+   }
+  }
+ },
+ "four-hosts": {
+  "start": {
+   "healthyAfterMs": 52282
+  },
+  "kill": {
+   "killed": "money",
+   "services": 19,
+   "answeringWhileDown": 10,
+   "recoveredAfterMs": 22992
+  },
+  "load": {
+   "5": {
+    "customers": 20,
+    "ordersPerSecond": 5,
+    "seconds": 60,
+    "orders": 300,
+    "filled": 300,
+    "serverErrors": 0,
+    "clientErrors": 0,
+    "holdingsMismatched": 0,
+    "p50Ms": 57,
+    "p95Ms": 88,
+    "p99Ms": 135,
+    "maxMs": 523,
+    "statuses": {
+     "201": 300
+    },
+    "outcomes": {
+     "FILLED": 300
+    }
+   },
+   "10": {
+    "customers": 20,
+    "ordersPerSecond": 10,
+    "seconds": 60,
+    "orders": 600,
+    "filled": 600,
+    "serverErrors": 0,
+    "clientErrors": 0,
+    "holdingsMismatched": 0,
+    "p50Ms": 52,
+    "p95Ms": 98,
+    "p99Ms": 146,
+    "maxMs": 198,
+    "statuses": {
+     "201": 600
+    },
+    "outcomes": {
+     "FILLED": 600
+    }
+   },
+   "20": {
+    "failed": "test did not finish: a funding step answered 401"
+   },
+   "40": {
+    "customers": 20,
+    "ordersPerSecond": 40,
+    "seconds": 60,
+    "orders": 2400,
+    "filled": 2400,
+    "serverErrors": 0,
+    "clientErrors": 0,
+    "holdingsMismatched": 0,
+    "p50Ms": 64,
+    "p95Ms": 172,
+    "p99Ms": 304,
+    "maxMs": 1258,
+    "statuses": {
+     "201": 2400
+    },
+    "outcomes": {
+     "FILLED": 2400
+    }
+   },
+   "80": {
+    "customers": 20,
+    "ordersPerSecond": 80,
+    "seconds": 60,
+    "orders": 4800,
+    "filled": 4416,
+    "serverErrors": 6,
+    "clientErrors": 0,
+    "holdingsMismatched": 98,
+    "p50Ms": 180,
+    "p95Ms": 535,
+    "p99Ms": 623,
+    "maxMs": 5298,
+    "statuses": {
+     "504": 6,
+     "201": 4673,
+     "429": 121
+    },
+    "outcomes": {
+     "FILLED": 4416,
+     "504": 6,
+     "429": 121,
+     "REJECTED": 257
+    }
+   }
+  }
+ },
+ "per-service": {
+  "start": {
+   "healthyAfterMs": 203463
+  },
+  "kill": {
+   "killed": "ledger",
+   "services": 19,
+   "answeringWhileDown": 15,
+   "recoveredAfterMs": 12620
+  },
+  "load": {
+   "5": {
+    "failed": "test did not finish: a funding step answered 401"
+   },
+   "10": {
+    "failed": "test did not finish: a funding step answered 401"
+   },
+   "20": {
+    "failed": "test did not finish: a funding step answered 503"
+   },
+   "40": {
+    "failed": "test did not finish: a funding step answered 401"
+   },
+   "80": {
+    "failed": "test did not finish: see the run log"
+   }
+  }
+ }
+}
