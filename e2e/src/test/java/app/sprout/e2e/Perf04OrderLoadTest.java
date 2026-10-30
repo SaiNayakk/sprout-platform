@@ -78,7 +78,13 @@ class Perf04OrderLoadTest {
         int mismatched = 0;
         for (int i = 0; i < CUSTOMERS; i++) {
             Customer c = customers.get(i);
-            JsonNode holdings = c.client().get("/api/oms/v1/holdings", c.token()).body().path("holdings");
+            // read once the customer's rate limit allows: a 429 here is the check's own doing, not a lost share
+            Client.Response r = c.client().get("/api/oms/v1/holdings", c.token());
+            for (int tries = 0; r.status() == 429 && tries < 10; tries++) {
+                Thread.sleep(2_000);
+                r = c.client().get("/api/oms/v1/holdings", c.token());
+            }
+            JsonNode holdings = r.body().path("holdings");
             for (String symbol : SYMBOLS) {
                 int held = 0;
                 for (JsonNode h : holdings) {

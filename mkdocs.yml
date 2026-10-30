@@ -56,6 +56,7 @@ nav:
       - Architecture: architecture.md
       - Contracts: contracts.md
       - Environments & releases: environments.md
+      - "Monolith or microservices": shapes.md
   - Testing:
       - End-to-end tests: testing/e2e.md
       - Performance tests: testing/performance.md
