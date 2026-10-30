@@ -1,7 +1,7 @@
 """Every rule of cw_logic.py against the incident that taught it.   python -m unittest deploy/cells/test_cw_logic.py"""
 import unittest
 
-from cw_logic import Cfg, Obs, PeerView, WitView, decide, flapping, peer_holds_me, peer_lost, should_rebuild_copy
+from cw_logic import Cfg, Obs, PeerView, WitView, decide, flapping, peer_holds_me, peer_lost, replay_from, should_rebuild_copy
 
 A = Cfg(cell='a', peer='b', preferred='b')
 B = Cfg(cell='b', peer='a', preferred='b')
@@ -286,6 +286,24 @@ class MissingCopy(unittest.TestCase):
 
     def test_a_fenced_cell_may_make_it(self):
         self.assertTrue(should_rebuild_copy('FENCED', 600, True, True, False))
+
+
+class ReplayFromTest(unittest.TestCase):
+    NOW = 1_800_000_000
+
+    def test_a_copy_heard_from_lately_replays_from_a_little_before_then_and_misses_nothing(self):
+        self.assertEqual(replay_from(self.NOW - 600, self.NOW, 72), (self.NOW - 720, None))
+
+    def test_not_knowing_when_the_copy_last_heard_replays_the_whole_journal_without_claiming_a_gap(self):
+        # after a restart the subscription's worker isn't running and the time is unknown: this once alerted "71 h ago"
+        since, gap = replay_from(0, self.NOW, 72)
+        self.assertEqual(since, self.NOW - 71 * 3600)
+        self.assertIsNone(gap)
+
+    def test_a_copy_older_than_the_journal_says_how_many_hours_may_be_missing(self):
+        since, gap = replay_from(self.NOW - 80 * 3600, self.NOW, 72)
+        self.assertEqual(since, self.NOW - 71 * 3600)
+        self.assertAlmostEqual(gap, 80 + 120 / 3600)
 
 
 if __name__ == '__main__':
