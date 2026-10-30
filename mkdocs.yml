@@ -34,6 +34,10 @@ theme:
 
 extra_css:
   - assets/brand.css
+  - assets/walkthrough.css
+
+extra_javascript:
+  - assets/walkthrough.js
 
 markdown_extensions:
   - admonition
@@ -52,6 +56,7 @@ not_in_nav: |
 
 nav:
   - Overview:
+      - Sprout in ten minutes: walkthrough.md
       - index.md
       - Architecture: architecture.md
       - Contracts: contracts.md
