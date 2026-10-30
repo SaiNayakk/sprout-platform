@@ -80,10 +80,39 @@ final class Client {
         return post("/api/identity/v1/sessions", Map.of("email", email, "password", password));
     }
 
-    /** Signs up and signs in; returns the token pair. */
+    /**
+     * Signs up and signs in; returns the token pair. A step that is told to wait (429, or a 503/504 while identity
+     * is busy hashing passwords for many sign-ups at once) waits and tries again; any other failure fails here,
+     * rather than handing back an empty token that only fails, misleadingly as a 401, on the next call.
+     */
     JsonNode account(String email) {
-        signUp(email, PASSWORD);
-        return signIn(email, PASSWORD).body().path("tokens");
+        Response up = retrying(() -> signUp(email, PASSWORD));
+        if (up.status() != 409) {   // the address is new to this run: 409 means a try that timed out did create it
+            expect(up, 201, "sign-up");
+        }
+        return expect(retrying(() -> signIn(email, PASSWORD)), 200, "sign-in").body().path("tokens");
+    }
+
+    private static Response retrying(java.util.function.Supplier<Response> call) {
+        Response r = call.get();
+        for (int tries = 0; tries < 8 && (r.status() == 429 || r.status() == 503 || r.status() == 504); tries++) {
+            System.out.println("E2E-RETRY " + r.status() + " " + r.code());
+            try {
+                Thread.sleep(1_000L << Math.min(tries, 4));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return r;
+            }
+            r = call.get();
+        }
+        return r;
+    }
+
+    private static Response expect(Response r, int status, String step) {
+        if (r.status() != status) {
+            throw new AssertionError(step + " answered " + r.status() + ": " + r.body());
+        }
+        return r;
     }
 
     // ── TOTP for the test's authenticator app ────────────────────────────────
