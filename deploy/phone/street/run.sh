@@ -28,6 +28,7 @@ if [ "${SPROUT_SANDBOX:-false}" = true ]; then
 fi
 # everything else (market data, the order service's and back office's callbacks) defaults to 127.0.0.1
 
-# JVM settings sized for the phone; SPROUT_STREET_JAVA_OPTS in ~/.sprout.env overrides them (capacity experiments)
-java ${SPROUT_STREET_JAVA_OPTS:--XX:+UseSerialGC -Xms32m -Xmx160m -Xss512k -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=48m -XX:TieredStopAtLevel=1} \
+# JVM and pool sizes from the profile (profile.sh); SPROUT_STREET_JAVA_OPTS in ~/.sprout.env overrides the JVM settings
+. "$HOME/sprout/profile.sh" street
+java ${SPROUT_STREET_JAVA_OPTS:-$SPROUT_JAVA_OPTS} \
   -jar street-host.jar
