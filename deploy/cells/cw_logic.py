@@ -11,7 +11,7 @@ A cell is in one of these states:
   (FAILING_BACK and HANDING_BACK are the two halves of giving them back: see cw_failback.py)
 """
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Tuple
 
 
 @dataclass
@@ -175,6 +175,22 @@ def should_rebuild_copy(state: str, missing_for: float, peer_seen: bool, peer_ok
     serves its own customers (or is fenced), only when the other cell is well enough to copy from, and only once the copy has been
     missing for a while and no attempt failed lately."""
     return state in ('NORMAL', 'FENCED') and missing_for >= grace and peer_seen and peer_ok and not retry_wait
+
+
+def replay_from(heard: float, now: float, keep_hours: int, margin: int = 120) -> Tuple[float, Optional[float]]:
+    """Where to start replaying the journal when taking over, and how many hours of writes it may miss (None if none).
+
+    `heard` is when the copy last heard from the other cell (0 if nobody knows). The copy has everything up to then, so replay
+    starts a little before it. The journal keeps `keep_hours` (less an hour of margin): an older `heard` means writes between it
+    and the journal's start are on no copy, which must be said. Not knowing `heard` is not that: replaying the whole journal
+    is the safe choice, and says nothing about a gap."""
+    oldest = now - (keep_hours - 1) * 3600
+    if heard <= 0:
+        return oldest, None
+    since = heard - margin
+    if since < oldest:
+        return oldest, (now - since) / 3600
+    return since, None
 
 
 def decide(state: str, o: Obs, c: Cfg) -> Optional[Decision]:
