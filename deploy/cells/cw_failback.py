@@ -19,8 +19,8 @@ import time
 import uuid
 
 from cw_env import (ADMIN_DB, DB_OWNER, OWNER_PSQL, CELL, ENV, LOCK, OWN_DB, PEER, S, db_exists, iso, log, notify, now, psql, save_state, set_state, sh)
-from cw_ops import (ABORT, SEQUENCES, archive_journal, copy_untouched, drop_probe, drop_remote_slot, rebuild_copy, replay_pass, resume_copy,
-                    start_probe, terminate_connections)
+from cw_ops import (ABORT, SEQUENCES, archive_journal, copy_untouched, drop_probe, drop_remote_slot, freeze_copy, rebuild_copy, replay_pass,
+                    resume_copy, start_probe, terminate_connections)
 
 NEW_DB = 'sprout_new'
 SUB = f'back_{CELL}'
@@ -218,6 +218,7 @@ def handback_holder(ctx, fid):
         time.sleep(3)
         archive_journal()
         r = replay_pass()
+        freeze_copy(True)          # from here nothing writes to the copy: the cutover point is its last write
         probe = start_probe()      # before the position is read: what the other cell builds from includes everything up to the probe
         lsn = psql('SELECT pg_current_wal_lsn()', ADMIN_DB).strip()
         with LOCK:
@@ -236,6 +237,7 @@ def handback_holder(ctx, fid):
         if outcome != 'done':
             raise RuntimeError('the other cell did not finish' if outcome is None else 'the other cell gave up')
         sh(ENV['STANDBY_STOP'], check=False)
+        freeze_copy(False)
         ctx.fence_standby(False)
         set_state('NORMAL', since=iso(), replay=None, hb_prepared=False)
         ctx.publish_routes('NORMAL')
@@ -250,6 +252,7 @@ def handback_holder(ctx, fid):
             rebuild_copy()
     except Exception as e:
         log(f'handback {fid[:8]} did not complete: {e}; the standby serves again')
+        freeze_copy(False)
         ctx.fence_standby(False)
         with LOCK:
             S['hb'] = None

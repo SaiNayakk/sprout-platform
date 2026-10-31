@@ -32,6 +32,7 @@ if [ "${SPROUT_SANDBOX:-false}" = true ]; then
   export SANDBOX_EVERY=5s              # the personas act at the pace the 30x market needs
 fi
 
-# JVM settings sized for the phone; SPROUT_EDGE_JAVA_OPTS in ~/.sprout.env overrides them (capacity experiments)
-java ${SPROUT_EDGE_JAVA_OPTS:--XX:+UseSerialGC -Xms32m -Xmx160m -Xss512k -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=48m -XX:TieredStopAtLevel=1} \
+# JVM and pool sizes from the profile (profile.sh); SPROUT_EDGE_JAVA_OPTS in ~/.sprout.env overrides the JVM settings
+. "$HOME/sprout/profile.sh" edge
+java ${SPROUT_EDGE_JAVA_OPTS:-$SPROUT_JAVA_OPTS} \
   -jar edge-host.jar
