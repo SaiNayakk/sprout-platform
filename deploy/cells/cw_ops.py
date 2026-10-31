@@ -11,7 +11,7 @@ import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
-from cw_logic import should_rebuild_copy
+from cw_logic import replay_from, should_rebuild_copy
 from cw_env import (ADMIN_DB, ARCHIVE_DIR, DB_OWNER, OWNER_PSQL, ARCHIVE_KEEP_HOURS, COPY_DB, ENV, LOCK, OWN_DB, PEER, S, CELL, answers, db_exists, iso,
                     log, notify, now, psql, save_state, set_state, sh)
 
@@ -230,17 +230,17 @@ def _replay_pass(prefix, target, key):
 
 def initial_watermark():
     """Where the journal must be replayed from: a little before the copy last heard from the other cell. The copy has
-    everything up to then; the journal has the rest, if it reaches back that far."""
+    everything up to then; the journal has the rest, if it reaches back that far. After a restart the subscription's
+    worker may not be running, and Postgres no longer knows when the copy last heard: the time saved while it did is used."""
     i = copy_info()
-    if i and i['last_receipt'] > 0:
-        since = i['last_receipt'] - 120
-    else:
-        since = now() - (ARCHIVE_KEEP_HOURS - 1) * 3600
-    if since < now() - (ARCHIVE_KEEP_HOURS - 1) * 3600:
+    heard = i['last_receipt'] if i and i['last_receipt'] > 0 else S.get('copy_heard', 0)
+    since, gap = replay_from(heard, now(), ARCHIVE_KEEP_HOURS)
+    if gap is not None:
         notify('the journal may not reach back to the copy',
-               f'the copy last heard from cell {PEER.upper()} {int((now() - since) / 3600)} h ago; writes before the journal began are not covered',
+               f'the copy last heard from cell {PEER.upper()} {int(gap)} h ago; writes before the journal began are not covered',
                5, 'rotating_light')
-        since = now() - (ARCHIVE_KEEP_HOURS - 1) * 3600
+    elif heard <= 0:
+        log('when the copy last heard from the other cell is unknown: replaying the whole journal')
     return iso(since)
 
 
@@ -475,6 +475,9 @@ def monitor_once():
     state = S.get('state')
     info = copy_info()
     RT['copy'] = info
+    if info and info['last_receipt'] > S.get('copy_heard', 0) + 60:
+        S['copy_heard'] = info['last_receipt']       # saved with the state: a takeover after a restart still knows it
+        save_state()
     if state not in ('NORMAL', 'FENCED'):
         return
     if info is None:
