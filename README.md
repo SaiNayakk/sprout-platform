@@ -2,6 +2,8 @@
 
 How [Sprout](https://sainayakk.github.io/sprout-platform/)'s services are put together, released and proven.
 
+Read the [Sprout in ten minutes walkthrough](https://sainayakk.github.io/sprout-platform/walkthrough/) for a step-by-step tour of the system.
+
 ## What Sprout is
 
 Sprout is a simulated brokerage: accounts, deposits, orders, an exchange, clearing, settlement, a

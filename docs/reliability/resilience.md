@@ -1,3 +1,9 @@
+---
+walkthrough: true
+---
+
+<div class="walkthrough-page"></div>
+
 # Resilience
 
 What the two cells do when something fails, how fast, and how that is checked. The design is
