@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 254" class="viz" role="img" aria-label="Region A stopped; the other region served its customers, then handed them back">
+<style>
+  .viz { --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7;
+         --own:#2a78d6; --both:#eb6834; --switching:#1baf7a; --out:#c3c2b7; --peak:#c3c2b7; --demo:#2a78d6;
+         --on-fill:#ffffff; --on-out:#0b0b0b; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  @media (prefers-color-scheme: dark) {
+    .viz { --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --grid:#2c2c2a; --axis:#383835;
+           --own:#3987e5; --both:#d95926; --switching:#199e70; --out:#52514e; --peak:#6d6c67; --demo:#3987e5; --on-out:#f0efec; }
+  }
+  .bg { fill: var(--surface); }
+  .t1 { fill: var(--ink); font-size: 15px; font-weight: 600; }
+  .t2 { fill: var(--ink2); font-size: 12.5px; }
+  .lab { fill: var(--ink2); font-size: 12px; }
+  .tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .grid { stroke: var(--grid); stroke-width: 1; }
+  .axis { stroke: var(--axis); stroke-width: 1; }
+  .mark { stroke: var(--ink2); stroke-width: 1; }
+  .in { fill: var(--on-fill); font-size: 11px; font-weight: 600; }
+  .in.dim { fill: var(--on-out); font-weight: 500; }
+  .own { fill: var(--own); } .both { fill: var(--both); } .switching { fill: var(--switching); } .out { fill: var(--out); }
+  .peak { fill: var(--peak); stroke: var(--surface); stroke-width: 2; }
+  .demo { fill: var(--demo); stroke: var(--surface); stroke-width: 2; }
+  .link { stroke: var(--axis); stroke-width: 2; stroke-linecap: round; }
+</style>
+<rect class="bg" width="760" height="254" rx="8"/>
+<text class="t1" x="128" y="28">Region A stopped: the other region took its customers, then gave them back</text>
+<text class="t2" x="128" y="48">Orders worked again after 154 s. 1,679 orders acknowledged during the run: 0 lost, 0 applied twice.</text>
+<line class="grid" x1="162.2" x2="162.2" y1="92" y2="158"/>
+<text class="tick" x="162.2" y="178" text-anchor="middle">stopped</text>
+<line class="grid" x1="230.6" x2="230.6" y1="92" y2="158"/>
+<text class="tick" x="230.6" y="178" text-anchor="middle">+2 min</text>
+<line class="grid" x1="298.9" x2="298.9" y1="92" y2="158"/>
+<text class="tick" x="298.9" y="178" text-anchor="middle">+4 min</text>
+<line class="grid" x1="367.3" x2="367.3" y1="92" y2="158"/>
+<text class="tick" x="367.3" y="178" text-anchor="middle">+6 min</text>
+<line class="grid" x1="435.7" x2="435.7" y1="92" y2="158"/>
+<text class="tick" x="435.7" y="178" text-anchor="middle">+8 min</text>
+<line class="grid" x1="504.1" x2="504.1" y1="92" y2="158"/>
+<text class="tick" x="504.1" y="178" text-anchor="middle">+10 min</text>
+<line class="grid" x1="572.5" x2="572.5" y1="92" y2="158"/>
+<text class="tick" x="572.5" y="178" text-anchor="middle">+12 min</text>
+<line class="grid" x1="640.8" x2="640.8" y1="92" y2="158"/>
+<text class="tick" x="640.8" y="178" text-anchor="middle">+14 min</text>
+<line class="grid" x1="709.2" x2="709.2" y1="92" y2="158"/>
+<text class="tick" x="709.2" y="178" text-anchor="middle">+16 min</text>
+<line class="axis" x1="128" x2="736" y1="164" y2="164"/>
+<text class="lab" x="118" y="112" text-anchor="end">Region A (phone)</text>
+<rect class="own" x="129.0" y="96" width="32.2" height="24" rx="4"><title>its own customers: -60 s to +0 s</title></rect>
+<rect class="out" x="163.2" y="96" width="351.9" height="24" rx="4"><title>out: stopped, fenced or handed over: +0 s to +621 s</title></rect>
+<text class="in dim" x="169.2" y="112">out</text>
+<rect class="own" x="517.0" y="96" width="36.7" height="24" rx="4"><title>its own customers: +621 s to +689 s</title></rect>
+<rect class="out" x="555.8" y="96" width="104.6" height="24" rx="4"><title>out: stopped, fenced or handed over: +689 s to +876 s</title></rect>
+<text class="in dim" x="561.8" y="112">out</text>
+<rect class="switching" x="662.4" y="96" width="48.1" height="24" rx="4"><title>switching over: +876 s to +964 s</title></rect>
+<rect class="own" x="712.5" y="96" width="22.5" height="24" rx="4"><title>its own customers: +964 s to +1007 s</title></rect>
+<text class="lab" x="118" y="150" text-anchor="end">Region B (laptop)</text>
+<rect class="own" x="129.0" y="134" width="91.5" height="24" rx="4"><title>its own customers: -60 s to +104 s</title></rect>
+<rect class="switching" x="222.5" y="134" width="25.9" height="24" rx="4"><title>switching over: +104 s to +153 s</title></rect>
+<rect class="both" x="250.4" y="134" width="462.4" height="24" rx="4"><title>both regions' customers: +153 s to +968 s</title></rect>
+<text class="in" x="256.4" y="150">both regions</text>
+<rect class="own" x="714.8" y="134" width="20.2" height="24" rx="4"><title>its own customers: +968 s to +1007 s</title></rect>
+<line class="mark" x1="249.4" x2="249.4" y1="80" y2="158"/>
+<text class="lab" x="254.4" y="76" text-anchor="start">took over at 2:33</text>
+<line class="mark" x1="713.8" x2="713.8" y1="80" y2="158"/>
+<text class="lab" x="708.8" y="76" text-anchor="end">handed back at 16:08</text>
+<rect class="own" x="128" y="208" width="12" height="12" rx="3"/><text class="lab" x="145" y="218">its own customers</text>
+<rect class="both" x="277.24" y="208" width="12" height="12" rx="3"/><text class="lab" x="294.24" y="218">both regions' customers</text>
+<rect class="switching" x="466.8" y="208" width="12" height="12" rx="3"/><text class="lab" x="483.8" y="218">switching over</text>
+<rect class="out" x="128" y="226" width="12" height="12" rx="3"/><text class="lab" x="145" y="236">out: stopped, fenced or handed over</text>
+</svg>

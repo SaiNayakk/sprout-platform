@@ -11,7 +11,7 @@ import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
-from cw_logic import should_rebuild_copy
+from cw_logic import replay_from, should_rebuild_copy
 from cw_env import (ADMIN_DB, ARCHIVE_DIR, DB_OWNER, OWNER_PSQL, ARCHIVE_KEEP_HOURS, COPY_DB, ENV, LOCK, OWN_DB, PEER, S, CELL, answers, db_exists, iso,
                     log, notify, now, psql, save_state, set_state, sh)
 
@@ -230,17 +230,17 @@ def _replay_pass(prefix, target, key):
 
 def initial_watermark():
     """Where the journal must be replayed from: a little before the copy last heard from the other cell. The copy has
-    everything up to then; the journal has the rest, if it reaches back that far."""
+    everything up to then; the journal has the rest, if it reaches back that far. After a restart the subscription's
+    worker may not be running, and Postgres no longer knows when the copy last heard: the time saved while it did is used."""
     i = copy_info()
-    if i and i['last_receipt'] > 0:
-        since = i['last_receipt'] - 120
-    else:
-        since = now() - (ARCHIVE_KEEP_HOURS - 1) * 3600
-    if since < now() - (ARCHIVE_KEEP_HOURS - 1) * 3600:
+    heard = i['last_receipt'] if i and i['last_receipt'] > 0 else S.get('copy_heard', 0)
+    since, gap = replay_from(heard, now(), ARCHIVE_KEEP_HOURS)
+    if gap is not None:
         notify('the journal may not reach back to the copy',
-               f'the copy last heard from cell {PEER.upper()} {int((now() - since) / 3600)} h ago; writes before the journal began are not covered',
+               f'the copy last heard from cell {PEER.upper()} {int(gap)} h ago; writes before the journal began are not covered',
                5, 'rotating_light')
-        since = now() - (ARCHIVE_KEEP_HOURS - 1) * 3600
+    elif heard <= 0:
+        log('when the copy last heard from the other cell is unknown: replaying the whole journal')
     return iso(since)
 
 
@@ -279,6 +279,7 @@ def take_over(reason, publish_routes):
         archive_journal()
         watermark = initial_watermark()
         psql(f'ALTER SUBSCRIPTION from_{PEER} DISABLE', COPY_DB)
+        freeze_copy(False)   # a handback cut short by a crash must not leave the standby unable to write
         psql(SEQUENCES, COPY_DB)
         log(f'stopped replicating from {PEER} and moved its sequences on')
         sh(ENV['STANDBY_START'])
@@ -372,12 +373,26 @@ def terminate_connections(db):
 PROBE = f'hb_probe_{PEER}'      # on the holder: shows whether its copy changed after the handback's cutover point
 
 
+def freeze_copy(on):
+    """While a handback runs, nothing may write to the copy after the cutover point. The standby is fenced from customers, but
+    its own background jobs keep running until it is stopped (2026-10-30: one wrote a row after the probe, and the copy had to be
+    copied again from scratch). On: new transactions on the copy are read-only, and the sessions already open are closed so they
+    come back read-only. Off: as before. Safe to repeat; also undone before a standby starts, in case cellwatch died mid-handback."""
+    if on:
+        psql(f'ALTER DATABASE {COPY_DB} SET default_transaction_read_only = on', ADMIN_DB)
+        psql(f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{COPY_DB}' AND backend_type = 'client backend' "
+             f"AND pid <> pg_backend_pid()", ADMIN_DB, check=False)
+    else:
+        psql(f'ALTER DATABASE {COPY_DB} RESET default_transaction_read_only', ADMIN_DB, check=False)
+
+
 def start_probe():
     """A slot on this cell's copy of the other, made at the handback's cutover point: whatever is written to the copy after it shows
     up in it. False if it could not be made (the copy is then rebuilt from scratch, as before)."""
     drop_probe()
     try:
-        psql(f"SET statement_timeout = '15s'; SELECT pg_create_logical_replication_slot('{PROBE}', 'pgoutput')", COPY_DB)
+        psql(f"SET statement_timeout = '15s'; SET default_transaction_read_only = off; "
+             f"SELECT pg_create_logical_replication_slot('{PROBE}', 'pgoutput')", COPY_DB)
         return True
     except Exception as e:
         log(f'could not mark the cutover point on the copy: {e}')
@@ -460,6 +475,9 @@ def monitor_once():
     state = S.get('state')
     info = copy_info()
     RT['copy'] = info
+    if info and info['last_receipt'] > S.get('copy_heard', 0) + 60:
+        S['copy_heard'] = info['last_receipt']       # saved with the state: a takeover after a restart still knows it
+        save_state()
     if state not in ('NORMAL', 'FENCED'):
         return
     if info is None:

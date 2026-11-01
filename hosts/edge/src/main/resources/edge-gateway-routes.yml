@@ -9,6 +9,8 @@ sprout:
         public:
           - GET /v3/demo
           - POST /v3/demo-sessions
+          - POST /v3/demo-sessions/heartbeat   # the visitor's tab, every 30 s, with the key it was given
+          - POST /v3/demo-sessions/leave       # sendBeacon as the tab closes
         auth-limited:
           - POST /v3/demo-sessions        # each one signs someone in: limited like sign-in
       - name: identity

@@ -80,6 +80,35 @@ states every few seconds). The rules themselves are tested with `python -m unitt
 which runs in CI: each test is an incident (a returning cell that unfenced too soon, a cell fenced again by a stale status,
 two cells holding each other) written down.
 
+### Every scenario's latest run
+
+Written by `python docs/figures/build.py` from the run files in
+[`deploy/cells/results/`](https://github.com/SaiNayakk/sprout-platform/tree/main/deploy/cells/results); nothing in it is typed by hand.
+
+<!-- figures:begin (written by docs/figures/build.py) -->
+| Scenario | Latest run | Result | Orders back after | Orders acknowledged | Lost | Applied twice |
+|---|---|---|---|---|---|---|
+| `kill_cell_a`: the phone's cell stopped | 29/10 21:44 | pass | 154 s | 1679 | 0 | 0 |
+| `kill_cell_b`: the laptop's cell stopped | 29/10 21:58 | pass | 336 s | 759 | 0 | 0 |
+| `dead_host_trading`: one JVM host killed | 28/10 11:48 | pass | 308 s | 754 | 0 | 0 |
+| `holder_dies`: the cell serving both dies | 28/10 09:52 | pass | - | 938 | 0 | 0 |
+| `cf_blind`: the cells can't see each other | 28/10 11:35 | pass | - | 580 | 0 | 0 |
+| `mutual_blind`: the cells can't see each other at all | 28/10 12:01 | pass | - | 741 | 0 | 0 |
+| `blind_no_witness`: blind to each other and to the witness | 28/10 12:12 | pass | - | 998 | 0 | 0 |
+| `both_offline`: both public addresses down | 28/10 11:53 | pass | - | 180 | 0 | 0 |
+| `failed_takeover`: a takeover that can't finish | 28/10 13:08 | pass | - | 272 | 0 | 0 |
+| `replication_off`: replication silently switched off | 28/10 09:36 | pass | - | - | - | - |
+| `laptop_restart`: the laptop's containers all restarted | 29/10 02:58 | pass | 45 s | 158 | 0 | 0 |
+<!-- figures:end -->
+
+**The phone's cell stopped** (latest `kill_cell_a`): both cells' states through the run, as the suite saw them.
+
+![Region A stopped: the laptop takes over its customers, then hands them back](../assets/figures/kill-cell-a.svg)
+
+**The laptop's cell stopped** (latest `kill_cell_b`):
+
+![Region B stopped: the phone takes over its customers, then hands them back](../assets/figures/kill-cell-b.svg)
+
 ### Copy resume check: 2026-10-29, v0.18.1 code
 
 `kill_cell_a` and `kill_cell_b` run again to check that the cell that held the other's customers resumes its copy after the
