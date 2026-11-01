@@ -17,3 +17,4 @@ preprod/out/
 !docs/reliability/runs/**/*.log
 __pycache__/
 __pycache__/
+preprod/shapes/out/
