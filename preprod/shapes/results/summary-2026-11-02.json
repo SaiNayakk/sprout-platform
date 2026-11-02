@@ -1,0 +1,440 @@
+{
+ "one-jvm": {
+  "runs": [
+   "2026-11-02-0452",
+   "2026-11-02-0526",
+   "2026-11-02-0639"
+  ],
+  "healthyAfterS": 47,
+  "healthyRangeS": [
+   44,
+   49
+  ],
+  "idleMemMiB": 448,
+  "idleMemRangeMiB": [
+   441,
+   449
+  ],
+  "idleCpuPct": 11,
+  "answeringWhileDown": [
+   0
+  ],
+  "recoveredAfterS": 38,
+  "recoveredRangeS": [
+   38,
+   38
+  ],
+  "load": {
+   "5": {
+    "runs": 3,
+    "p50Ms": 57,
+    "p95Ms": 102,
+    "p99Ms": 113,
+    "p95Range": [
+     102,
+     110
+    ],
+    "filled": 900,
+    "orders": 900,
+    "outcomes": [
+     {
+      "FILLED": 300
+     },
+     {
+      "FILLED": 300
+     },
+     {
+      "FILLED": 300
+     }
+    ]
+   },
+   "10": {
+    "runs": 3,
+    "p50Ms": 68,
+    "p95Ms": 108,
+    "p99Ms": 121,
+    "p95Range": [
+     103,
+     113
+    ],
+    "filled": 1800,
+    "orders": 1800,
+    "outcomes": [
+     {
+      "FILLED": 600
+     },
+     {
+      "FILLED": 600
+     },
+     {
+      "FILLED": 600
+     }
+    ]
+   },
+   "20": {
+    "runs": 3,
+    "p50Ms": 75,
+    "p95Ms": 100,
+    "p99Ms": 117,
+    "p95Range": [
+     99,
+     102
+    ],
+    "filled": 3600,
+    "orders": 3600,
+    "outcomes": [
+     {
+      "FILLED": 1200
+     },
+     {
+      "FILLED": 1200
+     },
+     {
+      "FILLED": 1200
+     }
+    ]
+   },
+   "40": {
+    "runs": 3,
+    "p50Ms": 72,
+    "p95Ms": 111,
+    "p99Ms": 152,
+    "p95Range": [
+     106,
+     125
+    ],
+    "filled": 7200,
+    "orders": 7200,
+    "outcomes": [
+     {
+      "FILLED": 2400
+     },
+     {
+      "FILLED": 2400
+     },
+     {
+      "FILLED": 2400
+     }
+    ]
+   },
+   "80": {
+    "runs": 3,
+    "p50Ms": 74,
+    "p95Ms": 132,
+    "p99Ms": 645,
+    "p95Range": [
+     125,
+     160
+    ],
+    "filled": 14400,
+    "orders": 14400,
+    "outcomes": [
+     {
+      "FILLED": 4800
+     },
+     {
+      "FILLED": 4800
+     },
+     {
+      "FILLED": 4800
+     }
+    ]
+   }
+  }
+ },
+ "four-hosts": {
+  "runs": [
+   "2026-11-02-0452",
+   "2026-11-02-0526",
+   "2026-11-02-0639"
+  ],
+  "healthyAfterS": 39,
+  "healthyRangeS": [
+   38,
+   41
+  ],
+  "idleMemMiB": 922,
+  "idleMemRangeMiB": [
+   920,
+   923
+  ],
+  "idleCpuPct": 16,
+  "answeringWhileDown": [
+   10
+  ],
+  "recoveredAfterS": 17,
+  "recoveredRangeS": [
+   17,
+   18
+  ],
+  "load": {
+   "5": {
+    "runs": 3,
+    "p50Ms": 55,
+    "p95Ms": 102,
+    "p99Ms": 122,
+    "p95Range": [
+     101,
+     178
+    ],
+    "filled": 900,
+    "orders": 900,
+    "outcomes": [
+     {
+      "FILLED": 300
+     },
+     {
+      "FILLED": 300
+     },
+     {
+      "FILLED": 300
+     }
+    ]
+   },
+   "10": {
+    "runs": 3,
+    "p50Ms": 57,
+    "p95Ms": 105,
+    "p99Ms": 114,
+    "p95Range": [
+     101,
+     159
+    ],
+    "filled": 1800,
+    "orders": 1800,
+    "outcomes": [
+     {
+      "FILLED": 600
+     },
+     {
+      "FILLED": 600
+     },
+     {
+      "FILLED": 600
+     }
+    ]
+   },
+   "20": {
+    "runs": 3,
+    "p50Ms": 73,
+    "p95Ms": 104,
+    "p99Ms": 124,
+    "p95Range": [
+     101,
+     142
+    ],
+    "filled": 3600,
+    "orders": 3600,
+    "outcomes": [
+     {
+      "FILLED": 1200
+     },
+     {
+      "FILLED": 1200
+     },
+     {
+      "FILLED": 1200
+     }
+    ]
+   },
+   "40": {
+    "runs": 3,
+    "p50Ms": 56,
+    "p95Ms": 118,
+    "p99Ms": 167,
+    "p95Range": [
+     111,
+     122
+    ],
+    "filled": 7200,
+    "orders": 7200,
+    "outcomes": [
+     {
+      "FILLED": 2400
+     },
+     {
+      "FILLED": 2400
+     },
+     {
+      "FILLED": 2400
+     }
+    ]
+   },
+   "80": {
+    "runs": 3,
+    "p50Ms": 72,
+    "p95Ms": 725,
+    "p99Ms": 1197,
+    "p95Range": [
+     136,
+     3245
+    ],
+    "filled": 14395,
+    "orders": 14400,
+    "outcomes": [
+     {
+      "FILLED": 4797,
+      "504": 3
+     },
+     {
+      "FILLED": 4800
+     },
+     {
+      "FILLED": 4798,
+      "504": 2
+     }
+    ]
+   }
+  }
+ },
+ "per-service": {
+  "runs": [
+   "2026-11-02-0600",
+   "2026-11-02-0613",
+   "2026-11-02-0626"
+  ],
+  "healthyAfterS": 123,
+  "healthyRangeS": [
+   119,
+   126
+  ],
+  "idleMemMiB": 2479,
+  "idleMemRangeMiB": [
+   2457,
+   2526
+  ],
+  "idleCpuPct": 36,
+  "answeringWhileDown": [
+   16
+  ],
+  "recoveredAfterS": 12,
+  "recoveredRangeS": [
+   12,
+   12
+  ],
+  "load": {
+   "5": {
+    "runs": 3,
+    "p50Ms": 59,
+    "p95Ms": 119,
+    "p99Ms": 812,
+    "p95Range": [
+     114,
+     122
+    ],
+    "filled": 899,
+    "orders": 900,
+    "outcomes": [
+     {
+      "FILLED": 300
+     },
+     {
+      "FILLED": 300
+     },
+     {
+      "FILLED": 299
+     }
+    ]
+   },
+   "10": {
+    "runs": 3,
+    "p50Ms": 58,
+    "p95Ms": 119,
+    "p99Ms": 335,
+    "p95Range": [
+     108,
+     131
+    ],
+    "filled": 1800,
+    "orders": 1800,
+    "outcomes": [
+     {
+      "FILLED": 600
+     },
+     {
+      "FILLED": 600
+     },
+     {
+      "FILLED": 600
+     }
+    ]
+   },
+   "20": {
+    "runs": 3,
+    "p50Ms": 61,
+    "p95Ms": 168,
+    "p99Ms": 928,
+    "p95Range": [
+     115,
+     254
+    ],
+    "filled": 3579,
+    "orders": 3600,
+    "outcomes": [
+     {
+      "FILLED": 1179
+     },
+     {
+      "FILLED": 1200
+     },
+     {
+      "FILLED": 1200
+     }
+    ]
+   },
+   "40": {
+    "runs": 3,
+    "p50Ms": 62,
+    "p95Ms": 255,
+    "p99Ms": 591,
+    "p95Range": [
+     210,
+     478
+    ],
+    "filled": 7190,
+    "orders": 7200,
+    "outcomes": [
+     {
+      "FILLED": 2390
+     },
+     {
+      "FILLED": 2400
+     },
+     {
+      "FILLED": 2400
+     }
+    ]
+   },
+   "80": {
+    "runs": 3,
+    "p50Ms": 242,
+    "p95Ms": 3078,
+    "p99Ms": 4654,
+    "p95Range": [
+     2813,
+     4195
+    ],
+    "filled": 13038,
+    "orders": 14400,
+    "outcomes": [
+     {
+      "FILLED": 4442,
+      "504": 4
+     },
+     {
+      "503": 1,
+      "FILLED": 4096,
+      "504": 4,
+      "PENDING": 3,
+      "REJECTED": 1
+     },
+     {
+      "FILLED": 4500,
+      "504": 6,
+      "PENDING": 4
+     }
+    ]
+   }
+  }
+ }
+}
