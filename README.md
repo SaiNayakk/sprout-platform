@@ -1,5 +1,18 @@
 # sprout-platform
 
+**400 people trading at once, p95 under a second, on a phone and a laptop that cost nothing to run.**
+Lose either one and the other serves everyone within 3–4 minutes, with no order lost or applied twice.
+
+| | Measured |
+|---|---|
+| Peak, both cells together | **400 users** (167 req/s, p95 < 1 s); 267 req/s at most |
+| One cell alone | 300 users each (phone 143 req/s at most, laptop 259) |
+| Whole cell lost | Customers served again in 176 s (phone) and 258 s (laptop); 0 of 7,000 orders lost |
+| Customers handed back | Automatic; writes refused for 2–5 s |
+| Hosting bill | Rs 0 (Termux, Docker Desktop, free Cloudflare tunnels and Worker) |
+
+How each figure was measured: [capacity](docs/reliability/capacity.md) and [resilience](docs/reliability/resilience.md).
+
 How [Sprout](https://sainayakk.github.io/sprout-platform/)'s services are put together, released and proven.
 
 Read the [Sprout in ten minutes walkthrough](https://sainayakk.github.io/sprout-platform/walkthrough/) for a step-by-step tour of the system.
