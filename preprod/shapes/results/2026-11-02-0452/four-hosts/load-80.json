@@ -1,0 +1,22 @@
+{
+  "customers" : 40,
+  "ordersPerSecond" : 80,
+  "seconds" : 60,
+  "orders" : 4800,
+  "filled" : 4797,
+  "serverErrors" : 3,
+  "clientErrors" : 0,
+  "holdingsMismatched" : 3,
+  "p50Ms" : 91,
+  "p95Ms" : 3245,
+  "p99Ms" : 4257,
+  "maxMs" : 5361,
+  "statuses" : {
+    "504" : 3,
+    "201" : 4797
+  },
+  "outcomes" : {
+    "FILLED" : 4797,
+    "504" : 3
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "customers" : 40,
+  "ordersPerSecond" : 20,
+  "seconds" : 60,
+  "orders" : 1200,
+  "filled" : 1200,
+  "serverErrors" : 0,
+  "clientErrors" : 0,
+  "holdingsMismatched" : 0,
+  "p50Ms" : 73,
+  "p95Ms" : 104,
+  "p99Ms" : 124,
+  "maxMs" : 202,
+  "statuses" : {
+    "201" : 1200
+  },
+  "outcomes" : {
+    "FILLED" : 1200
+  }
+}

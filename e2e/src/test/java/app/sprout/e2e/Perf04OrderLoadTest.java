@@ -78,7 +78,13 @@ class Perf04OrderLoadTest {
         int mismatched = 0;
         for (int i = 0; i < CUSTOMERS; i++) {
             Customer c = customers.get(i);
-            JsonNode holdings = c.client().get("/api/oms/v1/holdings", c.token()).body().path("holdings");
+            // read once the customer's rate limit allows: a 429 here is the check's own doing, not a lost share
+            Client.Response r = c.client().get("/api/oms/v1/holdings", c.token());
+            for (int tries = 0; r.status() == 429 && tries < 10; tries++) {
+                Thread.sleep(2_000);
+                r = c.client().get("/api/oms/v1/holdings", c.token());
+            }
+            JsonNode holdings = r.body().path("holdings");
             for (String symbol : SYMBOLS) {
                 int held = 0;
                 for (JsonNode h : holdings) {
@@ -118,10 +124,14 @@ class Perf04OrderLoadTest {
         assertThat(Perf03StreamFanoutTest.pct(ms, 99)).as("p99 placement").isLessThan(2000);
     }
 
-    /** Funds every customer at once, each from their own client address, as real users. */
+    /**
+     * Funds the customers, each from their own client address, as real users: all at once unless
+     * {@code perf.setupParallel} says how many at a time. Setup isn't measured; the shapes experiment
+     * sets it low so a slow shape can still be measured placing orders.
+     */
     List<Customer> fund() throws Exception {
         List<Customer> customers = new ArrayList<>();
-        try (var pool = Executors.newVirtualThreadPerTaskExecutor()) {
+        try (var pool = Executors.newFixedThreadPool(Integer.getInteger("perf.setupParallel", CUSTOMERS), Thread.ofVirtual().factory())) {
             List<java.util.concurrent.Future<Customer>> made = new ArrayList<>();
             for (int i = 0; i < CUSTOMERS; i++) {
                 made.add(pool.submit(() -> {
@@ -130,7 +140,7 @@ class Perf04OrderLoadTest {
                 }));
             }
             for (var f : made) {
-                customers.add(f.get(2, TimeUnit.MINUTES));
+                customers.add(f.get(10, TimeUnit.MINUTES));
             }
         }
         return customers;
