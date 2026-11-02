@@ -8,8 +8,8 @@ works without touching either cell's machine directly.
 ## 1. Open the site and place an order
 
 1. Go to **https://sprout-saiworks.nncs.in**.
-2. On the home page, click **Try a demo account**. Type any name. The sandbox gives you a named demo
-   customer with money already in their account; no sign-up, no real details.
+2. On the home page, type any name and click **Try the demo**. The sandbox gives you a demo account of
+   your own: Rs 1,00,000, two holdings and a month of history; no sign-up, no real details.
 3. Open any stock and buy one share at market. The exchange fills it at the current simulated price.
 4. Open your holdings to see the share and the money it cost.
 
