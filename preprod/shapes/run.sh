@@ -43,6 +43,16 @@ answering() {   # shape -> how many services answer their health check, probed f
   echo $n
 }
 
+# The order-load test (PERF-04) runs on the machine itself, outside Docker, against the shape's published gateway: inside
+# the Docker VM its two JVMs took the memory the 19-JVM shape needed, and it would compete with what it measures. It is
+# a light client, so its JVMs are kept small: the laptop has little memory left beside the Docker VM.
+load() {   # summary.json [-Dperf.*...]
+  local summary=$1; shift
+  JAVA_TOOL_OPTIONS="-Xmx256m -XX:+UseSerialGC -XX:TieredStopAtLevel=1" PERF04_OUT="$(cygpath -m "$summary" 2>/dev/null || echo "$summary")" mvn -q -B -o -f "$ROOT/e2e/pom.xml" test \
+    -Dsprout.baseUrl=http://localhost:8100 -Dgroups=perf-orders -De2e.excludedGroups= \
+    -Dperf.setupParallel="${SETUP_PARALLEL:-4}" -De2e.depositWaitSeconds=120 "$@"
+}
+
 sample() {   # shape phase -> appends one docker stats sample per container to stats.csv, until stopped
   while true; do
     docker stats --no-stream --format "{{.Name}},{{.MemUsage}},{{.CPUPerc}}" \
@@ -65,8 +75,17 @@ for shape in "${SHAPES[@]}"; do
   "${C[@]}" build -q || { echo "$shape: build failed"; continue; }
 
   log "$shape: start from nothing"
-  t0=$(now_ms)
-  if ! "${C[@]}" up -d --wait >/dev/null 2>"$out/up.err"; then
+  # Docker Desktop frees the last shape's published port a while after "down" returns, and the host can't see it held:
+  # a start refused for that is undone and tried again, timed afresh.
+  started=no
+  for try in 1 2 3 4 5; do
+    t0=$(now_ms)
+    "${C[@]}" up -d --wait >/dev/null 2>"$out/up.err" && { started=yes; break; }
+    grep -q "port is already allocated" "$out/up.err" || break
+    echo "port 8100 still held by Docker; trying again in 30 s ($try)"
+    "${C[@]}" --profile tools down -v --remove-orphans >/dev/null 2>&1; sleep 30
+  done
+  if [ $started = no ]; then
     echo "$shape did not become healthy"; "${C[@]}" logs --tail 80 > "$out/up.log" 2>&1
     "${C[@]}" --profile tools down -v --remove-orphans >/dev/null 2>&1; continue
   fi
@@ -77,17 +96,15 @@ for shape in "${SHAPES[@]}"; do
   sample "$shape" idle & sp=$!; sleep 20; kill $sp 2>/dev/null; wait $sp 2>/dev/null
 
   log "$shape: warm up (PERF-04 at 2/s for 30 s, not recorded)"
-  "${C[@]}" --profile tools run --rm -e PERF04_OUT=/out/warm.json loadgen -Dgroups=perf-orders -De2e.excludedGroups= \
-    -Dperf.rate=2 -Dperf.seconds=30 >/dev/null 2>&1
+  load "$out/warm.json" -Dperf.rate=2 -Dperf.seconds=30 >/dev/null 2>&1
 
   for rate in "${RATES[@]}"; do
     log "$shape: orders at $rate/s for ${SECONDS_PER_RATE}s"
     sample "$shape" "load-$rate" & sp=$!
-    "${C[@]}" --profile tools run --rm -e PERF04_OUT=/out/perf-04-$shape-$rate.json loadgen -Dgroups=perf-orders \
-      -De2e.excludedGroups= -Dperf.rate="$rate" -Dperf.seconds="$SECONDS_PER_RATE" -Dperf.customers="${CUSTOMERS:-40}" > "$out/load-$rate.log" 2>&1
+    load "$out/load-$rate.json" -Dperf.rate="$rate" -Dperf.seconds="$SECONDS_PER_RATE" -Dperf.customers="${CUSTOMERS:-40}" \
+      > "$out/load-$rate.log" 2>&1
     kill $sp 2>/dev/null; wait $sp 2>/dev/null
-    cp "$ROOT/preprod/out/perf-04-$shape-$rate.json" "$out/load-$rate.json" 2>/dev/null \
-      && python -c "import json; d=json.load(open(r'$PYOUT/load-$rate.json')); print({k: d.get(k) for k in ('orders','p50Ms','p95Ms','p99Ms','outcomes')})"
+    [ -f "$out/load-$rate.json" ] && python -c "import json; d=json.load(open(r'$PYOUT/load-$rate.json')); print({k: d.get(k) for k in ('orders','p50Ms','p95Ms','p99Ms','outcomes')})"
   done
 
   log "$shape: kill what runs the ledger"

@@ -94,8 +94,16 @@ final class Client {
     }
 
     private static Response retrying(java.util.function.Supplier<Response> call) {
-        Response r = call.get();
-        for (int tries = 0; tries < 8 && (r.status() == 429 || r.status() == 503 || r.status() == 504); tries++) {
+        return retrying(call, true);
+    }
+
+    /**
+     * Calls again while told to wait: 429, or 503 (the gateway didn't pass the call on). A 504 may have done its work
+     * upstream, so it is retried only when {@code afterTimeout} says the call is safe to repeat.
+     */
+    static Response retrying(java.util.function.Supplier<Response> call, boolean afterTimeout) {
+        Response r = timedOutAs504(call, afterTimeout);
+        for (int tries = 0; tries < 8 && (r.status() == 429 || r.status() == 503 || (afterTimeout && r.status() == 504)); tries++) {
             System.out.println("E2E-RETRY " + r.status() + " " + r.code());
             try {
                 Thread.sleep(1_000L << Math.min(tries, 4));
@@ -103,9 +111,21 @@ final class Client {
                 Thread.currentThread().interrupt();
                 return r;
             }
-            r = call.get();
+            r = timedOutAs504(call, afterTimeout);
         }
         return r;
+    }
+
+    /** A call safe to repeat that gets no answer in time counts as a 504, so it is tried again like one. */
+    private static Response timedOutAs504(java.util.function.Supplier<Response> call, boolean afterTimeout) {
+        try {
+            return call.get();
+        } catch (IllegalStateException e) {
+            if (afterTimeout && e.getCause() instanceof java.net.http.HttpTimeoutException) {
+                return new Response(504, JSON.createObjectNode().put("code", "CLIENT_TIMEOUT"), Map.of());
+            }
+            throw e;
+        }
     }
 
     private static Response expect(Response r, int status, String step) {

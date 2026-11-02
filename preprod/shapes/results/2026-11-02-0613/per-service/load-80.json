@@ -1,0 +1,26 @@
+{
+  "customers" : 40,
+  "ordersPerSecond" : 80,
+  "seconds" : 60,
+  "orders" : 4800,
+  "filled" : 4096,
+  "serverErrors" : 5,
+  "clientErrors" : 695,
+  "holdingsMismatched" : 7,
+  "p50Ms" : 343,
+  "p95Ms" : 4195,
+  "p99Ms" : 7891,
+  "maxMs" : 8813,
+  "statuses" : {
+    "503" : 1,
+    "504" : 4,
+    "201" : 4100
+  },
+  "outcomes" : {
+    "503" : 1,
+    "FILLED" : 4096,
+    "504" : 4,
+    "PENDING" : 3,
+    "REJECTED" : 1
+  }
+}

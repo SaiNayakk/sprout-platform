@@ -33,6 +33,22 @@ PORTS_BY_NAME = {name: port for services in HOSTS.values() for name, port in ser
 HOST_OF = {name: host for host, services in HOSTS.items() for name in services}
 HEALTH = {'gateway': 8190}   # the gateway answers health on its management port
 
+# Calls whose address defaults to 127.0.0.1 because, in every host, caller and callee share a JVM. Pre-prod's compose
+# file never sets them, so a service alone in its JVM would call itself: the 19-JVM shape must set each one.
+# Found by grepping every service's src/main/resources for ${*_URL:http://127.0.0.1:...}.
+COLOCATED = {
+    'CLEARING_BANK_URL': 'bank', 'CLEARING_DEPOSITORY_URL': 'depository', 'CLEARING_EXCHANGE_URL': 'exchange',
+    'GOALS_ACCOUNTS_URL': 'accounts', 'GOALS_PAYMENTS_URL': 'payments',
+    'HABITS_MARKETDATA_URL': 'marketdata', 'HABITS_OMS_URL': 'oms',
+    'OMS_MARKETDATA_URL': 'marketdata',
+    'PLANS_MARKETDATA_URL': 'marketdata', 'PLANS_OMS_URL': 'oms',
+    'RECON_LEDGER_URL': 'ledger', 'RECON_SETTLEMENT_URL': 'settlement',
+    'REWARDS_HABITS_URL': 'habits',
+    'SANDBOX_IDENTITY_URL': 'identity',
+    'SETTLEMENT_LEDGER_URL': 'ledger',
+    'STATEMENTS_ACCOUNTS_URL': 'accounts', 'STATEMENTS_LEDGER_URL': 'ledger',
+}
+
 HEAP = {'four-hosts': '256m', 'one-jvm': '768m', 'per-service': '128m'}
 FLAGS = ('-XX:+UseSerialGC -Xms32m -Xmx{heap} -Xss512k -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=48m '
          '-XX:TieredStopAtLevel=1')
@@ -105,7 +121,8 @@ def per_service(base):
         s = c['services'].pop(host)
         for name, port in services.items():
             one = jvm(s, 'cell', HEAP['per-service'])
-            one['environment'] = readdress({**one['environment'], 'SPROUT_SERVICE': name}, own_ports={port})
+            colocated = {k: f'http://{v}:{PORTS_BY_NAME[v]}' for k, v in COLOCATED.items()}
+            one['environment'] = readdress({**one['environment'], **colocated, 'SPROUT_SERVICE': name}, own_ports={port})
             one['entrypoint'] = ['sh', '-c', SERVICE_MAIN]
             one['healthcheck'] = health([HEALTH.get(name, port)])
             one['ports'] = [p for p in s.get('ports', []) if p.split(':')[-1] == str(port)]

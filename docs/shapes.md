@@ -5,10 +5,10 @@ Nothing about the services changes between the three. Only how they are packed i
 Sprout a fair place to measure an argument that is usually settled by opinion: what does splitting a system into
 processes cost, and what does it buy?
 
-!!! warning "Draft"
-    Results below are from the first two runs (2026-10-30). The order-load ladder for the one-JVM-per-service shape is
-    still to run: its first two attempts were spoiled by a test bug (see [What the experiment found](#found)).
-    Each figure will be the median of three runs before this page is final.
+**In short:** on the same laptop, 19 JVMs need **5.5 times the memory** of one JVM and **2.6 times the start-up
+time**. They also slow down sooner under load, with p95 at 255 ms against 111 ms at 40 orders a second. In return
+they keep **16 of 19 services up** when the ledger's process dies, against **none** in one JVM, and they come back
+3 times faster. Sprout's four hosts sit in between: 2 times the monolith's memory, and 10 of 19 services survive.
 
 ## The three shapes
 
@@ -24,12 +24,13 @@ How it's built, so the comparison is honest:
 - **The packaging is all that changes.** `CellHost` starts all four hosts' services in one JVM. `ServiceHost` starts the one named by `SPROUT_SERVICE`.
 - **Same configuration.** `preprod/shapes/render.py` writes all three compose files from pre-prod's. It changes only the packing, and the addresses the services use to find each other.
 - **Same JVM settings.** Every JVM gets the same flags, with heap caps high enough never to bind: the experiment measures what each shape uses, not whether it fits a budget.
-- **Same machine, one shape at a time.** 8 vCPUs and Docker's 3.7 GB; nothing else in Docker while a shape runs.
+- **Same machine, one shape at a time.** 8 vCPUs and Docker's 3.7 GB, with nothing else in Docker while a shape runs. The load generator runs on the laptop itself, outside Docker, so it doesn't compete with what it measures.
 - **Same measurements**, by `preprod/shapes/run.sh`:
     - time to healthy from nothing;
     - memory and CPU at idle;
     - an order-load ladder (PERF-04 at 5, 10, 20, 40 and 80 orders a second, 60 s each, after a warm-up);
     - killing the process that runs the ledger: how many services still answer, and how long until it's back.
+- **Three runs of each shape** on 2026-11-02. Every figure below is the median of the three, with the range where the runs disagree. `preprod/shapes/summarize.py` computes them from `preprod/shapes/results/`.
 
 In every shape the services still call each other over HTTP, even inside one JVM. That isolates the cost of
 *processes*; a monolith that calls in-process would be cheaper again (see [Limits](#limits)).
@@ -40,59 +41,82 @@ In every shape the services still call each other over HTTP, even inside one JVM
 
 | | 1 JVM | 4 hosts | 19 JVMs |
 |---|---|---|---|
-| Memory at idle, all JVMs | **408 MB** | 809 MB | 2,496 MB |
-| CPU at idle (of 800%) | **10%** | 18% | 69% (46% in run 2) |
-| Healthy from nothing | 50 s | 52 s | 203 s (128 s in run 2) |
+| Memory at idle, all JVMs | **448 MB** | 922 MB | 2,479 MB |
+| CPU at idle (% of one core) | **11%** | 16% | 36% |
+| Healthy from nothing | 47 s | **39 s** | 123 s (119-126) |
 
 Each JVM has a floor of roughly 110-130 MB before it does any work: its own heap, metaspace, code cache, threads
-and a copy of Spring. Nineteen floors cost six times one. Idle CPU grows with the number of JVMs too: each runs its
-own timers, health checks, connection pools and garbage collector.
+and a copy of Spring. Nineteen floors cost 5.5 times one. Idle CPU grows with the number of JVMs too: each runs its
+own timers, health checks, connection pools and garbage collector. Four hosts start fastest because they start in
+parallel; nineteen JVMs also start in parallel, but then compete for 8 cores while each warms up.
 
 ### Speed: orders under load (PERF-04, latency to place an order)
 
-| Orders a second | 1 JVM p95 / p99 | 4 hosts p95 / p99 |
-|---|---|---|
-| 5 | 121 / 652 ms | 88 / 135 ms |
-| 10 | 73 / 124 ms | 98 / 146 ms (69 / 80 in run 2) |
-| 20 | 62 / 77 ms | 87 / 993 ms (run 2) |
-| 40 | 77 / 122 ms (84 / 136 in run 2) | 172 / 304 ms (88 / 136 in run 2) |
-| 80 | 207 / 395 ms | 535 / 623 ms |
+p95 / p99 in ms, median of three runs (p95 range in brackets where the runs differ by more than 25%):
 
-Every order was filled at every rate up to 40 a second, in both shapes, with nothing lost or doubled. At 80 a second,
-which is above what one test customer may send under the gateway's per-customer limit, some orders were turned away
-with 429 (as designed) and a few timed out (504). The two runs differ enough at single rates (4 hosts at 40 a second:
-p95 172 ms, then 88 ms) that only the trend is solid so far: at 80 orders a second one JVM's p95 was 207 ms against
-four hosts' 535 ms, and its p99 395 ms against 623 ms. An order crosses three hosts, and every hop is a real network call with its own thread pools. In one
-JVM those hops stay on loopback and share one warm JIT.
+| Orders a second | 1 JVM | 4 hosts | 19 JVMs |
+|---|---|---|---|
+| 5 | 102 / 113 | 102 / 122 | 119 / 812 |
+| 10 | 108 / 121 | 105 / 114 | 119 / 335 |
+| 20 | 100 / 117 | 104 / 124 | 168 / 928 (115-254) |
+| 40 | **111 / 152** | 118 / 167 | 255 / 591 (210-478) |
+| 80 | **132 / 645** | 725 / 1,197 (136-3,245) | 3,078 / 4,654 |
+| Orders filled, all rates | 27,900 of 27,900 | 27,895 of 27,900 | 26,506 of 27,900 |
+
+- **Up to 20 orders a second, the shapes look alike.** About 55-75 ms of every figure is the trip from the load
+  generator into Docker's network, the same for all three, so the floor hides small differences.
+- **19 JVMs pull away first.** At 40 a second their p95 is more than twice the others', and their p99 goes over half a
+  second from the first step. One order crosses gateway, OMS, accounts, ledger and exchange, each in its own JVM
+  with its own thread pools and its own share of 8 cores.
+- **At 80 a second, only one JVM holds.** Its p95 stays at 132 ms. Four hosts did that in one run of three
+  (136 ms) and fell to 725 ms and 3.2 s in the others. 19 JVMs reached p95 over 3 s in every run, and about 1 order
+  in 10 didn't fill within the test. The hosts lost 5 of 14,400 orders at that rate to timeouts (504), which the
+  test counts as unknown, not failed.
 
 ### Failure: kill the process that runs the ledger
 
 | | 1 JVM | 4 hosts | 19 JVMs |
 |---|---|---|---|
-| Services still answering while it's down | **0 of 19** | 10 of 19 | **15-16 of 19** |
-| Back and healthy after | 41-44 s | 17-23 s | **13 s** |
+| Services still answering while it's down | **0 of 19** | 10 of 19 | **16 of 19** |
+| Back and healthy after | 38 s | 17 s | **12 s** |
 
 Here the order reverses. In one JVM, a fault anywhere is a fault everywhere: sign-in, prices and the status page
 go down with the ledger. With 4 hosts, the money host takes its seven services with it. With 19 JVMs only the
-ledger goes, and the few services that can't work without it. A small process also restarts faster.
+ledger goes, and the few services that can't work without it. A small process also restarts faster. The three
+runs agreed on every number here.
 
 ## What the experiment found along the way { #found }
 
+- **17 calls that only worked because they shared a JVM.** Each service's default address for some of its
+  neighbours is `127.0.0.1`, because in every host the caller and the callee share a process. Pre-prod never sets
+  those addresses, so nothing showed it. With each service alone, the calls went nowhere:
+    - OMS couldn't fetch prices, so **every order failed** with a 503 within 10 ms;
+    - settlement, recon and statements couldn't reach the ledger;
+    - clearing couldn't reach the bank, exchange or depository.
+
+  Three 19-JVM runs measured this bug, not the architecture, before it was found. The render now sets all 17
+  addresses (`COLOCATED` in `render.py`). This is the hidden coupling a modular monolith accumulates: splitting it
+  into processes is the test that finds it.
+- **A load generator that took the shape's memory.** Run inside Docker, the load test's two JVMs sized themselves
+  to a quarter of the VM each, and the 19-JVM shape ran out of memory (`Cannot allocate memory`). It now runs on the
+  laptop, outside Docker, with small fixed heaps.
 - **A test that hid its own failure.** The load test's helper ignored whether sign-up and sign-in succeeded. When 40
   customers signed up at once, past identity's measured capacity of about 20 sign-ins a second
   ([PERF-01](testing/performance.md#perf-01)), a refused sign-in became an empty token, and the next call failed
-  with a misleading `401 Sign in to continue`. It hit the 19-JVM shape first because there identity shares the
-  CPU with 18 other JVMs. The helper now checks each step and backs off when told to.
-- **A misdiagnosis, and a real hardening.** The first suspect was the gateway's key fetch. Nimbus's defaults give
-  identity 500 ms to serve its signing keys, then refuse to refetch for 30 s, during which every token is refused.
-  That wasn't this failure. It is still a real risk, fixed in gateway 0.5.1 (v0.19.1):
+  with a misleading `401 Sign in to continue`. The helper now checks each step and backs off when told to.
+- **Setup that gave up too soon.** Setting up customers isn't what's measured, but it has to work on the slowest
+  shape. It now waits and tries again when told to (429, 503, or a timeout on a call that's safe to repeat). It
+  waits for the bank to receive a deposit's collect request, and sets up four customers at a time.
+- **A misdiagnosis, and a real hardening.** The first suspect for the 401s was the gateway's key fetch. Nimbus's
+  defaults give identity 500 ms to serve its signing keys, then refuse to refetch for 30 s, during which every
+  token is refused. That wasn't this failure. It is still a real risk, fixed in gateway 0.5.1 (v0.19.1):
     - patient timeouts;
     - a refresh in the background before the keys expire;
     - keys kept through an outage;
     - a retryable 503 instead of 401 when the gateway truly can't check a token.
 - **A check that tripped its own rate limit.** At 80 orders a second, the after-load holdings check read 0 shares for
   96 customer-symbols. The holdings were fine; the check's own requests were being rate-limited. It now waits its
-  turn. The two real mismatches were orders that timed out with 504 but filled: a 504 means "unknown", not "failed".
+  turn.
 
 ## Monorepo or many repositories?
 
@@ -131,9 +155,9 @@ larger one: if Sprout started again, it would be one repository with many module
 
 | If you need... | Choose | Because, measured here |
 |---|---|---|
-| The least memory and CPU, the simplest operations | **1 JVM** (modular monolith) | 408 MB vs 2.5 GB at idle; fastest under load |
-| A fault in one area not to take the rest down | **Split by failure domain** (Sprout's 4 hosts) | 10 of 19 services survive the money host's loss, at 2x the monolith's memory, not 6x |
-| Independent scaling, deploys and teams per service; the smallest blast radius | **Microservices** | 15 of 19 services survive; 13 s recovery; at 6x the memory and 4x the start-up |
+| The least memory and CPU, the simplest operations, the most throughput per core | **1 JVM** (modular monolith) | 448 MB against 2.5 GB at idle; the only shape at p95 under 150 ms at 80 orders a second |
+| A fault in one area not to take the rest down | **Split by failure domain** (Sprout's 4 hosts) | 10 of 19 services survive the money host's loss, at 2 times the monolith's memory, not 5.5 |
+| Independent scaling, deploys and teams per service; the smallest blast radius | **Microservices** | 16 of 19 services survive; back in 12 s; at 5.5 times the memory, 2.6 times the start-up, and the first to slow under load |
 
 Sprout runs the middle shape on purpose. A phone can afford four JVMs but not nineteen, and grouping by what
 fails together keeps sign-in and prices up when money breaks. Its standby runs the monolith, because a standby is
@@ -142,6 +166,7 @@ idle until it is needed and must fit beside a cell's own services.
 ## Limits { #limits }
 
 - **Not production hardware.** One laptop with 8 vCPUs; every shape shares one Postgres. The relative differences are what carry over.
+- **A shared floor.** The load generator reaches Docker through its port forwarding, which adds about 55-75 ms to every order in every shape. Differences smaller than that are hidden.
 - **HTTP inside one JVM.** In-process method calls would make the monolith cheaper still; this measures packaging, not a rewrite.
-- **Scaling one service out isn't measured yet.** For example, two OMS replicas behind the gateway: the microservices shape's main argument.
-- **Two runs so far.** Single-rate figures vary between runs; final figures will be medians of three.
+- **Scaling one service out isn't measured.** For example, two OMS replicas behind the gateway: the microservices shape's main argument, and the one this machine has no room left to test.
+- **Three runs.** At 80 orders a second the four-host runs ranged from 136 ms to 3.2 s at p95, so that cell of the table is a median of very different runs.

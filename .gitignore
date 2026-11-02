@@ -18,3 +18,6 @@ preprod/out/
 __pycache__/
 __pycache__/
 preprod/shapes/out/
+preprod/shapes/results/**/*.log
+preprod/shapes/results/**/warm.json
+preprod/shapes/results/**/up.err
