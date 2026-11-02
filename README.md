@@ -13,6 +13,10 @@ Lose either one and the other serves everyone within 3–4 minutes, with no orde
 
 How each figure was measured: [capacity](docs/reliability/capacity.md) and [resilience](docs/reliability/resilience.md).
 
+![Sprout's home screen for a demo account](docs/assets/screens/home.png)
+
+More screens: [what it looks like](docs/screens.md).
+
 How [Sprout](https://sainayakk.github.io/sprout-platform/)'s services are put together, released and proven.
 
 Read the [Sprout in ten minutes walkthrough](https://sainayakk.github.io/sprout-platform/walkthrough/) for a step-by-step tour of the system.
