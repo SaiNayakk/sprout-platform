@@ -433,6 +433,20 @@ def replay_while_holding():
                 f'{r["refused"]} refused, {r["failed"]} failed')
 
 
+def keep_standby_up():
+    """While holding, the standby is what serves the other cell's customers. If it is gone (Docker restarted under a holding cell,
+    or it crashed), start it again: after two misses in a row, and at most once every 10 minutes, so one still booting is left alone."""
+    if S.get('state') != 'HOLDING' or busy() or S.get('hb') or answers(ENV['STANDBY_CHECK']):
+        T.pop('standby_miss', None)
+        return
+    T['standby_miss'] = T.get('standby_miss', 0) + 1
+    if T['standby_miss'] < 2 or now() - T.get('standby_started', 0) < 600:
+        return
+    T['standby_started'] = now()
+    notify(f'the standby holding cell {PEER.upper()} is down', 'starting it again', 4, 'warning', key='standby_down')
+    sh(ENV['STANDBY_START'], check=False)
+
+
 def unprotected_writes():
     """The gateway writes down every write that went ahead without the other cell having it (its journal was slow or away). Those
     are the only writes a failure of this cell right now could lose: say so, once a minute at most."""
@@ -491,6 +505,7 @@ def main():
     background(cw_ops.archive_journal, 30)
     background(cw_ops.monitor_once, 30)
     background(replay_while_holding, 5)
+    background(keep_standby_up, 30)
     background(cw_ops.selfreplay_while_active, 5)
     background(cw_ops.maintenance, 3600)
     background(resources, 300)
