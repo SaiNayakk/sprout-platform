@@ -37,6 +37,20 @@ class Fencing(unittest.TestCase):
         self.assertFalse(flapping({'edge': [1], 'trading': [2], 'money': [3], 'street': [4], 'web': [5]}, A))
         self.assertTrue(flapping({'edge': [1], 'trading': [2, 100, 200]}, A))
 
+    def test_unreachable_to_the_other_cell_says_it_is_out_after_two_minutes(self):
+        """2026-11-07: on mobile data the phone's tunnel took requests and never answered them, while its own check of its address
+        and its witness beats got through: nothing took its customers over for hours."""
+        self.assertIsNone(act('NORMAL', Obs(addr_unseen_for=119, peer_seen=True)))
+        d = decide('NORMAL', Obs(addr_unseen_for=120), A)
+        self.assertEqual((d.action, d.declared_down), ('FENCE', True))
+
+    def test_fenced_for_its_address_then_unseen_says_it_is_out(self):
+        self.assertEqual(act('FENCED', Obs(addr_unseen_for=120)), 'FENCE')
+
+    def test_once_out_the_witness_lets_the_other_cell_take_it(self):
+        o = Obs(peer_declared_for=30, wit=WitView(reachable=True, seen=True, age=5, state='FENCED', declared_down=True))
+        self.assertEqual(peer_lost(o, B), 'it has said it is out')
+
     def test_slow_but_answering_waits_five_minutes(self):
         self.assertIsNone(act('NORMAL', Obs(sick_for=299)))
         self.assertEqual(act('NORMAL', Obs(sick_for=300)), 'FENCE')

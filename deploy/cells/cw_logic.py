@@ -27,6 +27,7 @@ class Cfg:
     peer: str = 'b'
     preferred: str = 'b'          # when both took each other over, this cell keeps what it took
     fence_after: int = 60         # own public address unreachable
+    unseen_fence_after: int = 120  # the other cell, reachable itself, has not reached this cell's address this long
     host_down_fence_after: int = 60   # a host of this cell refusing connections (a crash restarts in about 30 s)
     sick_fence_after: int = 300   # answering, but unhealthy
     takeover_after: int = 120     # the other cell's address silent
@@ -55,6 +56,7 @@ class PeerView:
     fb_ready: bool = False        # holding, with what a handback needs prepared
     at: float = 0                 # when it published this status (its clock, as a timestamp)
     resumed_at: float = 0         # when it resumed serving its own customers because the cell holding them was gone
+    addr_bad_for: float = 0       # how long it has not reached THIS cell's public address
 
 
 @dataclass
@@ -71,6 +73,7 @@ class WitView:
 @dataclass
 class Obs:
     addr_down_for: float = 0      # this cell's own public address
+    addr_unseen_for: float = 0    # ... as the other cell sees it, when this cell can reach the other's address
     sick_for: float = 0           # its own health check failing
     hosts_down: dict = field(default_factory=dict)   # host -> seconds, for the hosts refusing connections now
     flapping: bool = False
@@ -149,6 +152,11 @@ def fence_reason(o: Obs, c: Cfg) -> Optional[tuple]:
         return ('a host keeps crashing', True)
     if o.addr_down_for >= c.fence_after:
         return ('its address is unreachable', False)
+    if o.addr_unseen_for >= c.unseen_fence_after:
+        # 2026-11-07: on mobile data the phone's tunnel took requests but its answers never got back. The phone's own check of
+        # its address went through a working connection and its witness beats got out, so nothing took its customers over for
+        # hours. Said out, so the witness lets the other cell take them.
+        return ("the other cell cannot reach this cell's address", True)
     if o.sick_for >= c.sick_fence_after:
         return ('its services are failing', False)
     if peer_taking_me(o):

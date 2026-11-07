@@ -119,11 +119,13 @@ def build_status():
             fb = dict(S['fb'])
         down = sorted(h for h, v in HEALTH['hosts'].items() if v == 'down')
         peer_ok_since = T.get('peer_reach_since')
+        gone_since = T.get('peer_gone')
         return {
             'cell': CELL, 'state': state, 'healthy': bool(HEALTH['local']) and not down,
             'holding': PEER if state == 'HOLDING' else None, 'at': iso(),
             'declared_down': S.get('declared_down'), 'hosts_down': down or None,
             'peer_ok_for': round(now() - peer_ok_since) if peer_ok_since else 0,
+            'peer_addr_bad_for': round(now() - gone_since) if gone_since else 0,
             'resumed_at': S.get('resumed_at') if now() - S.get('resumed_at', 0) < 3600 else None,
             'lan': own_lan_addr(), 'fb': fb,
             'fb_ready': bool(state == 'HOLDING' and S.get('hb_prepared') and not S.get('hb')),
@@ -229,7 +231,7 @@ def to_view(raw):
                     declared_down=bool(raw.get('declared_down')), peer_ok_for=float(raw.get('peer_ok_for') or 0),
                     fb=raw.get('fb'), fb_ready=bool(raw.get('fb_ready')),
                     at=datetime.datetime.fromisoformat(raw['at']).timestamp(),
-                    resumed_at=float(raw.get('resumed_at') or 0))
+                    resumed_at=float(raw.get('resumed_at') or 0), addr_bad_for=float(raw.get('peer_addr_bad_for') or 0))
 
 
 def fetch_cf():
@@ -322,9 +324,12 @@ def observe(t):
         T[f'prev_{h}'] = st
     S['flaps'] = {h: kept for h, times in flaps.items() if (kept := [x for x in times if t - x < CFG.flap_window])}
 
-    all_green = self_ok and local_ok and not hosts_down
+    # only through Cloudflare: that this cell read the other's status at its public address shows the other cell's own address
+    # works, so its word that it cannot reach this one's is about this cell, not about itself
+    unseen = cf.addr_bad_for if cf.fresh else 0
+    all_green = self_ok and local_ok and not hosts_down and unseen < CFG.unseen_fence_after
     o = Obs(
-        addr_down_for=since_of('addr_bad', not self_ok, t),
+        addr_down_for=since_of('addr_bad', not self_ok, t), addr_unseen_for=unseen,
         sick_for=since_of('sick', not local_ok, t),
         hosts_down=hosts_down, flapping=flapping(S['flaps'], CFG), declared=bool(S.get('declared_down')),
         good_for=since_of('good', all_green, t),
