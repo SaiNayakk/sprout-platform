@@ -8,6 +8,7 @@ cat > "$HERE/config.yml" <<EOF
 tunnel: $(python3 -c 'import json,os;print(json.load(open(os.path.expanduser("~/.cloudflared/front.json")))["TunnelID"])')
 credentials-file: $HOME/.cloudflared/front.json
 metrics: 127.0.0.1:8183
+protocol: http2   # QUIC held up on Jio mobile data but its answers never came back (2026-11-07)
 ingress:
   - hostname: sprout-saiworks.nncs.in
     service: http://localhost:8180
